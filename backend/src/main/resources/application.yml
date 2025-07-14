@@ -3,6 +3,4 @@ spring:
     import: classpath:db.properties
   data:
     mongodb:
-      user: db.user
-      password: db.password
-      uri: db.uri
+      uri: ${db.uri}
