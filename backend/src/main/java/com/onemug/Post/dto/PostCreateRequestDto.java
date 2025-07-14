@@ -3,6 +3,7 @@ package com.onemug.Post.dto;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
+import org.bson.types.ObjectId;
 
 @Getter
 public class PostCreateRequestDto {
@@ -13,8 +14,8 @@ public class PostCreateRequestDto {
     private String content;
 
     @NotNull
-    private Long categoryId;
+    private ObjectId categoryId;
 
     @NotNull
-    private Long userId;
+    private ObjectId userId;
 }

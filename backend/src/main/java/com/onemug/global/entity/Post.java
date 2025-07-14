@@ -8,7 +8,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import java.time.LocalDateTime;
 
 @Getter
-@Document(collation = "post")
+@Document(collection = "post")
 @AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Builder
@@ -26,4 +26,8 @@ public class Post {
 
     private LocalDateTime createdAt;
 //    private LocalDateTime updatedAt;
+public void update(String title, String content) {
+    this.title = title;
+    this.content = content;
+}
 }

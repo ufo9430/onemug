@@ -21,36 +21,37 @@ public class PostController {
     @GetMapping("/user/{id}/posts")
     public Page<Post> getPostAll(@RequestParam(defaultValue = "0") int page,
                                  @RequestParam(defaultValue = "10") int size,
-                                 @PathVariable Long id) {
+                                 @PathVariable String id) {
         Pageable pageable = PageRequest.of(page, size);
-        return postService.getPostAllByPage(pageable, id);
+        return postService.getPostAllByPage(new ObjectId(id), pageable);
     }
 
     @GetMapping("/post/{id}")
-    public Post getPost(@PathVariable Long id) {
+    public Post getPost(@PathVariable String id) {
         return postService.getPost(id);
     }
 
     @PostMapping("/c/post/add")
-    public Post writePost(PostCreateRequestDto dto/*@AuthenticationPrincipal OAuth2User user*/) {
-        return Post.builder()
+    public Post writePost(@RequestBody PostCreateRequestDto dto/*@AuthenticationPrincipal OAuth2User user*/) {
+        Post post = Post.builder()
                 .title(dto.getTitle())
                 .content(dto.getContent())
-                .categoryId(new ObjectId(dto.getCategoryId().toString()))
-                .userId(new ObjectId(dto.getUserId().toString()))
+                .categoryId(dto.getCategoryId())
+                .userId(dto.getUserId())
                 .build();
+        return postService.writePost(post);
     }
 
     @PutMapping("/c/post/update/{id}")
-    public Post updatePost(Long id, PostUpdateRequestDto dto) {
+    public Post updatePost(@PathVariable String id, @RequestBody PostUpdateRequestDto dto) {
         Post currentPost = postService.getPost(id);
         currentPost.update(dto.getTitle(),dto.getContent());
-        return currentPost;
+        return postService.updatePost(currentPost);
     }
 
     @DeleteMapping("/c/post/delete/{id}")
-    public void deletePost(Long id) {
-        postService.deletePost(id);
+    public void deletePost(@PathVariable String id) {
+        postService.deletePost(new ObjectId(id));
         // 게시글에 연결된 이미지나 다른 것들 삭제하기
     }
 }
