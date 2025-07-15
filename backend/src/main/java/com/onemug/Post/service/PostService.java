@@ -13,7 +13,7 @@ public class PostService {
     private final PostRepository postRepository;
 
     public Page<Post> getPostAllByPage(Long id, Pageable pageable) {
-        return postRepository.findAllByUserIdOrderByCreatedAtDesc(id, pageable);
+        return postRepository.findByCreatorId(id, pageable);
     }
 
     public Post getPost(Long id) {

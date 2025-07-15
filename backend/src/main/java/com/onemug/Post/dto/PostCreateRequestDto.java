@@ -16,5 +16,5 @@ public class PostCreateRequestDto {
     private Long categoryId;
 
     @NotNull
-    private Long userId;
+    private Long creatorId;
 }
