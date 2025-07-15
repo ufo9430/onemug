@@ -1,33 +1,36 @@
 package com.onemug.global.entity;
 
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
 import lombok.*;
-import org.bson.types.ObjectId;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
 
 @Getter
-@Document(collection = "post")
+@Entity
+//@Document(collection = "post")
 @AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Builder
 public class Post {
     @Id
-    private ObjectId _id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long _id;
 
     private String title;
     private String content;
 
-    private ObjectId categoryId;
-    private ObjectId userId;
+    private Long categoryId;
+    private Long userId;
     private Integer viewCount;
     private Integer likeCount;
 
     private LocalDateTime createdAt;
 //    private LocalDateTime updatedAt;
-public void update(String title, String content) {
-    this.title = title;
-    this.content = content;
-}
+    public void update(String title, String content) {
+        this.title = title;
+        this.content = content;
+    }
 }
