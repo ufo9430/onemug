@@ -1,10 +1,7 @@
 package com.onemug.global.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.OneToOne;
+import jakarta.persistence.*;
 import lombok.*;
-import jakarta.persistence.Id;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,7 +13,8 @@ import java.util.List;
 @Builder
 public class Creator {
     @Id
-    private Long creator_id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
     private String introduceText;
 

@@ -14,7 +14,7 @@ import java.util.List;
 public class Chatroom {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long chatroom_id;
+    private Long id;
 
     @OneToMany
     private List<User> participant = new ArrayList<>();

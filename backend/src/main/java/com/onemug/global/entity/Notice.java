@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 public class Notice {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long notice_id;
+    private Long id;
 
     @OneToOne
     @JoinColumn(name = "user_id")

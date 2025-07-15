@@ -14,7 +14,8 @@ import java.util.List;
 @Builder
 public class Membership {
     @Id
-    private Long membership_id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
     private String name;
 
