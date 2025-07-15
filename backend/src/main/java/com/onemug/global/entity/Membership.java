@@ -1,26 +1,32 @@
 package com.onemug.global.entity;
 
+import jakarta.persistence.*;
 import lombok.*;
-import org.bson.types.ObjectId;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
-@Document(collation = "membership")
+@Entity
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Builder
 public class Membership {
     @Id
-    private ObjectId _id;
+    private Long membership_id;
 
     private String name;
+
     private Integer price;
-    private ObjectId creatorId;
-    private ObjectId subscriberId;
-    private String[] benefits;
+
+    @ManyToOne
+    @JoinColumn(name = "creator_id")
+    private Creator creator;
 
     private LocalDateTime createdAt;
+
+    @OneToMany
+    private List<Benefit> benefitList = new ArrayList<>();
+
 }

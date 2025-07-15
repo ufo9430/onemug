@@ -1,6 +1,19 @@
 spring:
   config:
     import: classpath:db.properties
-  data:
-    mongodb:
-      uri: ${db.uri}
+  datasource:
+    driver: ${db.driver}
+    url: ${db.url}
+    username: ${db.username}
+    password: ${db.password}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.MySQL8Dialect
+logging:
+  level:
+    org.hibernate.SQL: debug
+    org.hibernate.type: trace

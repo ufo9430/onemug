@@ -1,19 +1,24 @@
 package com.onemug.global.entity;
 
+import jakarta.persistence.*;
 import lombok.*;
-import org.bson.types.ObjectId;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
-@Document(collation = "chatroom")
+@Entity
 @AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Builder
 public class Chatroom {
     @Id
-    private ObjectId _id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long chatroom_id;
 
-    private ObjectId participantId;
-    private ObjectId chatId;
+    @OneToMany
+    private List<User> participant = new ArrayList<>();
+
+    @OneToMany
+    private List<Chat> chat = new ArrayList<>();
 }
