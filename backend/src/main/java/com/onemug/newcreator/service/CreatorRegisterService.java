@@ -29,6 +29,6 @@ public class CreatorRegisterService {
     }
 
     public boolean checkAlreadyExist(Long userId){
-        return creatorRepository.existsByUserUserId(userId);
+        return creatorRepository.existsByUserId(userId);
     }
 }
