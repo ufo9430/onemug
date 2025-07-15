@@ -1,0 +1,9 @@
+package com.onemug.newcreator.repository;
+
+import com.onemug.global.entity.Creator;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+// 임시 생성, 추후 다른 브랜치와 통합
+@Repository
+public interface CreatorRegisterRepository extends JpaRepository<Creator, Long> {
+}
