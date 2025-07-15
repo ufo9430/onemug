@@ -1,26 +1,28 @@
 package com.onemug.global.entity;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import org.bson.types.ObjectId;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
+import jakarta.persistence.*;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
 @Getter
-@Document(collection = "comment")
+@Entity
 @AllArgsConstructor
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Builder
 public class Comment {
     @Id
-    private ObjectId _id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long comment_id;
 
-    private ObjectId postId;
-    private ObjectId userId;
+    @ManyToOne
+    @JoinColumn(name = "post_id")
+    private Post post;
+
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User user;
+
     private String content;
 
     private LocalDateTime createdAt;

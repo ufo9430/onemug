@@ -3,23 +3,19 @@ package com.onemug.global.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.LocalDateTime;
-
-@Getter
 @Entity
+@Getter
 @AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Builder
-public class Chat {
+public class Benefit {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long chat_id;
+    private Long benefit_id;
 
     private String content;
 
     @ManyToOne
-    @JoinColumn(name = "user_id")
-    private User user;
-
-    private LocalDateTime created_at;
+    @JoinColumn(name = "membership_id")
+    private Membership membership;
 }

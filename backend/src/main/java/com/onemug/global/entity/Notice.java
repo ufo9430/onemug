@@ -1,24 +1,30 @@
 package com.onemug.global.entity;
 
+import jakarta.persistence.*;
 import lombok.*;
-import org.bson.types.ObjectId;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
 
-@Document(collection = "notice")
+@Entity
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Builder
 public class Notice {
     @Id
-    private ObjectId _id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long notice_id;
 
-    private ObjectId receiverId;
+    @OneToOne
+    @JoinColumn(name = "user_id")
+    private User receiver;
+
     private String targetName;
-    private ObjectId targetPostId;
+
+    @OneToOne
+    @JoinColumn(name = "post_id")
+    private Post targetPostId;
+
     private String content;
     private LocalDateTime createdAt;
 }

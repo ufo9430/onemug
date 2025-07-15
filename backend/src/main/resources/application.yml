@@ -2,7 +2,18 @@ spring:
   config:
     import: classpath:db.properties
   datasource:
-    url: ${db.uri}
+    driver: ${db.driver}
+    url: ${db.url}
     username: ${db.username}
     password: ${db.password}
-    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.MySQL8Dialect
+logging:
+  level:
+    org.hibernate.SQL: debug
+    org.hibernate.type: trace

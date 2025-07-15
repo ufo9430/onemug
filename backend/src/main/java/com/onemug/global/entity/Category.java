@@ -1,19 +1,23 @@
 package com.onemug.global.entity;
 
+import jakarta.persistence.*;
 import lombok.*;
-import org.bson.types.ObjectId;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
+
 
 @Getter
-@Document(collation = "category")
+@Entity
 @AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Builder
 public class Category {
     @Id
-    private ObjectId _id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long category_id;
 
     private String name;
     private Integer viewCount;
+
+    @OneToOne
+    @JoinColumn(name = "post_id")
+    private Post post;
 }

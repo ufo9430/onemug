@@ -1,29 +1,31 @@
 package com.onemug.global.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
 
 @Getter
 @Entity
-//@Document(collection = "post")
 @AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Builder
 public class Post {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long _id;
+    private Long post_id;
 
     private String title;
     private String content;
 
-    private Long categoryId;
-    private Long userId;
+    @OneToOne
+    @JoinColumn(name = "category_id")
+    private Category category;
+
+    @ManyToOne
+    @JoinColumn(name = "creator_id")
+    private Creator creator;
+
     private Integer viewCount;
     private Integer likeCount;
 

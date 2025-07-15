@@ -1,25 +1,27 @@
 package com.onemug.global.entity;
 
+import jakarta.persistence.*;
 import lombok.*;
-import org.bson.types.ObjectId;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
-@Document(collation = "user")
+@Entity
 @AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Builder
 public class User {
     @Id
-    private ObjectId _id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long user_id;
 
     private String nickname;
     private String email;
     private String password;
     private String profileUrl;
 
-    private ObjectId subscribed;
-    private ObjectId creatorId;
+    @OneToMany
+    private List<Membership> subscribed = new ArrayList<>();
 
 }
