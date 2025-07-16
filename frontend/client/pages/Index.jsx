@@ -1,12 +1,13 @@
-import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect } from "react"
+import { useNavigate } from "react-router-dom"
 
 export default function Index() {
-  const navigate = useNavigate();
+  const navigate = useNavigate()
 
   useEffect(() => {
-    navigate("/welcome");
-  }, [navigate]);
+    // Redirect to welcome page on initial load
+    navigate("/welcome")
+  }, [navigate])
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-brand-secondary">
@@ -44,5 +45,5 @@ export default function Index() {
         </p>
       </div>
     </div>
-  );
+  )
 }

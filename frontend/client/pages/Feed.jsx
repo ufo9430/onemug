@@ -1,7 +1,7 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Heart, MessageCircle } from "lucide-react";
-import Sidebar from "../components/Sidebar";
+import React from "react"
+import { useNavigate } from "react-router-dom"
+import { Heart, MessageCircle } from "lucide-react"
+import Sidebar from "../components/Sidebar"
 
 const PostCard = ({
   id,
@@ -12,9 +12,9 @@ const PostCard = ({
   likes,
   comments,
   image,
-  authorAvatar,
+  authorAvatar
 }) => {
-  const navigate = useNavigate();
+  const navigate = useNavigate()
   return (
     <article
       onClick={() => navigate(`/post/${id}`)}
@@ -24,6 +24,7 @@ const PostCard = ({
       <div className="aspect-[4/2] bg-gray-100">
         <img src={image} alt={title} className="w-full h-full object-cover" />
       </div>
+
       {/* Content */}
       <div className="p-8">
         {/* Author */}
@@ -34,10 +35,15 @@ const PostCard = ({
             <div className="text-sm text-gray-500">• {category}</div>
           </div>
         </div>
+
         {/* Title */}
-        <h2 className="text-xl font-bold text-gray-900 mb-4 line-clamp-2">{title}</h2>
+        <h2 className="text-xl font-bold text-gray-900 mb-4 line-clamp-2">
+          {title}
+        </h2>
+
         {/* Excerpt */}
         <p className="text-gray-600 mb-6 line-clamp-2">{excerpt}</p>
+
         {/* Actions */}
         <div className="flex items-center gap-6">
           <button className="flex items-center gap-2 text-gray-600 hover:text-brand-primary transition-colors">
@@ -51,14 +57,14 @@ const PostCard = ({
         </div>
       </div>
     </article>
-  );
-};
+  )
+}
 
-export default function Feed({ hasCreatorAccount = false }) {
+const Feed = ({ hasCreatorAccount = false }) => {
   const samplePosts = [
     {
       id: "1",
-      title: "스펜티 원두 10종 비교 후기 (with 추출 가이드)",
+      title: "스페셜티 원두 10종 비교 후기 (with 추출 가이드)",
       excerpt:
         "같은 생두라도 로스터마다 풍미가 어떻게 달라지는지 비교했습니다. 홈카페 유저와 바리스타 모두에게 유용한 정리입니다.",
       author: "MinJung Kim",
@@ -67,34 +73,49 @@ export default function Feed({ hasCreatorAccount = false }) {
       comments: 18,
       image:
         "https://cdn.builder.io/api/v1/image/assets/TEMP/d5ee4b9e89993eff120520ccacca32438749b014?width=1692",
-      authorAvatar: "",
+      authorAvatar: ""
     },
     {
       id: "2",
-      title: "스펜티 원두 10종 비교 후기 (with 추출 가이드)",
+      title: "스페셜티 원두 10종 비교 후기 (with 추출 가이드)",
       excerpt:
         "같은 생두라도 로스터마다 풍미가 어떻게 달라지는지 비교했습니다. 홈카페 유저와 바리스타 모두에게 유용한 정리입니다.",
       author: "MinJung Kim",
       category: "원두 · 기기 리뷰",
-      likes: 120,
-      comments: 12,
+      likes: 124,
+      comments: 18,
       image:
         "https://cdn.builder.io/api/v1/image/assets/TEMP/d5ee4b9e89993eff120520ccacca32438749b014?width=1692",
-      authorAvatar: "",
-    },
-  ];
+      authorAvatar: ""
+    }
+  ]
 
   return (
-    <div className="flex">
-      <Sidebar />
-      <main className="flex-1 p-8">
-        <h1 className="text-3xl font-bold mb-8">피드</h1>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {samplePosts.map((post) => (
-            <PostCard key={post.id} {...post} />
-          ))}
-        </div>
-      </main>
+    <div className="min-h-screen bg-brand-secondary flex">
+      {/* Sidebar */}
+      <Sidebar hasCreatorAccount={hasCreatorAccount} activeItem="feed" />
+
+      {/* Main Content */}
+      <div className="flex-1">
+        {/* Header */}
+        <header className="h-[73px] bg-white border-b border-gray-200 flex items-center px-6">
+          <div className="lg:hidden mr-4">
+            <h2 className="text-lg font-bold text-gray-900">OneMug</h2>
+          </div>
+          <h1 className="text-xl font-semibold text-gray-900">피드</h1>
+        </header>
+
+        {/* Content Area */}
+        <main className="bg-brand-secondary min-h-[calc(100vh-73px)] p-4 lg:p-8">
+          <div className="max-w-4xl mx-auto space-y-6 lg:space-y-8">
+            {samplePosts.map(post => (
+              <PostCard key={post.id} {...post} />
+            ))}
+          </div>
+        </main>
+      </div>
     </div>
-  );
+  )
 }
+
+export default Feed
