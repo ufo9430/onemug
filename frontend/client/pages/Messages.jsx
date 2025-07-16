@@ -1,10 +1,10 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import Sidebar from "@/components/Sidebar";
-import { Search, Plus } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import React, { useState } from "react"
+import { useNavigate } from "react-router-dom"
+import Sidebar from "@/components/Sidebar"
+import { Search, Plus } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 
 const mockConversations = [
   {
@@ -15,7 +15,7 @@ const mockConversations = [
     avatar:
       "https://cdn.builder.io/api/v1/image/assets%2F96669fc18d0a42e7921a546a167f4728%2F225690d8977549608e6ed4823c342234?format=webp&width=800",
     isOnline: true,
-    unreadCount: 3,
+    unreadCount: 3
   },
   {
     id: "growth-hacker",
@@ -23,7 +23,7 @@ const mockConversations = [
     lastMessage: "멤버십 이벤트 관련해서 문의가 있어요",
     timestamp: "15분 전",
     avatar:
-      "https://cdn.builder.io/api/v1/image/assets%2F96669fc18d0a42e7921a546a167f4728%2Fa4664d4a45254082babb84389ef91331?format=webp&width=800",
+      "https://cdn.builder.io/api/v1/image/assets%2F96669fc18d0a42e7921a546a167f4728%2Fa4664d4a45254082babb84389ef91331?format=webp&width=800"
   },
   {
     id: "kim-min-jung",
@@ -32,16 +32,16 @@ const mockConversations = [
     timestamp: "1시간 전",
     avatar:
       "https://cdn.builder.io/api/v1/image/assets%2F96669fc18d0a42e7921a546a167f4728%2Fbb366f75478e4386bba89cfb978a8993?format=webp&width=800",
-    isOnline: true,
+    isOnline: true
   },
   {
     id: "barista-pro",
     name: "Barista Pro",
-    lastMessage: "라루아트 강의 언제 시작하나요?",
+    lastMessage: "라떼아트 강의 언제 시작하나요?",
     timestamp: "3시간 전",
     avatar:
       "https://cdn.builder.io/api/v1/image/assets/TEMP/a379c1873d3190768039f837ab75ed73623f0585?width=112",
-    unreadCount: 1,
+    unreadCount: 1
   },
   {
     id: "bean-lover",
@@ -49,7 +49,7 @@ const mockConversations = [
     lastMessage: "원두 배송 확인 부탁드려요",
     timestamp: "어제",
     avatar:
-      "https://cdn.builder.io/api/v1/image/assets/TEMP/0acf6a3cab0a026c6c2d09cd335478a831d7d91a?width=112",
+      "https://cdn.builder.io/api/v1/image/assets/TEMP/0acf6a3cab0a026c6c2d09cd335478a831d7d91a?width=112"
   },
   {
     id: "cafe-owner",
@@ -59,7 +59,7 @@ const mockConversations = [
     avatar:
       "https://cdn.builder.io/api/v1/image/assets/TEMP/883b179b10e3f42937f47a604e4878e2e38586f3?width=112",
     isOnline: true,
-    unreadCount: 2,
+    unreadCount: 2
   },
   {
     id: "roaster-kim",
@@ -67,70 +67,120 @@ const mockConversations = [
     lastMessage: "새로운 원두 샘플 보내드릴게요",
     timestamp: "3일 전",
     avatar:
-      "https://cdn.builder.io/api/v1/image/assets/TEMP/7e7b1e2c5f8c2f7d0e6f4f6d7f3e2b8b6e2d2e8b6?width=112",
+      "https://cdn.builder.io/api/v1/image/assets/TEMP/10d6d64c327c4da74fb3354892454d4ac4d934d1?width=112"
   },
-];
-
-function ConversationItem({ conversation }) {
-  return (
-    <div className={`flex items-center gap-4 p-4 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer ${conversation.isActive ? "bg-gray-100" : ""}`}>
-      <Avatar className="w-12 h-12">
-        <AvatarImage src={conversation.avatar} alt={conversation.name} />
-        <AvatarFallback>{conversation.name[0]}</AvatarFallback>
-      </Avatar>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <span className="font-medium text-gray-900 truncate">{conversation.name}</span>
-          {conversation.isOnline && <span className="ml-2 w-2 h-2 rounded-full bg-green-500 inline-block" />}
-        </div>
-        <div className="text-sm text-gray-500 truncate">{conversation.lastMessage}</div>
-      </div>
-      <div className="flex flex-col items-end">
-        <span className="text-xs text-gray-400 mb-1">{conversation.timestamp}</span>
-        {conversation.unreadCount ? (
-          <span className="bg-brand-primary text-white text-xs px-2 py-0.5 rounded-full">
-            {conversation.unreadCount}
-          </span>
-        ) : null}
-      </div>
-    </div>
-  );
-}
+  {
+    id: "home-barista",
+    name: "Home Barista",
+    lastMessage: "추출 방법 조언 감사했어요!",
+    timestamp: "1주일 전",
+    avatar:
+      "https://cdn.builder.io/api/v1/image/assets/TEMP/5d104cc5e7d4da989a3ff6ac17ebc3c667834c06?width=112",
+    isOnline: true
+  }
+]
 
 export default function Messages() {
-  const [search, setSearch] = useState("");
-  const filteredConversations = mockConversations.filter((c) =>
-    c.name.toLowerCase().includes(search.toLowerCase())
-  );
+  const navigate = useNavigate()
+  const [searchQuery, setSearchQuery] = useState("")
+
+  const filteredConversations = mockConversations.filter(
+    conv =>
+      conv.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      conv.lastMessage.toLowerCase().includes(searchQuery.toLowerCase())
+  )
+
+  const handleConversationClick = conversationId => {
+    navigate(`/messages/${conversationId}`)
+  }
 
   return (
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar activeItem="messages" />
+
       <div className="flex-1 flex flex-col w-full lg:w-auto">
         {/* Header */}
-        <div className="bg-white border-b border-gray-200 px-4 lg:px-6 py-4 lg:py-5 flex items-center gap-4">
-          <h1 className="text-lg lg:text-xl font-semibold text-gray-900 flex-1">메시지</h1>
-          <Button size="icon" variant="outline">
-            <Plus className="w-5 h-5" />
-          </Button>
+        <div className="bg-white border-b border-gray-200 px-4 lg:px-6 py-4 lg:py-6">
+          <div className="flex items-center justify-between">
+            <h1 className="text-lg lg:text-xl font-semibold text-gray-900">
+              메시지
+            </h1>
+            <Button
+              size="icon"
+              variant="ghost"
+              className="h-8 w-8 lg:h-10 lg:w-10 rounded-lg hover:bg-gray-100"
+            >
+              <Plus className="h-4 w-4 lg:h-6 lg:w-6" />
+            </Button>
+          </div>
+
+          {/* Search */}
+          <div className="mt-4 lg:mt-6 relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 lg:h-5 lg:w-5 text-gray-400" />
+            <Input
+              placeholder="메시지 검색"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              className="pl-8 lg:pl-10 bg-gray-50 border-gray-200 rounded-lg h-10 lg:h-12 text-sm lg:text-base"
+            />
+          </div>
         </div>
-        {/* Search Input */}
-        <div className="bg-white px-4 py-2 border-b border-gray-200">
-          <Input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="대화 상대 검색..."
-            className="w-full max-w-md"
-          />
-        </div>
-        {/* Conversation List */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-2">
-          {filteredConversations.map((conv) => (
-            <ConversationItem key={conv.id} conversation={conv} />
+
+        {/* Conversations List */}
+        <div className="flex-1 overflow-y-auto">
+          {filteredConversations.map(conversation => (
+            <div
+              key={conversation.id}
+              onClick={() => handleConversationClick(conversation.id)}
+              className="bg-white border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors"
+            >
+              <div className="px-4 lg:px-6 py-3 lg:py-4">
+                <div className="flex items-center gap-3 lg:gap-4">
+                  {/* Avatar with online indicator */}
+                  <div className="relative flex-shrink-0">
+                    <Avatar className="h-12 w-12 lg:h-14 lg:w-14">
+                      <AvatarImage
+                        src={conversation.avatar}
+                        alt={conversation.name}
+                      />
+                      <AvatarFallback className="bg-gray-200 text-gray-600 font-medium text-sm lg:text-base">
+                        {conversation.name.slice(0, 2).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    {conversation.isOnline && (
+                      <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 lg:h-4 lg:w-4 bg-green-500 rounded-full border-2 border-white"></div>
+                    )}
+                  </div>
+
+                  {/* Content */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-1">
+                      <h3 className="font-semibold text-gray-900 truncate text-sm lg:text-base">
+                        {conversation.name}
+                      </h3>
+                      <span className="text-xs text-gray-500 whitespace-nowrap ml-2 flex-shrink-0">
+                        {conversation.timestamp}
+                      </span>
+                    </div>
+                    <p className="text-xs lg:text-sm text-gray-600 truncate">
+                      {conversation.lastMessage}
+                    </p>
+                  </div>
+
+                  {/* Unread badge */}
+                  {conversation.unreadCount && (
+                    <div className="h-4 w-4 lg:h-5 lg:w-5 bg-brand-primary rounded-full flex items-center justify-center flex-shrink-0">
+                      <span className="text-xs font-semibold text-white">
+                        {conversation.unreadCount}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
           ))}
         </div>
       </div>
     </div>
-  );
+  )
 }
-

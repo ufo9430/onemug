@@ -1,5 +1,5 @@
-import React from "react";
-import { useNavigate } from "react-router-dom";
+import React from "react"
+import { useNavigate } from "react-router-dom"
 import {
   Search,
   Mail,
@@ -8,99 +8,157 @@ import {
   Clock,
   Settings,
   Home,
-  CheckSquare,
-} from "lucide-react";
+  CheckSquare
+} from "lucide-react"
 
 const Sidebar = ({
   hasCreatorAccount = false,
   activeItem = "feed",
-  className = "",
+  className = ""
 }) => {
-  const navigate = useNavigate();
+  const navigate = useNavigate()
 
   const navigationItems = [
     {
       id: "feed",
       label: "피드",
       icon: Home,
-      path: "/feed",
+      path: "/feed"
     },
     {
       id: "search",
-      label: "검색",
+      label: "탐색",
       icon: Search,
-      path: "/search",
+      path: "/search"
     },
     {
       id: "messages",
       label: "소통",
       icon: Mail,
-      path: "/messages",
+      path: "/messages"
     },
     {
       id: "subscriptions",
       label: "구독한 창작자",
       icon: CheckSquare,
-      path: "/subscriptions",
+      path: "/subscriptions"
     },
     {
       id: "notifications",
       label: "알림",
       icon: Bell,
-      path: "/notifications",
+      path: "/notifications"
     },
     {
       id: "bookmarks",
-      label: "북마크",
+      label: "좋아요한 글",
       icon: Bookmark,
-      path: "/bookmarks",
+      path: "/bookmarks"
     },
     {
       id: "recent",
       label: "최근 본 글",
       icon: Clock,
-      path: "/recent",
+      path: "/recent"
     },
     {
       id: "settings",
       label: "설정",
       icon: Settings,
-      path: "/settings",
-    },
-  ];
+      path: "/settings"
+    }
+  ]
+
+  const handleNavigation = path => {
+    navigate(path)
+  }
 
   return (
-    <aside className={`w-64 bg-white shadow-md h-full flex flex-col ${className}`}>
-      <div className="flex-1 py-8 px-4">
-        <nav className="space-y-2">
-          {navigationItems.map((item) => (
-            <button
-              key={item.id}
-              className={`flex items-center w-full px-4 py-2 rounded-lg transition-colors ${
-                activeItem === item.id
-                  ? "bg-blue-100 text-blue-600"
-                  : "hover:bg-gray-100 text-gray-700"
-              }`}
-              onClick={() => navigate(item.path)}
-            >
-              <item.icon className="w-5 h-5 mr-3" />
-              <span>{item.label}</span>
-            </button>
-          ))}
-        </nav>
+    <div
+      className={`w-full lg:w-80 h-screen bg-white border-r border-gray-200 flex flex-col fixed lg:relative z-10 lg:z-auto ${className}`}
+    >
+      {/* Header */}
+      <div className="h-[89px] border-b border-gray-200 flex items-center px-[52px]">
+        <h1 className="text-xl font-bold text-gray-900">OneMug</h1>
       </div>
-      {hasCreatorAccount && (
-        <div className="p-4 border-t">
-          <button
-            className="w-full py-2 px-4 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-            onClick={() => navigate("/creator/dashboard")}
-          >
-            크리에이터 대시보드
-          </button>
-        </div>
-      )}
-    </aside>
-  );
-};
 
-export default Sidebar;
+      {/* User Profile */}
+      <div className="p-4">
+        <div className="bg-gray-50 rounded-lg p-3 flex items-center gap-3">
+          <img
+            src="https://cdn.builder.io/api/v1/image/assets/TEMP/74a447f181f8719eda86719d9315b0e741b1307f?width=96"
+            alt="User"
+            className="w-12 h-12 rounded-full"
+          />
+          <div>
+            <div className="font-semibold text-gray-900">김민정</div>
+            <div className="text-sm text-gray-500">minjung_kim@abc.abc</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Navigation */}
+      <nav className="flex-1 px-4">
+        <div className="space-y-1">
+          {navigationItems.map(item => {
+            const IconComponent = item.icon
+            const isActive = activeItem === item.id
+
+            return (
+              <button
+                key={item.id}
+                onClick={() => handleNavigation(item.path)}
+                className={`w-full rounded-lg p-3 flex items-center gap-3 transition-colors ${
+                  isActive
+                    ? "bg-brand-primary text-white"
+                    : "hover:bg-gray-50 text-gray-600"
+                }`}
+              >
+                <IconComponent
+                  className={`w-5 h-5 ${
+                    isActive ? "text-white" : "text-gray-600"
+                  }`}
+                />
+                <span
+                  className={`font-medium ${
+                    isActive ? "text-white" : "text-gray-600"
+                  }`}
+                >
+                  {item.label}
+                </span>
+              </button>
+            )
+          })}
+        </div>
+      </nav>
+
+      {/* Bottom Action */}
+      <div className="p-4">
+        {hasCreatorAccount ? (
+          <button
+            onClick={() => navigate("/creator/dashboard")}
+            className="w-full bg-brand-primary text-white rounded-lg py-3 px-6 font-medium hover:bg-brand-primary/90 transition-colors"
+          >
+            창작 계정으로 전환
+          </button>
+        ) : (
+          <div className="text-center">
+            <div className="text-sm text-gray-500 mb-2">
+              또는
+              <br />
+              창작자가 되어 보세요
+            </div>
+            <button
+              onClick={() => navigate("/creator/signup")}
+              className="w-full bg-brand-primary text-white rounded-lg py-3 px-6 font-medium hover:bg-brand-primary/90 transition-colors"
+            >
+              창작자 계정 생성
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+export default Sidebar
