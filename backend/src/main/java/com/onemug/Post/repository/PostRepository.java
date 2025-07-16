@@ -10,6 +10,6 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface PostRepository extends JpaRepository<Post, Long> {
-    @Query("SELECT p FROM Post p WHERE p.creator.creator_id = :creatorId ORDER BY p.createdAt desc")
+    @Query("SELECT p FROM Post p WHERE p.creator.id = :creatorId ORDER BY p.createdAt desc")
     Page<Post> findByCreatorId(@Param("creatorId") Long id, Pageable pageable);
 }
