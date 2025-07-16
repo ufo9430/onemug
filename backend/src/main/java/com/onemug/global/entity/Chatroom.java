@@ -25,10 +25,6 @@ public class Chatroom {
     private List<User> participant = new ArrayList<>();
 
     @OneToMany
-    @JoinTable(
-            name = "chatroom_chat",
-            joinColumns = @JoinColumn(name = "chatroom_id"),
-            inverseJoinColumns = @JoinColumn(name = "chat_id")
-    )
+    @JoinColumn
     private List<Chat> chat = new ArrayList<>();
 }
