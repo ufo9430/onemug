@@ -5,6 +5,7 @@ import com.onemug.community.repository.ChatRoomRepository;
 import com.onemug.global.entity.Chat;
 import com.onemug.global.entity.Chatroom;
 import com.onemug.global.entity.User;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -19,26 +20,31 @@ public class ChatRoomService {
     private ChatRoomRepository chatRoomRepository;
 
     public List<ChatRoomResponseDTO> findAll(Long userId) {
-        //Ctrl + Alt + V: 변수 추출 (Extract Variable)
-        //Alt + Enter: 빠른 오류 해결
-        //todo: 결과값은 ChatRoomResponseDTO이기 때문에, 빈 List<ChatRoomResponseDTO> 객체가 하나 필요해 보여요
         List<ChatRoomResponseDTO> chatRoomResponseDTO = new ArrayList<>();
 
         List<Chatroom> chatrooms = chatRoomRepository.findAllByUserId(userId);
         for (Chatroom chatroom : chatrooms) {
-            // todo: DTO에 필요한 값을 찾아 주입
 
             Long chatroomId = chatroom.getId();
-            chatRoomRepository.findRecentChatByChatroomId(chatroomId);
+            Chat recentChat = chatRoomRepository.findRecentChatByChatroomId(chatroomId)
+                    .orElseThrow(EntityNotFoundException::new);
+            User recentChatUser = recentChat.getUser();
 
-            String recentChat = chat
-            String nickname
-            String profileUrl
-            LocalDateTime createdAt = chat
+            String recentChatContent = recentChat.getContent();
+            String nickname = recentChatUser.getNickname();
+            String profileUrl = recentChatUser.getProfileUrl();
+            LocalDateTime createdAt = recentChat.getCreated_at();
 
-            chatrooms.add();
+            ChatRoomResponseDTO dto = ChatRoomResponseDTO.builder()
+                    .recentChat(recentChatContent)
+                    .chatroomId(chatroomId)
+                    .nickname(nickname)
+                    .profileUrl(profileUrl)
+                    .createdAt(createdAt)
+                    .build();
+
+            chatRoomResponseDTO.add(dto);
         }
-
         return chatRoomResponseDTO;
     }
 
