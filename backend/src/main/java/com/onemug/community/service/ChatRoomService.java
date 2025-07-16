@@ -11,6 +11,7 @@ import com.onemug.global.entity.Chatroom;
 import com.onemug.global.entity.User;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -37,14 +38,13 @@ public class ChatRoomService {
         for (Chatroom chatroom : chatrooms) {
 
             Long chatroomId = chatroom.getId();
-            Chat recentChat = chatRoomRepository.findRecentChatByChatroomId(chatroomId)
-                    .orElseThrow(EntityNotFoundException::new);
+            Chat recentChat = chatRepository.findTop1ByChatRoomIdOrderByCreatedAtDesc(chatroomId).orElseThrow(EntityNotFoundException::new);
             User recentChatUser = recentChat.getUser();
 
             String recentChatContent = recentChat.getContent();
             String nickname = recentChatUser.getNickname();
             String profileUrl = recentChatUser.getProfileUrl();
-            LocalDateTime createdAt = recentChat.getCreated_at();
+            LocalDateTime createdAt = recentChat.getCreatedAt();
 
             ChatRoomResponseDTO dto = ChatRoomResponseDTO.builder()
                     .recentChat(recentChatContent)
@@ -74,7 +74,7 @@ public class ChatRoomService {
             String nickname = user.getNickname();
             String profileUrl = user.getProfileUrl();
             String content = chat.getContent();
-            LocalDateTime createdAt = chat.getCreated_at();
+            LocalDateTime createdAt = chat.getCreatedAt();
 
             ChatResponseDTO dto = ChatResponseDTO.builder()
                     .nickname(nickname)
@@ -102,7 +102,7 @@ public class ChatRoomService {
                 .user(user)
                 .chatRoom(chatroom)
                 .content(content)
-                .created_at(LocalDateTime.now())
+                .createdAt(LocalDateTime.now())
                 .build();
 
         chatRepository.save(chat);

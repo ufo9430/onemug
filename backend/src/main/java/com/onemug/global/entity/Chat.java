@@ -25,5 +25,5 @@ public class Chat {
     @JoinColumn(name = "chatroom_id")
     private Chatroom chatRoom;
 
-    private LocalDateTime created_at;
+    private LocalDateTime createdAt;
 }
