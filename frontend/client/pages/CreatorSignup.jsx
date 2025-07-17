@@ -1,32 +1,32 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Camera } from "lucide-react";
+import React, { useState } from "react"
+import { useNavigate } from "react-router-dom"
+import { Camera } from "lucide-react"
 
-export default function CreatorSignup() {
-  const navigate = useNavigate();
-  const [introduction, setIntroduction] = useState("");
-  const [profileImage, setProfileImage] = useState(null);
+const CreatorSignup = () => {
+  const navigate = useNavigate()
+  const [introduction, setIntroduction] = useState("")
+  const [profileImage, setProfileImage] = useState(null)
 
-  const handleImageUpload = (e) => {
-    const file = e.target.files?.[0];
+  const handleImageUpload = e => {
+    const file = e.target.files?.[0]
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setProfileImage(e.target?.result);
-      };
-      reader.readAsDataURL(file);
+      const reader = new FileReader()
+      reader.onload = e => {
+        setProfileImage(e.target?.result)
+      }
+      reader.readAsDataURL(file)
     }
-  };
+  }
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  const handleSubmit = e => {
+    e.preventDefault()
     if (introduction.trim()) {
       // Handle creator account creation
-      console.log("Creating creator account:", { introduction, profileImage });
+      console.log("Creating creator account:", { introduction, profileImage })
       // Navigate to creator dashboard
-      navigate("/creator/dashboard");
+      navigate("/creator/dashboard")
     }
-  };
+  }
 
   return (
     <div className="min-h-screen bg-brand-secondary flex items-center justify-center p-4">
@@ -34,7 +34,9 @@ export default function CreatorSignup() {
         <div className="p-8">
           {/* Header */}
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">창작자 계정 생성</h1>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              창작자 계정 생성
+            </h1>
             <p className="text-gray-600">독자들과 소통을 시작해보세요</p>
           </div>
 
@@ -71,16 +73,20 @@ export default function CreatorSignup() {
           {/* Introduction Form */}
           <form onSubmit={handleSubmit}>
             <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">독자들에게 자신을 소개해 보세요</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                독자들에게 자신을 소개해 보세요
+              </label>
               <textarea
                 value={introduction}
-                onChange={(e) => setIntroduction(e.target.value)}
-                placeholder="자기소개를 입력해주새요..."
+                onChange={e => setIntroduction(e.target.value)}
+                placeholder="자기소개를 입력해주세요..."
                 className="w-full h-12 p-3 border border-gray-200 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent text-sm"
                 maxLength={30}
               />
               <div className="flex justify-end mt-2">
-                <span className="text-sm text-gray-500">{introduction.length}/30</span>
+                <span className="text-sm text-gray-500">
+                  {introduction.length}/30
+                </span>
               </div>
             </div>
 
@@ -94,11 +100,13 @@ export default function CreatorSignup() {
                   : "bg-gray-300 text-gray-500 cursor-not-allowed"
               }`}
             >
-              시작하기
+              창작 시작하기
             </button>
           </form>
         </div>
       </div>
     </div>
-  );
+  )
 }
+
+export default CreatorSignup
