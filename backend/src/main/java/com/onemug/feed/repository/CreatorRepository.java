@@ -1,6 +1,9 @@
 package com.onemug.feed.repository;
 
 import com.onemug.global.entity.Creator;
+import com.onemug.search.dto.SearchCond;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -19,4 +22,15 @@ public interface CreatorRepository extends JpaRepository<Creator, Long> {
         where s.id = :userId
     """)
     List<Long> findCreatorIdsBySubscriberId(@Param("userId") Long userId);
+
+    /** Creator 통합 검색 (닉네임·소개글) */
+    @Query(value = """
+    SELECT  cr.*
+    FROM    creator cr
+    JOIN    `user` u ON cr.user_id = u.id
+    WHERE   MATCH(u.nickname, cr.introduce_text)
+            AGAINST (:#{#cond.q} IN BOOLEAN MODE) > 0
+    """, nativeQuery = true)
+    Page<Creator> searchCreators(@Param("cond") SearchCond cond,
+                                 Pageable pageable);
 }

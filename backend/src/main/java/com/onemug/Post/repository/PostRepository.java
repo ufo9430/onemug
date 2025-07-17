@@ -1,6 +1,8 @@
+// src/main/java/com/onemug/Post/repository/PostRepository.java
 package com.onemug.Post.repository;
 
 import com.onemug.global.entity.Post;
+import com.onemug.search.dto.SearchCond;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -12,6 +14,8 @@ import java.util.List;
 
 @Repository
 public interface PostRepository extends JpaRepository<Post, Long> {
+
+
 
     /** 창작자 본인 글 목록 (Creator dashboard) */
     @Query("""
@@ -56,4 +60,38 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     Page<Post> findExplorePostsByCategory(@Param("userId") Long userId,
                                           @Param("categoryId") Long categoryId,
                                           Pageable pageable);
+
+    /* ────────────────────── 🔍 통합 검색 메서드 ───────────────────── */
+
+    /**
+     * FULLTEXT 통합 검색 (제목 + 내용 + 카테고리명).
+     *  - MATCH(title,content) + 2×MATCH(category.name) 로 가중 정렬
+     *  - 엔티티 매핑을 위해 SELECT 절은 p.* 만 남기고,
+     *    점수 계산은 ORDER BY 식 안에서 수행한다.
+     */
+    @Query(value = """
+        SELECT p.*
+        FROM   post p
+        JOIN   category c ON p.category_id = c.id
+        WHERE  (MATCH(p.title, p.content) AGAINST (:#{#cond.q} IN BOOLEAN MODE)
+                OR MATCH(c.name)         AGAINST (:#{#cond.q} IN BOOLEAN MODE))
+          AND  (:#{#cond.categoryIds == null || #cond.categoryIds.isEmpty() ? 0 : 1} = 0
+                 OR p.category_id IN :#{#cond.categoryIds})
+        ORDER BY
+              (MATCH(p.title, p.content) AGAINST (:#{#cond.q} IN BOOLEAN MODE)
+              + 2 * MATCH(c.name)        AGAINST (:#{#cond.q} IN BOOLEAN MODE)) DESC,
+              p.view_count DESC,
+              p.created_at DESC
+        """,
+            countQuery = """
+        SELECT COUNT(*)
+        FROM   post p
+        JOIN   category c ON p.category_id = c.id
+        WHERE  (MATCH(p.title, p.content) AGAINST (:#{#cond.q} IN BOOLEAN MODE)
+                OR MATCH(c.name)         AGAINST (:#{#cond.q} IN BOOLEAN MODE))
+          AND  (:#{#cond.categoryIds == null || #cond.categoryIds.isEmpty() ? 0 : 1} = 0
+                 OR p.category_id IN :#{#cond.categoryIds})
+        """,
+            nativeQuery = true)
+    Page<Post> searchPosts(@Param("cond") SearchCond cond, Pageable pageable);
 }
