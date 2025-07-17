@@ -35,3 +35,4 @@ public interface CreatorRepository extends JpaRepository<Creator, Long> {
     """, nativeQuery = true)
     Page<Creator> searchCreators(@Param("cond") SearchCond cond, Pageable pageable);
 }
+
