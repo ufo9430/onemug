@@ -1,6 +1,8 @@
 package com.onemug.global.dto;
 
+import com.onemug.global.entity.Creator;
 import com.onemug.global.entity.Membership;
+import com.onemug.global.entity.User;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -21,6 +23,8 @@ public class MembershipResponseDto {
     private LocalDateTime expiresAt;
     private String status; // ACTIVE, EXPIRED, CANCELLED
     private Boolean autoRenew;
+    private Creator creatorId;
+    private User subscriberId;
 
     // Static factory method
     public static MembershipResponseDto from(Membership membership) {
