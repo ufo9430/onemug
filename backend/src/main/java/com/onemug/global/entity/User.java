@@ -10,7 +10,7 @@ import java.util.List;
 @Entity
 @AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Builder
+@Builder(toBuilder = true)
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -19,7 +19,10 @@ public class User {
     private String nickname;
     private String email;
     private String password;
-    private String profileUrl;
+
+    @Builder.Default
+    @Column(name = "profile_url")
+    private String profileUrl = "/images/default-profile.jpg";
 
     @OneToMany
     private List<Membership> subscribed = new ArrayList<>();
