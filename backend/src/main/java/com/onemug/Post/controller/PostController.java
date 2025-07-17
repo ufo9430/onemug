@@ -3,8 +3,6 @@ package com.onemug.Post.controller;
 import com.onemug.Post.dto.PostCreateRequestDto;
 import com.onemug.Post.dto.PostUpdateRequestDto;
 import com.onemug.Post.service.PostService;
-import com.onemug.global.entity.Category;
-import com.onemug.global.entity.Creator;
 import com.onemug.global.entity.Post;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -33,14 +31,8 @@ public class PostController {
     }
 
     @PostMapping("/c/post/add")
-    public Post writePost(@RequestBody PostCreateRequestDto dto/*@AuthenticationPrincipal OAuth2User user*/) {
-        Post post = Post.builder()
-                .title(dto.getTitle())
-                .content(dto.getContent())
-                .category(new Category(dto.getCategoryId(), "커피", 0, null))
-                .creator(new Creator(dto.getCreatorId(), "text", null, null))
-                .build();
-        return postService.writePost(post);
+    public Post writePost(@RequestBody PostCreateRequestDto dto/*, @AuthenticationPrincipal OAuth2User user*/) {
+        return postService.writePost(dto/*, user*/);
     }
 
     @PutMapping("/c/post/update/{id}")

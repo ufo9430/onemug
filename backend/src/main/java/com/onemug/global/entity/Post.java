@@ -35,4 +35,16 @@ public class Post {
         this.title = title;
         this.content = content;
     }
+
+    public void incrementViewCount() {
+        this.viewCount = this.viewCount + 1;
+    }
+
+    public void incrementLikeCount() {
+        this.likeCount = this.likeCount + 1;
+    }
+
+    public void decrementLikeCount() {
+        this.likeCount = this.likeCount > 0 ? this.likeCount - 1 : 0;
+    }
 }
