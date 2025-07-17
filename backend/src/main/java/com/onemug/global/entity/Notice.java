@@ -15,16 +15,28 @@ public class Notice {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToOne
-    @JoinColumn(name = "user_id")
+    @ManyToOne
+    @JoinColumn(name = "reciever_id")
     private User receiver;
 
-    private String targetName;
+    @ManyToOne
+    @JoinColumn(name = "sender_id")
+    private User sender;
 
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name = "post_id")
-    private Post targetPostId;
+    private Post post;
 
     private String content;
+
+    @Enumerated(EnumType.STRING)
+    private NoticeType type;
+
     private LocalDateTime createdAt;
+
+    private boolean isRead;
+
+    public void markAsRead() {
+        this.isRead = true;
+    }
 }
