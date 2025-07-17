@@ -70,28 +70,37 @@ public interface PostRepository extends JpaRepository<Post, Long> {
      *    점수 계산은 ORDER BY 식 안에서 수행한다.
      */
     @Query(value = """
-        SELECT p.*
-        FROM   post p
-        JOIN   category c ON p.category_id = c.id
-        WHERE  (MATCH(p.title, p.content) AGAINST (:#{#cond.q} IN BOOLEAN MODE)
-                OR MATCH(c.name)         AGAINST (:#{#cond.q} IN BOOLEAN MODE))
-          AND  (:#{#cond.categoryIds == null || #cond.categoryIds.isEmpty() ? 0 : 1} = 0
-                 OR p.category_id IN :#{#cond.categoryIds})
-        ORDER BY
-              (MATCH(p.title, p.content) AGAINST (:#{#cond.q} IN BOOLEAN MODE)
-              + 2 * MATCH(c.name)        AGAINST (:#{#cond.q} IN BOOLEAN MODE)) DESC,
-              p.view_count DESC,
-              p.created_at DESC
-        """,
+    SELECT p.*
+    FROM   post p
+    JOIN   category c ON p.category_id = c.id
+    WHERE  (
+             MATCH(p.title, p.content) AGAINST (:#{#cond.q} IN BOOLEAN MODE)
+          OR MATCH(c.name)             AGAINST (:#{#cond.q} IN BOOLEAN MODE)
+          )
+      AND  (
+             :#{#cond.categoryIds == null || #cond.categoryIds.isEmpty()} = TRUE
+          OR p.category_id IN (:#{#cond.categoryIds})
+          )
+    ORDER BY
+          (MATCH(p.title, p.content) AGAINST (:#{#cond.q} IN BOOLEAN MODE)
+         + 2 * MATCH(c.name)         AGAINST (:#{#cond.q} IN BOOLEAN MODE)) DESC,
+          p.view_count DESC,
+          p.created_at DESC
+    """,
             countQuery = """
-        SELECT COUNT(*)
-        FROM   post p
-        JOIN   category c ON p.category_id = c.id
-        WHERE  (MATCH(p.title, p.content) AGAINST (:#{#cond.q} IN BOOLEAN MODE)
-                OR MATCH(c.name)         AGAINST (:#{#cond.q} IN BOOLEAN MODE))
-          AND  (:#{#cond.categoryIds == null || #cond.categoryIds.isEmpty() ? 0 : 1} = 0
-                 OR p.category_id IN :#{#cond.categoryIds})
-        """,
+    SELECT COUNT(*)
+    FROM   post p
+    JOIN   category c ON p.category_id = c.id
+    WHERE  (
+             MATCH(p.title, p.content) AGAINST (:#{#cond.q} IN BOOLEAN MODE)
+          OR MATCH(c.name)             AGAINST (:#{#cond.q} IN BOOLEAN MODE)
+          )
+      AND  (
+             :#{#cond.categoryIds == null || #cond.categoryIds.isEmpty()} = TRUE
+          OR p.category_id IN (:#{#cond.categoryIds})
+          )
+    """,
             nativeQuery = true)
     Page<Post> searchPosts(@Param("cond") SearchCond cond, Pageable pageable);
+
 }

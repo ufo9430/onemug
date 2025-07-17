@@ -25,12 +25,13 @@ public interface CreatorRepository extends JpaRepository<Creator, Long> {
 
     /** Creator 통합 검색 (닉네임·소개글) */
     @Query(value = """
-    SELECT  cr.*
-    FROM    creator cr
-    JOIN    `user` u ON cr.user_id = u.id
-    WHERE   MATCH(u.nickname, cr.introduce_text)
-            AGAINST (:#{#cond.q} IN BOOLEAN MODE) > 0
+    SELECT cr.*
+    FROM   creator cr
+    JOIN   `user` u ON cr.user_id = u.id
+    WHERE  (
+             MATCH(u.nickname)           AGAINST (:#{#cond.q} IN BOOLEAN MODE)
+          OR MATCH(cr.introduce_text)     AGAINST (:#{#cond.q} IN BOOLEAN MODE)
+          )
     """, nativeQuery = true)
-    Page<Creator> searchCreators(@Param("cond") SearchCond cond,
-                                 Pageable pageable);
+    Page<Creator> searchCreators(@Param("cond") SearchCond cond, Pageable pageable);
 }
