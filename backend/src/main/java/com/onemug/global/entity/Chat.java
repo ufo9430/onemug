@@ -21,5 +21,9 @@ public class Chat {
     @JoinColumn(name = "user_id")
     private User user;
 
-    private LocalDateTime created_at;
+    @ManyToOne
+    @JoinColumn(name = "chatroom_id")
+    private Chatroom chatRoom;
+
+    private LocalDateTime createdAt;
 }
