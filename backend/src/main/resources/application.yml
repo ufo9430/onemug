@@ -1,6 +1,6 @@
 spring:
   config:
-    import: classpath:db.properties
+    import: classpath:application.properties
   datasource:
     driver: ${db.driver}
     url: ${db.url}
