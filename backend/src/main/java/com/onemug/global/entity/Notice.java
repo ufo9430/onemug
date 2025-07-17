@@ -16,7 +16,7 @@ public class Notice {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "reciever_id")
+    @JoinColumn(name = "receiver_id")
     private User receiver;
 
     @ManyToOne
