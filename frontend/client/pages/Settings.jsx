@@ -1,43 +1,100 @@
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import Sidebar from "../components/Sidebar"
 import { Button } from "../components/ui/button"
 import { Input } from "../components/ui/input"
 import { Avatar, AvatarImage, AvatarFallback } from "../components/ui/avatar"
 
-const mockSubscriptions = [
-  {
-    id: "1",
-    name: "아티스트 A",
-    tier: "티어 2 멤버십",
-    price: "₩15,000/월",
-    avatar:
-      "https://cdn.builder.io/api/v1/image/assets/TEMP/5cf25178d404c9657f984e256dd1c49b5c5f4571?width=80"
+// API 호출을 위한 함수들
+const api = {
+  // 사용자 구독 멤버십 목록 조회
+  getMySubscriptions: async (userId) => {
+    try {
+      // 임시로 모든 멤버십 데이터를 가져오도록 수정 (테스트용)
+      const response = await fetch(`http://localhost:8080/memberships`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'User-Id': userId // 헤더에 사용자 ID 전달
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch subscriptions');
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching subscriptions:', error);
+      return [];
+    }
   },
-  {
-    id: "2",
-    name: "아티스트 A",
-    tier: "티어 2 멤버십",
-    price: "₩15,000/월",
-    avatar:
-      "https://cdn.builder.io/api/v1/image/assets/TEMP/5cf25178d404c9657f984e256dd1c49b5c5f4571?width=80"
+
+  // 활성 멤버십만 조회
+  getActiveSubscriptions: async (userId) => {
+    try {
+      const response = await fetch(`http://localhost:8080/memberships/active-subscriptions`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'User-Id': userId
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch active subscriptions');
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching active subscriptions:', error);
+      return [];
+    }
   },
-  {
-    id: "3",
-    name: "아티스트 A",
-    tier: "티어 2 멤버십",
-    price: "₩15,000/월",
-    avatar:
-      "https://cdn.builder.io/api/v1/image/assets/TEMP/5cf25178d404c9657f984e256dd1c49b5c5f4571?width=80"
+
+  // 구독 이력 조회
+  getSubscriptionHistory: async (userId) => {
+    try {
+      const response = await fetch(`http://localhost:8080/memberships/subscription-history`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'User-Id': userId
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch subscription history');
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching subscription history:', error);
+      return [];
+    }
   },
-  {
-    id: "4",
-    name: "아티스트 A",
-    tier: "티어 2 멤버십",
-    price: "₩15,000/월",
-    avatar:
-      "https://cdn.builder.io/api/v1/image/assets/TEMP/5cf25178d404c9657f984e256dd1c49b5c5f4571?width=80"
+
+  // 구독 취소
+  cancelSubscription: async (subscriptionId, userId) => {
+    try {
+      const response = await fetch(`http://localhost:8080/memberships/${subscriptionId}/cancel`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'User-Id': userId
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to cancel subscription');
+      }
+      
+      return await response.text();
+    } catch (error) {
+      console.error('Error canceling subscription:', error);
+      throw error;
+    }
   }
-]
+};
 
 export default function Settings() {
   const [activeTab, setActiveTab] = useState("profile")
@@ -45,13 +102,36 @@ export default function Settings() {
   const [currentPassword, setCurrentPassword] = useState("")
   const [newPassword, setNewPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
+  
+  // 구독 관련 상태
+  const [subscriptions, setSubscriptions] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  
+  // 임시 사용자 ID (실제로는 로그인 시스템에서 가져와야 함)
+  const userId = 1; // 실제 구현에서는 로그인한 사용자 ID를 사용
 
-  const settingsTabs = [
-    { id: "profile", label: "프로필" },
-    { id: "account", label: "계정" },
-    { id: "subscriptions", label: "구독 멤버십" },
-    { id: "payment", label: "결제" }
-  ]
+  // 구독 데이터 로드
+  useEffect(() => {
+    if (activeTab === "subscriptions") {
+      loadSubscriptions();
+    }
+  }, [activeTab]);
+
+  const loadSubscriptions = async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const data = await api.getMySubscriptions(userId);
+      setSubscriptions(data);
+    } catch (err) {
+      setError('구독 정보를 불러오는데 실패했습니다.');
+      console.error('Error loading subscriptions:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSaveProfile = () => {
     console.log("Saving profile changes...")
@@ -61,9 +141,32 @@ export default function Settings() {
     console.log("Changing password...")
   }
 
-  const handleCancelSubscription = subscriptionId => {
-    console.log("Canceling subscription:", subscriptionId)
+  const handleCancelSubscription = async (subscriptionId) => {
+    // 사용자 확인
+    const confirmed = window.confirm('정말로 구독을 취소하시겠습니까?');
+    if (!confirmed) return;
+    
+    try {
+      const result = await api.cancelSubscription(subscriptionId, userId);
+      console.log('구독 취소 성공:', result);
+      
+      // 성공 메시지 표시
+      alert('구독이 성공적으로 취소되었습니다.');
+      
+      // 구독 목록 다시 로드
+      await loadSubscriptions();
+    } catch (error) {
+      console.error('구독 취소 실패:', error);
+      alert('구독 취소에 실패했습니다. 다시 시도해주세요.');
+    }
   }
+
+  const settingsTabs = [
+    { id: "profile", label: "프로필" },
+    { id: "account", label: "계정" },
+    { id: "subscriptions", label: "구독 멤버십" },
+    { id: "payment", label: "결제" }
+  ]
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -119,8 +222,10 @@ export default function Settings() {
             )}
             {activeTab === "subscriptions" && (
               <SubscriptionsSettings
-                subscriptions={mockSubscriptions}
+                subscriptions={subscriptions}
                 onCancel={handleCancelSubscription}
+                loading={loading}
+                error={error}
               />
             )}
             {activeTab === "payment" && <PaymentSettings />}
@@ -279,7 +384,45 @@ function AccountSettings({
   )
 }
 
-function SubscriptionsSettings({ subscriptions, onCancel }) {
+function SubscriptionsSettings({ subscriptions, onCancel, loading, error }) {
+  if (loading) {
+    return (
+      <div className="max-w-2xl">
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold text-gray-900">구독 멤버십</h2>
+          <p className="text-gray-600 mt-2">
+            구독 중인 창작자와 멤버십 혜택을 관리하세요.
+          </p>
+        </div>
+
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+          <div className="text-center py-12">
+            <p className="text-gray-500">로딩 중...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="max-w-2xl">
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold text-gray-900">구독 멤버십</h2>
+          <p className="text-gray-600 mt-2">
+            구독 중인 창작자와 멤버십 혜택을 관리하세요.
+          </p>
+        </div>
+
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+          <div className="text-center py-12">
+            <p className="text-red-500">{error}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-2xl">
       <div className="mb-6">
@@ -301,38 +444,53 @@ function SubscriptionsSettings({ subscriptions, onCancel }) {
           </div>
 
           <div className="space-y-4">
-            {subscriptions.map(subscription => (
-              <div
-                key={subscription.id}
-                className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg"
-              >
-                <Avatar className="h-10 w-10">
-                  <AvatarImage
-                    src={subscription.avatar}
-                    alt={subscription.name}
-                  />
-                  <AvatarFallback className="bg-brand-primary text-white font-semibold">
-                    A
-                  </AvatarFallback>
-                </Avatar>
-
-                <div className="flex-1">
-                  <h4 className="font-medium text-gray-900">
-                    {subscription.name}
-                  </h4>
-                  <p className="text-sm text-gray-600">
-                    {subscription.tier} • {subscription.price}
-                  </p>
-                </div>
-
-                <button
-                  onClick={() => onCancel(subscription.id)}
-                  className="px-3 py-1 text-xs font-medium text-red-600 bg-red-50 rounded"
-                >
-                  취소
-                </button>
+            {subscriptions.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-gray-500">구독 중인 멤버십이 없습니다.</p>
               </div>
-            ))}
+            ) : (
+              subscriptions.map(subscription => (
+                <div
+                  key={subscription.id}
+                  className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg"
+                >
+                  <Avatar className="h-10 w-10">
+                    <AvatarImage
+                      src={subscription.avatar || "https://cdn.builder.io/api/v1/image/assets/TEMP/5cf25178d404c9657f984e256dd1c49b5c5f4571?width=80"}
+                      alt={subscription.creatorName}
+                    />
+                    <AvatarFallback className="bg-brand-primary text-white font-semibold">
+                      {subscription.creatorName ? subscription.creatorName.charAt(0) : 'A'}
+                    </AvatarFallback>
+                  </Avatar>
+
+                  <div className="flex-1">
+                    <h4 className="font-medium text-gray-900">
+                      {subscription.creatorName}
+                    </h4>
+                    <p className="text-sm text-gray-600">
+                      {subscription.name} • ₩{subscription.price?.toLocaleString()}/월
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      상태: {subscription.status === 'ACTIVE' ? '활성' : subscription.status === 'EXPIRED' ? '만료' : '취소됨'}
+                      {subscription.autoRenew && ' • 자동 갱신'}
+                    </p>
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <button
+                      onClick={() => onCancel(subscription.id)}
+                      className="px-3 py-1 text-xs font-medium text-red-600 bg-red-50 rounded hover:bg-red-100"
+                    >
+                      취소
+                    </button>
+                    <p className="text-xs text-gray-500">
+                      {subscription.expiresAt && new Date(subscription.expiresAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </div>
