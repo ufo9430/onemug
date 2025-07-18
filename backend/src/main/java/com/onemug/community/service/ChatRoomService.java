@@ -99,7 +99,6 @@ public class ChatRoomService {
 
             chatDTOList.add(dto);
         }
-
         return chatDTOList;
     }
 
@@ -122,12 +121,23 @@ public class ChatRoomService {
         chatRepository.save(chat);
     }
 
-    public NewChatroomResponseDTO createChatroom(Long p1Id, Long p2Id) {
+    public NewChatroomResponseDTO createChatroom(Long requesterId, Long targetId) {
+        Long existChatroomId = findExistChatroomId(requesterId,targetId);
 
-        User p1 = userRepository.findById(p1Id).orElseThrow(EntityNotFoundException::new);
-        User p2 = userRepository.findById(p2Id).orElseThrow(EntityNotFoundException::new);
+        //채팅방 불러오기
+        if(existChatroomId != -1L){
+            return NewChatroomResponseDTO.builder()
+                    .chatroomId(existChatroomId)
+                    .p1Id(requesterId)
+                    .p2Id(targetId)
+                    .build();
+        }
 
-        List<User> participants = List.of(p1,p2);
+        //완전 새로운 채팅방 생성
+        User p1 = userRepository.findById(requesterId).orElseThrow(EntityNotFoundException::new);
+        User p2 = userRepository.findById(targetId).orElseThrow(EntityNotFoundException::new);
+
+        List<User> participants = List.of(p1, p2);
 
         Chatroom newChatroom = Chatroom.builder()
                 .participant(participants)
@@ -137,9 +147,24 @@ public class ChatRoomService {
 
         return NewChatroomResponseDTO.builder()
                 .chatroomId(newChatroom.getId())
-                .p1Id(p1Id)
-                .p2Id(p2Id)
+                .p1Id(requesterId)
+                .p2Id(targetId)
                 .build();
+    }
+    
+    private Long findExistChatroomId(Long requesterId, Long targetId){
+
+        List<Chatroom> participatedChatrooms = chatRoomRepository.findAllByUserId(requesterId);
+
+        User targetUser = userRepository.findById(targetId).orElseThrow(EntityNotFoundException::new);
+
+        for (Chatroom participatedChatroom : participatedChatrooms) {
+            if(participatedChatroom.getParticipant().contains(targetUser)){
+                return participatedChatroom.getId();
+            }
+        }
+
+        return -1L;
     }
 
 }
