@@ -47,4 +47,11 @@ public class Post {
     public void decrementLikeCount() {
         this.likeCount = this.likeCount > 0 ? this.likeCount - 1 : 0;
     }
+
+    @PrePersist
+    public void prePersist() {
+        this.likeCount = 0;
+        this.viewCount = 0;
+        this.createdAt = LocalDateTime.now();
+    }
 }

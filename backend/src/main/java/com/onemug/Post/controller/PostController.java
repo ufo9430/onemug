@@ -1,21 +1,28 @@
 package com.onemug.Post.controller;
 
 import com.onemug.Post.dto.PostCreateRequestDto;
+import com.onemug.Post.dto.PostResponseDTO;
 import com.onemug.Post.dto.PostUpdateRequestDto;
 import com.onemug.Post.service.PostService;
+import com.onemug.global.utils.AuthUtils;
 import com.onemug.global.entity.Post;
+import com.onemug.newcreator.repository.CreatorRegisterRepository;
+import com.onemug.user.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
+@RequiredArgsConstructor
 public class PostController {
     private final PostService postService;
-
-    public PostController(PostService postService) {
-        this.postService = postService;
-    }
+    private final CreatorRegisterRepository creatorRegisterRepository;
+    private final UserRepository userRepository;
 
     @GetMapping("/user/{id}/posts")
     public Page<Post> getPostAll(@RequestParam(defaultValue = "0") int page,
@@ -31,15 +38,22 @@ public class PostController {
     }
 
     @PostMapping("/c/post/add")
-    public Post writePost(@RequestBody PostCreateRequestDto dto/*, @AuthenticationPrincipal OAuth2User user*/) {
-        return postService.writePost(dto/*, user*/);
+    public ResponseEntity<PostResponseDTO> writePost(@RequestBody PostCreateRequestDto dto, @AuthenticationPrincipal Object principal) {
+        Long creatorId = AuthUtils.extractUserId(principal, userRepository);
+
+        if (!creatorRegisterRepository.existsById(creatorId)) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
+
+        PostResponseDTO response = postService.writePost(dto, creatorId);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @PutMapping("/c/post/update/{id}")
-    public Post updatePost(@PathVariable Long id, @RequestBody PostUpdateRequestDto dto) {
-        Post currentPost = postService.getPost(id);
-        currentPost.update(dto.getTitle(),dto.getContent());
-        return postService.updatePost(currentPost);
+    public ResponseEntity<PostResponseDTO> updatePost(@PathVariable Long id,
+                                                      @RequestBody PostUpdateRequestDto dto) {
+        PostResponseDTO updatedPost = postService.updatePost(id, dto);
+        return ResponseEntity.ok(updatedPost);
     }
 
     @DeleteMapping("/c/post/delete/{id}")

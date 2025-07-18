@@ -30,4 +30,9 @@ public class Comment {
     public void update(String content) {
         this.content = content;
     }
+
+    @PrePersist
+    public void prePersist() {
+        this.createdAt = LocalDateTime.now();
+    }
 }

@@ -2,22 +2,25 @@ package com.onemug.comment.controller;
 
 import com.onemug.Post.service.PostService;
 import com.onemug.comment.dto.CommentRequestDto;
+import com.onemug.comment.dto.CommentResponseDTO;
 import com.onemug.comment.service.CommentService;
 import com.onemug.global.entity.Comment;
-import com.onemug.global.entity.Post;
+import com.onemug.global.utils.AuthUtils;
+import com.onemug.user.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
+@RequiredArgsConstructor
 public class CommentController {
     private final CommentService commentService;
     private final PostService postService;
-
-    public CommentController(CommentService commentService, PostService postService) {
-        this.commentService = commentService;
-        this.postService = postService;
-    }
+    private final UserRepository userRepository;
 
     @GetMapping("/post/{id}/comments")
     public List<Comment> getCommentAll(@PathVariable Long id) {
@@ -26,26 +29,22 @@ public class CommentController {
 
 
     @PostMapping("/post/{id}/comments")
-    public Comment writeComment(@PathVariable Long id, @RequestBody CommentRequestDto dto /*, @AuthenticationPrincipal OAuth2User user*/) {
-//        Long userId = ((Number) user.getAttribute("userId")).longValue();
-//        User user = userRepository.findById(userId).orElseThrow();
+    public ResponseEntity<CommentResponseDTO> writeComment(@PathVariable Long id, @RequestBody CommentRequestDto dto, @AuthenticationPrincipal Object principal) {
+        Long userId = AuthUtils.extractUserId(principal, userRepository);
 
-        Post post = postService.getPost(id);
-
-        Comment comment = Comment.builder()
-                .content(dto.getContent())
-                .post(post)
-//                .user(user)
-                .build();
-        return commentService.writeComment(comment);
+        CommentResponseDTO responseDto = commentService.writeComment(id, userId, dto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(responseDto);
     }
 
     @PutMapping("/comment/update/{id}")
-    public Comment updateComment(@PathVariable Long id, @RequestBody CommentRequestDto dto /*, @AuthenticationPrincipal OAuth2User user*/) {
+    public ResponseEntity<CommentResponseDTO> updateComment(@PathVariable Long id, @RequestBody CommentRequestDto dto) {
         Comment comment = commentService.getComment(id);
         comment.update(dto.getContent());
 
-        return commentService.updateComment(comment);
+        Comment updated = commentService.updateComment(comment);
+        CommentResponseDTO responseDto = CommentResponseDTO.from(updated);
+
+        return ResponseEntity.ok(responseDto);
     }
 
     @DeleteMapping("/comment/delete/{id}")
