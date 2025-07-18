@@ -2,6 +2,7 @@ package com.onemug.community.controller;
 
 import com.onemug.community.dto.ChatResponseDTO;
 import com.onemug.community.dto.ChatRoomResponseDTO;
+import com.onemug.community.dto.NewChatroomResponseDTO;
 import com.onemug.community.service.ChatRoomService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -23,15 +24,23 @@ public class CommunityController {
         //todo: 임시
         Long userId = 1L;
 
-        return chatRoomService.findChatRooms(userId);
+        return chatRoomService.browseChatrooms(userId);
     }
 
 
     //채팅방 입장(WebSocket으로 서버와 연결)
     @GetMapping("/{chatroomId}")
     public List<ChatResponseDTO> enterChatroom(@PathVariable Long chatroomId, HttpServletRequest request, HttpServletResponse response){
-
+    // 새 채팅을 시작했을 때 기능 X(기존 채팅의 내역을 조회하는 기능밖에 없어서 chatroom 테이블을 새로 생성하는 로직이 필요
         return chatRoomService.findChats(chatroomId);
+    }
+
+    // 새 채팅방을 만드는 get 요청, 채팅방 생성 이후 리디렉션은 프론트 파트에서 담당
+    @GetMapping("/new/{targetId}")
+    public NewChatroomResponseDTO createChatroom(@PathVariable Long targetId, HttpServletRequest request, HttpServletResponse response){
+        //todo: 임시
+        Long senderId = 1L; // 채팅 버튼을 누르는 주체 requesterId senderId actorId
+        return chatRoomService.createChatroom(senderId,targetId);
     }
 
 
