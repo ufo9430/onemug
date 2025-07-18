@@ -1,7 +1,7 @@
 package com.onemug.community.controller;
 
 import com.onemug.community.dto.ChatResponseDTO;
-import com.onemug.community.dto.ChatRoomResponseDTO;
+import com.onemug.community.dto.RecentChatResponseDTO;
 import com.onemug.community.dto.NewChatroomResponseDTO;
 import com.onemug.community.service.ChatRoomService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -20,7 +20,7 @@ public class CommunityController {
     private ChatRoomService chatRoomService;
 
     @GetMapping
-    public List<ChatRoomResponseDTO> findChatRooms(HttpServletRequest request, HttpServletResponse response){
+    public List<RecentChatResponseDTO> findChatRooms(HttpServletRequest request, HttpServletResponse response){
         //todo: 임시
         Long userId = 1L;
 
