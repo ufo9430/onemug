@@ -23,8 +23,8 @@ public class MembershipResponseDto {
     private LocalDateTime expiresAt;
     private String status; // ACTIVE, EXPIRED, CANCELLED
     private Boolean autoRenew;
-    private Creator creatorId;
-    private User subscriberId;
+    private Long creatorId;
+    private Long subscriberId;
 
     // Static factory method
     public static MembershipResponseDto from(Membership membership) {
@@ -34,6 +34,7 @@ public class MembershipResponseDto {
                 .price(membership.getPrice())
                 .creatorName(membership.getCreator() != null && membership.getCreator().getUser() != null ?
                         membership.getCreator().getUser().getNickname() : "Unknown Creator")
+                .creatorId(membership.getCreator().getId())
                 .subscribedAt(membership.getCreatedAt())
                 .expiresAt(membership.getCreatedAt() != null ?
                         membership.getCreatedAt().plusMonths(1) : LocalDateTime.now().plusMonths(1))

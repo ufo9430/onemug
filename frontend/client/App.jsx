@@ -29,6 +29,7 @@ import CreatorInsights from "./pages/CreatorInsights"
 import CreatePost from "./pages/CreatePost"
 import CreatePostPublish from "./pages/CreatePostPublish"
 import NotFound from "./pages/NotFound"
+import Membership from "./pages/Membership"
 
 const queryClient = new QueryClient()
 
@@ -53,6 +54,7 @@ const App = () => (
           <Route path="/search" element={<Search />} />
           <Route path="/messages" element={<Messages />} />
           <Route path="/messages/:conversationId" element={<Conversation />} />
+          <Route path="/Membership/creator/:creatorId" element={<Membership />} />
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/subscriptions" element={<Subscriptions />} />
           <Route path="/bookmarks" element={<Bookmarks />} />
