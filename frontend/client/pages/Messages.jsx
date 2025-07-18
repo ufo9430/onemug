@@ -34,8 +34,8 @@ export default function Messages() {
 
   const filteredConversations = conversations.filter(
     (conv) =>
-      conv.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      conv.lastMessage.toLowerCase().includes(searchQuery.toLowerCase()),
+      conv.nickname.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      conv.recentChat.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   const handleConversationClick = (conversationId) => {
@@ -84,13 +84,6 @@ export default function Messages() {
             <h1 className="text-lg lg:text-xl font-semibold text-gray-900">
               커뮤니티
             </h1>
-            <Button
-              size="icon"
-              variant="ghost"
-              className="h-8 w-8 lg:h-10 lg:w-10 rounded-lg hover:bg-gray-100"
-            >
-              <Plus className="h-4 w-4 lg:h-6 lg:w-6" />
-            </Button>
           </div>
 
           {/* Search */}
@@ -109,8 +102,8 @@ export default function Messages() {
         <div className="flex-1 overflow-y-auto">
           {filteredConversations.map((conversation) => (
             <div
-              key={conversation.id}
-              onClick={() => handleConversationClick(conversation.id)}
+              key={conversation.chatroomId}
+              onClick={() => handleConversationClick(conversation.chatroomId)}
               className="bg-white border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors"
             >
               <div className="px-4 lg:px-6 py-3 lg:py-4">
@@ -135,7 +128,7 @@ export default function Messages() {
                         {conversation.nickname}
                       </h3>
                       <span className="text-xs text-gray-500 whitespace-nowrap ml-2 flex-shrink-0">
-                        {conversation.timestamp}
+                        {formatRelativeTime(conversation.createdAt)}
                       </span>
                     </div>
                     <p className="text-xs lg:text-sm text-gray-600 truncate">
