@@ -23,9 +23,9 @@ public class Notice {
     @JoinColumn(name = "sender_id")
     private User sender;
 
-    @ManyToOne
-    @JoinColumn(name = "post_id")
-    private Post post;
+    private Long targetId;
+
+    private String targetName;
 
     private String content;
 
