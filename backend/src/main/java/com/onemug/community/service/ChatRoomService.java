@@ -2,7 +2,7 @@ package com.onemug.community.service;
 
 import com.onemug.community.dto.ChatPayloadDTO;
 import com.onemug.community.dto.ChatResponseDTO;
-import com.onemug.community.dto.ChatRoomResponseDTO;
+import com.onemug.community.dto.RecentChatResponseDTO;
 import com.onemug.community.dto.NewChatroomResponseDTO;
 import com.onemug.community.repository.ChatRepository;
 import com.onemug.community.repository.ChatRoomRepository;
@@ -30,8 +30,9 @@ public class ChatRoomService {
     @Autowired
     private ChatRoomUserTempRepository userRepository;
 
-    public List<ChatRoomResponseDTO> browseChatrooms(Long userId) {
-        List<ChatRoomResponseDTO> chatRoomResponseDTO = new ArrayList<>();
+    //ChatRoomResponseDTO - RecentChatResponseDTO ChatroomThumbnailResponseDTO
+    public List<RecentChatResponseDTO> browseChatrooms(Long userId) {
+        List<RecentChatResponseDTO> recentChatResponseDTO = new ArrayList<>();
 
         List<Chatroom> chatrooms = chatRoomRepository.findAllByUserId(userId);
         for (Chatroom chatroom : chatrooms) {
@@ -46,7 +47,7 @@ public class ChatRoomService {
                 String profileUrl = recentChatUser.getProfileUrl();
                 LocalDateTime createdAt = recentChat.getCreatedAt();
 
-                ChatRoomResponseDTO dto = ChatRoomResponseDTO.builder()
+                RecentChatResponseDTO dto = RecentChatResponseDTO.builder()
                         .recentChat(recentChatContent)
                         .chatroomId(chatroomId)
                         .nickname(nickname)
@@ -54,12 +55,12 @@ public class ChatRoomService {
                         .createdAt(createdAt)
                         .build();
 
-                chatRoomResponseDTO.add(dto);
+                recentChatResponseDTO.add(dto);
             } catch (EntityNotFoundException e) {
                 // 빈 채팅방이라는 표시의 dto를 넣는다
                 User participant = chatroom.getParticipant().getFirst();
 
-                ChatRoomResponseDTO dto = ChatRoomResponseDTO.builder()
+                RecentChatResponseDTO dto = RecentChatResponseDTO.builder()
                         .recentChat("")
                         .chatroomId(chatroomId)
                         .nickname(participant.getNickname())
@@ -67,12 +68,13 @@ public class ChatRoomService {
                         .createdAt(LocalDateTime.now())
                         .build();
 
-                chatRoomResponseDTO.add(dto);
+                recentChatResponseDTO.add(dto);
             }
         }
-        return chatRoomResponseDTO;
+        return recentChatResponseDTO;
     }
 
+    //개인챗 입장 시 채팅 내역 조회
     public List<ChatResponseDTO> findChats(Long chatroomId) {
         List<ChatResponseDTO> chatDTOList = new ArrayList<>();
         Chatroom chatroom = chatRoomRepository.findById(chatroomId).orElseThrow(EntityNotFoundException::new);
