@@ -78,7 +78,6 @@ const mockConversations = [
   }
 ]
 
-//화면이 실행되기전에 실행되는 메서드
 //여기서 fetch 사용
   useEffect(() => {
   fetch('http://Localhost:8080/community', {
