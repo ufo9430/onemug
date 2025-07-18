@@ -32,3 +32,4 @@ build/
 ### VS Code ###
 .vscode/
 backend/src/main/resources/db.properties
+backend/src/main/resources/oauth.properties

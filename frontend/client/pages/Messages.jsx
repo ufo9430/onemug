@@ -1,4 +1,4 @@
-import React, { useState } from "react"
+import React, { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import Sidebar from "@/components/Sidebar"
 import { Search, Plus } from "lucide-react"
@@ -13,9 +13,7 @@ const mockConversations = [
     lastMessage: "안녕하세요! 원두 추천 부탁드려요",
     timestamp: "2분 전",
     avatar:
-      "https://cdn.builder.io/api/v1/image/assets%2F96669fc18d0a42e7921a546a167f4728%2F225690d8977549608e6ed4823c342234?format=webp&width=800",
-    isOnline: true,
-    unreadCount: 3
+      "https://cdn.builder.io/api/v1/image/assets%2F96669fc18d0a42e7921a546a167f4728%2F225690d8977549608e6ed4823c342234?format=webp&width=800"
   },
   {
     id: "growth-hacker",
@@ -79,6 +77,18 @@ const mockConversations = [
     isOnline: true
   }
 ]
+
+//화면이 실행되기전에 실행되는 메서드
+//여기서 fetch 사용
+  useEffect(() => {
+  fetch('http://Localhost:8080/community', {
+    method: 'GET', // "GET"은 서버에서 데이터를 요청하는 뜻이에요.
+  })
+    .then(response => response.json()) // 서버로부터 응답이 오면 JSON으로 변환해요.
+    .then(data => {mockConversations = data}) // 데이터를 받아서 화면에 출력해요.
+    .catch(error => console.error('Error:', error)); // 문제가 생기면 오류를 출력해요.
+  }, []);
+
 
 export default function Messages() {
   const navigate = useNavigate()
