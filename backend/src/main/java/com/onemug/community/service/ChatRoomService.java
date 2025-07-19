@@ -3,10 +3,10 @@ package com.onemug.community.service;
 import com.onemug.community.dto.*;
 import com.onemug.community.repository.ChatRepository;
 import com.onemug.community.repository.ChatRoomRepository;
-import com.onemug.community.repository.ChatRoomUserTempRepository;
 import com.onemug.global.entity.Chat;
 import com.onemug.global.entity.Chatroom;
 import com.onemug.global.entity.User;
+import com.onemug.user.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -14,7 +14,6 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class ChatRoomService {
@@ -26,7 +25,7 @@ public class ChatRoomService {
     private ChatRepository chatRepository;
 
     @Autowired
-    private ChatRoomUserTempRepository userRepository;
+    private UserRepository userRepository;
 
     //ChatRoomResponseDTO - RecentChatResponseDTO ChatroomThumbnailResponseDTO
     public List<RecentChatResponseDTO> browseChatrooms(Long userId) {
