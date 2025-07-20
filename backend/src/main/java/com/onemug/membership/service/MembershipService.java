@@ -4,7 +4,10 @@ import com.onemug.global.dto.MembershipResponseDto;
 import com.onemug.global.entity.Membership;
 import com.onemug.membership.repository.MembershipRepository;
 import com.onemug.membership.dto.SubscriptionHistoryDto;
+import com.onemug.membership.dto.SubscriptionCancelResponseDto;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,6 +22,7 @@ import java.util.stream.Collectors;
 public class MembershipService {
     
     private final MembershipRepository membershipRepository;
+    private static final Logger log = LoggerFactory.getLogger(MembershipService.class);
     
     /**
      * 사용자의 현재 구독 멤버십 목록 조회
@@ -133,16 +137,47 @@ public class MembershipService {
     /**
      * 구독 취소
      */
-    public void cancelSubscription(Long membershipId, Long userId) {
-        Optional<Membership> membership = membershipRepository.findById(membershipId);
-        
-        if (membership.isPresent()) {
+    public SubscriptionCancelResponseDto cancelSubscription(Long membershipId, Long userId) {
+        try {
+            Optional<Membership> membership = membershipRepository.findById(membershipId);
+            
+            if (membership.isEmpty()) {
+                return SubscriptionCancelResponseDto.error(
+                    "멤버십을 찾을 수 없습니다.", membershipId, userId);
+            }
+            
             Membership membershipEntity = membership.get();
+            
+            // 이미 취소된 구독인지 확인
+            if ("CANCELLED".equals(membershipEntity.getStatus())) {
+                return SubscriptionCancelResponseDto.error(
+                    "이미 취소된 구독입니다.", membershipId, userId);
+            }
+            
+            // 취소 전 상태 저장
+            String previousStatus = membershipEntity.getStatus();
+            Boolean autoRenewValue = membershipEntity.getAutoRenew();
+            boolean wasAutoRenew = autoRenewValue != null ? autoRenewValue : false;
+            
+            // 구독 취소 처리
             membershipEntity.setStatus("CANCELLED");
             membershipEntity.setAutoRenew(false);
             membershipRepository.save(membershipEntity);
-        } else {
-            throw new RuntimeException("멤버십을 찾을 수 없습니다.");
+            
+            // 성공 응답 반환
+            return SubscriptionCancelResponseDto.success(
+                membershipId,
+                membershipEntity.getName(),
+                membershipEntity.getCreator().getId(),
+                userId,
+                previousStatus,
+                wasAutoRenew
+            );
+            
+        } catch (Exception e) {
+            log.error("구독 취소 중 오류 발생: membershipId={}, userId={}", membershipId, userId, e);
+            return SubscriptionCancelResponseDto.error(
+                "구독 취소 중 오류가 발생했습니다: " + e.getMessage(), membershipId, userId);
         }
     }
 }

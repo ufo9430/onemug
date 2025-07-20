@@ -3,6 +3,7 @@ package com.onemug.membership.controller;
 import com.onemug.global.dto.MembershipResponseDto;
 import com.onemug.membership.service.MembershipService;
 import com.onemug.membership.dto.SubscriptionHistoryDto;
+import com.onemug.membership.dto.SubscriptionCancelResponseDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -120,19 +121,29 @@ public class MembershipController {
      * DELETE /memberships/{membershipId}/cancel
      */
     @DeleteMapping(value = "/{membershipId}/cancel", produces = "application/json; charset=UTF-8")
-    public ResponseEntity<String> cancelSubscription(
+    public ResponseEntity<SubscriptionCancelResponseDto> cancelSubscription(
             @PathVariable Long membershipId,
             @RequestHeader(value = "User-Id", required = false) Long userId) {
         
         if (userId == null) {
-            return ResponseEntity.badRequest().body("User ID is required");
+            SubscriptionCancelResponseDto errorResponse = SubscriptionCancelResponseDto.error(
+                "User ID is required", membershipId, null);
+            return ResponseEntity.badRequest().body(errorResponse);
         }
         
         try {
-            membershipService.cancelSubscription(membershipId, userId);
-            return ResponseEntity.ok("구독이 성공적으로 취소되었습니다.");
+            SubscriptionCancelResponseDto response = membershipService.cancelSubscription(membershipId, userId);
+            
+            if ("SUCCESS".equals(response.getStatus())) {
+                return ResponseEntity.ok(response);
+            } else {
+                return ResponseEntity.badRequest().body(response);
+            }
+            
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("구독 취소 중 오류가 발생했습니다: " + e.getMessage());
+            SubscriptionCancelResponseDto errorResponse = SubscriptionCancelResponseDto.error(
+                "구독 취소 중 예상치 못한 오류가 발생했습니다: " + e.getMessage(), membershipId, userId);
+            return ResponseEntity.internalServerError().body(errorResponse);
         }
     }
 }

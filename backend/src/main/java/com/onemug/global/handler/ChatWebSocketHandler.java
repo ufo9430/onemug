@@ -36,11 +36,15 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
         chatService.saveChat(payloadDTO);
 
         clientSession.forEach((key, value) -> {
-            if(!key.equals(session.getId())) {
-                try{
-                    value.sendMessage(message);
-                }catch (IOException e){
-                    e.printStackTrace();
+            if (!key.equals(session.getId())) {
+                if (value.isOpen()) {
+                    try {
+                        value.sendMessage(message);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                } else {
+                    System.out.println("닫힌 세션 발견: " + key);
                 }
             }
         });
@@ -48,7 +52,7 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
 
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws IOException {
-        clientSession.remove(session);
+        clientSession.remove(session.getId());
     }
 
 }
