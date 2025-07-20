@@ -19,6 +19,7 @@ public class Creator {
     private String introduceText;
 
     @OneToOne
+    @JoinColumn(name = "user_id")
     private User user;
 
     @OneToMany

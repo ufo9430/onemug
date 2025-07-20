@@ -16,7 +16,7 @@ public class Notice {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "reciever_id")
+    @JoinColumn(name = "receiver_id")
     private User receiver;
 
     @ManyToOne
@@ -34,6 +34,7 @@ public class Notice {
 
     private LocalDateTime createdAt;
 
+    @Column(name = "is_read")
     private boolean isRead;
 
     public void markAsRead() {
