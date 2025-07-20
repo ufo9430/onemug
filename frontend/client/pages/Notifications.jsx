@@ -66,6 +66,7 @@ export default function Notifications() {
         return response.json();
       })
       .then((data) => {
+        console.log("받은 데이터", data);
         const mapped = data.map((n) => ({
           // 알림 데이터 매핑
           id: n.noticeId, // 알림의 고유 ID (React key용 + 읽음 처리용)
@@ -74,10 +75,11 @@ export default function Notifications() {
           targetId: n.targetId, // 상세페이지 이동용 (글 or 멤버십 ID)
           timestamp: formatRelativeTime(n.createdAt), //createdAt을 변환해야함 (formatRelativeTime)
           avatar: n.targetUserProfileUrl,
-          isUnread: !n.isRead, // 읽지 않은 알림 여부
+          isUnread: !n.read, // 읽지 않은 알림 여부
           isRecent: checkIsRecent(n.createdAt), //createdAt을 변환해야함(checkIsRecent) //최근, 지난 알림 구분
           type: n.noticeType, //알림 종류
         }));
+        console.log("변환한 데이터", mapped);
         setNotifications(mapped);
       })
       .catch((error) => {
@@ -114,6 +116,7 @@ export default function Notifications() {
           setNotifications((prev) =>
             prev.map((n) => ({ ...n, isUnread: false })),
           );
+          location.reload();
         } else {
           console.log("오류발생");
         }

@@ -1,5 +1,5 @@
-import React from "react"
-import { useNavigate } from "react-router-dom"
+import { React, useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Search,
   Mail,
@@ -8,70 +8,88 @@ import {
   Clock,
   Settings,
   Home,
-  CheckSquare
-} from "lucide-react"
+  CheckSquare,
+} from "lucide-react";
 
 const Sidebar = ({
   hasCreatorAccount = false,
   activeItem = "feed",
-  className = ""
+  className = "",
 }) => {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
+  const [hasUnread, setHasUnread] = useState(false);
+
+  useEffect(() => {
+    fetch("http://localhost:8080/notice/api/unread", {
+      credentials: "include",
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.checkUnread === true) {
+          setHasUnread(true);
+        } else {
+          setHasUnread(false);
+        }
+      })
+      .catch((err) => {
+        console.error("알림 상태를 불러오지 못했습니다:", err);
+      });
+  }, []);
 
   const navigationItems = [
     {
       id: "feed",
       label: "피드",
       icon: Home,
-      path: "/feed"
+      path: "/feed",
     },
     {
       id: "search",
       label: "탐색",
       icon: Search,
-      path: "/search"
+      path: "/search",
     },
     {
       id: "messages",
       label: "소통",
       icon: Mail,
-      path: "/messages"
+      path: "/messages",
     },
     {
       id: "subscriptions",
       label: "구독한 창작자",
       icon: CheckSquare,
-      path: "/subscriptions"
+      path: "/subscriptions",
     },
     {
       id: "notifications",
       label: "알림",
       icon: Bell,
-      path: "/notifications"
+      path: "/notifications",
     },
     {
       id: "bookmarks",
       label: "좋아요한 글",
       icon: Bookmark,
-      path: "/bookmarks"
+      path: "/bookmarks",
     },
     {
       id: "recent",
       label: "최근 본 글",
       icon: Clock,
-      path: "/recent"
+      path: "/recent",
     },
     {
       id: "settings",
       label: "설정",
       icon: Settings,
-      path: "/settings"
-    }
-  ]
+      path: "/settings",
+    },
+  ];
 
-  const handleNavigation = path => {
-    navigate(path)
-  }
+  const handleNavigation = (path) => {
+    navigate(path);
+  };
 
   return (
     <div
@@ -100,9 +118,10 @@ const Sidebar = ({
       {/* Navigation */}
       <nav className="flex-1 px-4">
         <div className="space-y-1">
-          {navigationItems.map(item => {
-            const IconComponent = item.icon
-            const isActive = activeItem === item.id
+          {navigationItems.map((item) => {
+            const IconComponent = item.icon;
+            const isActive = activeItem === item.id;
+            const isNotification = item.id === "notifications";
 
             return (
               <button
@@ -114,11 +133,17 @@ const Sidebar = ({
                     : "hover:bg-gray-50 text-gray-600"
                 }`}
               >
-                <IconComponent
-                  className={`w-5 h-5 ${
-                    isActive ? "text-white" : "text-gray-600"
-                  }`}
-                />
+                <div className="relative">
+                  <IconComponent
+                    className={`w-5 h-5 ${
+                      isActive ? "text-white" : "text-gray-600"
+                    }`}
+                  />
+                  {/* 읽지 않은 알림 표시 */}
+                  {isNotification && hasUnread && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 rounded-full w-2.5 h-2.5"></span>
+                  )}
+                </div>
                 <span
                   className={`font-medium ${
                     isActive ? "text-white" : "text-gray-600"
@@ -127,7 +152,7 @@ const Sidebar = ({
                   {item.label}
                 </span>
               </button>
-            )
+            );
           })}
         </div>
       </nav>
@@ -158,7 +183,7 @@ const Sidebar = ({
         )}
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default Sidebar
+export default Sidebar;

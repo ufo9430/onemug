@@ -14,7 +14,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class NoticeService {
@@ -78,7 +80,7 @@ public class NoticeService {
                     targetName,
                     createdAt,
                     isRead,
-                    type.getMessage()
+                    type.name()
             );
 
             noticeInfoDTOS.add(dto);
@@ -86,12 +88,20 @@ public class NoticeService {
         return noticeInfoDTOS;
     }
 
+    public Map<String, Object> checkUnread(Long userId){
+        Map<String, Object> map = new HashMap<>();
+
+        boolean isUnreadExists = noticeRepository.existsByReceiverIdAndIsReadFalse(userId);
+        map.put("checkUnread", isUnreadExists);
+
+        return map;
+    }
+
     //모든 알림 읽음 처리
     @Transactional
     public void markAllAsRead(Long userId) {
         List<Notice> notices = noticeRepository.findAllByReceiverId(userId);
         for (Notice notice : notices) {
-            System.out.println("notice" + notice.getId() + ".isRead() = " + notice.isRead());
             notice.markAsRead();
         }
     }
