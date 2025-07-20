@@ -1,85 +1,133 @@
-import React, { useState } from "react"
+import React, { useEffect, useRef, useState } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import Sidebar from "@/components/Sidebar"
-import { Phone, ChevronDown, Send } from "lucide-react"
+import { ChevronLeft, Send } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 
-const mockUsers = {
-  "coffee-master": {
-    id: "coffee-master",
-    name: "Coffee Master",
-    avatar:
-      "https://cdn.builder.io/api/v1/image/assets/TEMP/103ad23fdec830cc6845a6b15a4ea1458ff7394e?width=128",
-    isOnline: true
-  }
+function formatSimpleTime(timestamp) {
+  const date = new Date(timestamp);
+  let hours = date.getHours();
+  const minutes = date.getMinutes();
+
+  const isAm = hours < 12;
+  const period = isAm ? "오전" : "오후";
+
+  hours = hours % 12;
+  if (hours === 0) hours = 12;
+
+  const formattedMinutes = minutes.toString().padStart(2, '0');
+
+  return `${period} ${hours}:${formattedMinutes}`;
 }
 
-const mockMessages = {
-  "coffee-master": [
-    {
-      id: "1",
-      senderId: "coffee-master",
-      content: "안녕하세요! 원두 추천 부탁드려요",
-      timestamp: "오후 2:30",
-      isOwn: false
-    },
-    {
-      id: "2",
-      senderId: "current-user",
-      content: "안녕하세요! 어떤 맛을 선호하시나요?",
-      timestamp: "오후 2:32",
-      isOwn: true
-    },
-    {
-      id: "3",
-      senderId: "coffee-master",
-      content: "산미가 있으면서도 부드러운 맛을 좋아해요",
-      timestamp: "오후 2:33",
-      isOwn: false
-    },
-    {
-      id: "4",
-      senderId: "current-user",
-      content:
-        "그렇다면 에티오피아 예가체프를 추천드려요. 꽃향기와 함께 밝은 산미가 특징이에요",
-      timestamp: "오후 2:35",
-      isOwn: true
-    },
-    {
-      id: "5",
-      senderId: "coffee-master",
-      content: "오 좋네요! 어디서 구매할 수 있나요?",
-      timestamp: "오후 2:36",
-      isOwn: false
-    },
-    {
-      id: "6",
-      senderId: "current-user",
-      content: "ㄴㅇㄹㅁㄴㅇ",
-      timestamp: "오후 03:17",
-      isOwn: true
-    },
-    {
-      id: "7",
-      senderId: "current-user",
-      content: "ㅇ",
-      timestamp: "오후 03:17",
-      isOwn: true
-    }
-  ]
+function isSameDay(d1, d2) {
+  return (
+    d1.getFullYear() === d2.getFullYear() &&
+    d1.getMonth() === d2.getMonth() &&
+    d1.getDate() === d2.getDate()
+  );
 }
+
+function formatDateLine(timestamp) {
+  const date = new Date(timestamp);
+  return `${date.getFullYear()}년 ${date.getMonth() + 1}월 ${date.getDate()}일`;
+}
+
+// {
+//     "nickname": "bryan80",
+//     "userId": 3,
+//     "profileUrl": "https://www.lorempixel.com/499/666",
+//     "content": "오늘 커피 맛 정말 좋네요!",
+//     "createdAt": "2025-07-12T09:15:00"
+//   }
 
 export default function Conversation() {
   const { conversationId } = useParams()
   const navigate = useNavigate()
+  const [mockUser, setMockUser] = useState(null)
+  const [mockMessages, setMockMessages] = useState([])
   const [newMessage, setNewMessage] = useState("")
+  const socketRef = useRef(null)
+  const messagesEndRef = useRef(null);
 
-  const user = conversationId ? mockUsers[conversationId] : null
-  const messages = conversationId ? mockMessages[conversationId] || [] : []
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [mockMessages]);
 
-  if (!user) {
+  useEffect(() => {
+    const userId = 1 // todo: 임시 사용자 id
+    const chatroomId = Number(conversationId)
+    const socket = new WebSocket("ws://localhost:8080/ws")
+    socketRef.current = socket
+
+
+    // 대화 상대 정보 불러오기
+    fetch(`http://localhost:8080/community/${chatroomId}/opponent`)
+      .then(res => res.json())
+      .then(data => {
+        console.log("대화 상대 정보:", data)
+        setMockUser(data)
+      })
+
+
+    // 채팅 내역 불러오기
+    fetch(`http://localhost:8080/community/${chatroomId}`)
+      .then(res => res.json())
+      .then(data => {
+        console.log("이전 채팅 내역:", data)
+        const formatted = data.map(msg => ({
+          ...msg,
+          isOwn: msg.userId === userId,
+          timestamp: formatSimpleTime(msg.createdAt)
+        }))
+
+        setMockMessages(formatted)
+
+        setTimeout(() => {
+          if (messagesEndRef.current) {
+            messagesEndRef.current.scrollIntoView({ behavior: "instant" });
+          }
+        }, 0);
+
+      })
+
+
+    // WebSocket 연결 설정
+    socket.onopen = () => {
+      console.log("WebSocket 연결됨")
+    }
+
+    socket.onmessage = event => {
+      const message = JSON.parse(event.data);
+
+      const formatted = {
+        ...message,
+        isOwn: message.userId === userId,
+        timestamp: formatSimpleTime(message.createdAt || new Date())
+      }
+
+      setMockMessages(prev => [...prev, formatted]);
+    };
+
+    socket.onclose = () => {
+      console.log("WebSocket 연결 종료")
+    }
+
+    socket.onerror = error => {
+      console.error("WebSocket 오류:", error)
+    }
+
+    return () => {
+      socket.close()
+    }
+  }, [conversationId])
+
+
+  if (!mockUser) {
     return (
       <div className="flex min-h-screen bg-gray-50">
         <Sidebar activeItem="messages" />
@@ -96,11 +144,39 @@ export default function Conversation() {
       </div>
     )
   }
-
   const handleSendMessage = () => {
     if (newMessage.trim()) {
-      // In a real app, this would send the message to the server
-      console.log("Sending message:", newMessage)
+      const now = new Date();
+      const payload = {
+        userId: 1, // 실제 사용자 ID로 교체
+        chatroomId: Number(conversationId),
+        content: newMessage.trim()
+      }
+
+      if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
+        socketRef.current.send(JSON.stringify(payload))
+        console.log("메시지 전송됨:", payload)
+      } else {
+        console.warn("WebSocket이 연결되지 않았습니다.")
+      }
+
+      if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
+        socketRef.current.send(JSON.stringify(payload));
+
+        // UI에 즉시 반영
+        setMockMessages(prev => [
+          ...prev,
+          {
+            ...payload,
+            nickname: "Me",  // 필요에 따라 수정
+            profileUrl: "Me",
+            createdAt: now.toISOString(),
+            isOwn: true,
+            timestamp: formatSimpleTime(now)
+          }
+        ]);
+      }
+
       setNewMessage("")
     }
   }
@@ -116,46 +192,31 @@ export default function Conversation() {
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar activeItem="messages" />
 
-      <div className="flex-1 flex flex-col w-full lg:w-auto">
+      <div className="flex-1 flex flex-col w-full lg:w-auto h-screen">
         {/* Header */}
         <div className="bg-white border-b border-gray-200 px-4 lg:px-6 py-3 lg:py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3 lg:gap-4 min-w-0 flex-1">
               <Avatar className="h-12 w-12 lg:h-16 lg:w-16 flex-shrink-0">
-                <AvatarImage src={user.avatar} alt={user.name} />
+                <AvatarImage src={mockUser.profileUrl} alt={mockUser.nickname} />
                 <AvatarFallback className="bg-gray-200 text-gray-600 font-medium text-sm lg:text-lg">
-                  {user.name.slice(0, 2).toUpperCase()}
+                  {mockUser.nickname.slice(0, 2)}
                 </AvatarFallback>
               </Avatar>
               <div className="min-w-0">
                 <h1 className="text-lg lg:text-2xl font-semibold text-gray-900 truncate">
-                  {user.name}
+                  {mockUser.nickname}
                 </h1>
-                {user.isOnline && (
-                  <div className="flex items-center gap-2 mt-1">
-                    <div className="h-2 w-2 bg-green-500 rounded-full"></div>
-                    <span className="text-xs lg:text-sm text-green-600">
-                      온라인
-                    </span>
-                  </div>
-                )}
               </div>
             </div>
 
             <div className="flex items-center gap-1 lg:gap-2 flex-shrink-0">
-              <Button
+              <Button onClick={() => navigate("/messages")}
                 size="icon"
                 variant="outline"
                 className="h-8 w-8 lg:h-10 lg:w-10 rounded-lg"
               >
-                <Phone className="h-4 w-4 lg:h-5 lg:w-5" />
-              </Button>
-              <Button
-                size="icon"
-                variant="outline"
-                className="h-8 w-8 lg:h-10 lg:w-10 rounded-lg"
-              >
-                <ChevronDown className="h-4 w-4 lg:h-5 lg:w-5" />
+                <ChevronLeft className="h-4 w-4 lg:h-5 lg:w-5" />
               </Button>
             </div>
           </div>
@@ -163,55 +224,64 @@ export default function Conversation() {
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto p-4 lg:p-6 space-y-3 lg:space-y-4">
-          {messages.map(message => (
-            <div
-              key={message.id}
-              className={`flex gap-2 lg:gap-3 ${
-                message.isOwn ? "justify-end" : "justify-start"
-              }`}
-            >
-              {!message.isOwn && (
-                <Avatar className="h-8 w-8 lg:h-10 lg:w-10 flex-shrink-0">
-                  <AvatarImage src={user.avatar} alt={user.name} />
-                  <AvatarFallback className="bg-gray-200 text-gray-600 font-medium text-xs lg:text-sm">
-                    {user.name.slice(0, 2).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-              )}
+          {mockMessages.map((message, index) => {
+            const prevMessage = mockMessages[index - 1];
+            const currentDate = new Date(message.createdAt);
+            const prevDate = prevMessage ? new Date(prevMessage.createdAt) : null;
 
-              <div
-                className={`flex flex-col ${
-                  message.isOwn ? "items-end" : "items-start"
-                } max-w-[85%] lg:max-w-md`}
-              >
-                {!message.isOwn && (
-                  <span className="text-xs lg:text-sm font-medium text-gray-900 mb-1">
-                    {user.name}
-                  </span>
+            const showDateLine = !prevDate || !isSameDay(currentDate, prevDate);
+
+            return (
+              <React.Fragment key={index}>
+                {showDateLine && (
+                  <div className="flex justify-center my-2">
+                    <span className="text-xs text-gray-500 px-3 py-1 bg-gray-100 rounded-full">
+                      {formatDateLine(message.createdAt)}
+                    </span>
+                  </div>
                 )}
 
                 <div
-                  className={`px-3 lg:px-4 py-2 lg:py-3 rounded-2xl ${
-                    message.isOwn
-                      ? "bg-brand-primary text-white rounded-br-md"
-                      : "bg-gray-100 text-gray-900 rounded-bl-md"
-                  }`}
+                  className={`flex gap-2 lg:gap-3 ${message.isOwn ? "justify-end" : "justify-start"}`}
                 >
-                  <p className="text-xs lg:text-sm leading-relaxed break-words">
-                    {message.content}
-                  </p>
-                </div>
+                  {!message.isOwn && (
+                    <Avatar className="h-8 w-8 lg:h-10 lg:w-10 flex-shrink-0">
+                      <AvatarImage src={mockUser.profileUrl} alt={mockUser.nickname} />
+                      <AvatarFallback className="bg-gray-200 text-gray-600 font-medium text-xs lg:text-sm">
+                        {mockUser.nickname.slice(0, 2).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                  )}
 
-                <span
-                  className={`text-xs text-gray-500 mt-1 ${
-                    message.isOwn ? "text-right" : "text-left"
-                  }`}
-                >
-                  {message.timestamp}
-                </span>
-              </div>
-            </div>
-          ))}
+                  <div
+                    className={`flex flex-col ${message.isOwn ? "items-end" : "items-start"} max-w-[85%] lg:max-w-md`}
+                  >
+                    {!message.isOwn && (
+                      <span className="text-xs lg:text-sm font-medium text-gray-900 mb-1">
+                        {mockUser.nickname}
+                      </span>
+                    )}
+
+                    <div
+                      className={`px-3 lg:px-4 py-2 lg:py-3 rounded-2xl ${message.isOwn
+                        ? "bg-brand-primary text-white rounded-br-md"
+                        : "bg-gray-100 text-gray-900 rounded-bl-md"
+                        }`}
+                    >
+                      <p className="text-xs lg:text-sm leading-relaxed break-words">
+                        {message.content}
+                      </p>
+                    </div>
+
+                    <span className={`text-xs text-gray-500 mt-1 ${message.isOwn ? "text-right" : "text-left"}`}>
+                      {message.timestamp}
+                    </span>
+                  </div>
+                </div>
+              </React.Fragment>
+            );
+          })}
+          <div ref={messagesEndRef} />
         </div>
 
         {/* Message Input */}

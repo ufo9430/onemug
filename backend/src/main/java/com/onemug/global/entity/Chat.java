@@ -17,13 +17,13 @@ public class Chat {
 
     private String content;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "chatroom_id")
-    private Chatroom chatRoom;
+    private Chatroom chatroom;
 
     private LocalDateTime createdAt;
 }
