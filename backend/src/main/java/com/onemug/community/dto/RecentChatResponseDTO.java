@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 
 @Getter
 @Builder
-public class ChatRoomResponseDTO {
+public class RecentChatResponseDTO {
     private Long chatroomId; // 채팅방 id
     private String recentChat; // 가장 최근 채팅 내용
     private String nickname; // 최근 채팅 작성자 닉네임
