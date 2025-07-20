@@ -1,23 +1,19 @@
 package com.onemug.community.service;
 
-import com.onemug.community.dto.ChatPayloadDTO;
-import com.onemug.community.dto.ChatResponseDTO;
-import com.onemug.community.dto.ChatRoomResponseDTO;
+import com.onemug.community.dto.*;
 import com.onemug.community.repository.ChatRepository;
 import com.onemug.community.repository.ChatRoomRepository;
-import com.onemug.community.repository.ChatRoomUserTempRepository;
 import com.onemug.global.entity.Chat;
 import com.onemug.global.entity.Chatroom;
 import com.onemug.global.entity.User;
+import com.onemug.user.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class ChatRoomService {
@@ -29,36 +25,68 @@ public class ChatRoomService {
     private ChatRepository chatRepository;
 
     @Autowired
-    private ChatRoomUserTempRepository userRepository;
+    private UserRepository userRepository;
 
-    public List<ChatRoomResponseDTO> findChatRooms(Long userId) {
-        List<ChatRoomResponseDTO> chatRoomResponseDTO = new ArrayList<>();
+    //ChatRoomResponseDTO - RecentChatResponseDTO ChatroomThumbnailResponseDTO
+    public List<RecentChatResponseDTO> browseChatrooms(Long userId) {
+        List<RecentChatResponseDTO> recentChatResponseDTO = new ArrayList<>();
+        User currentUser = userRepository.findById(userId).orElseThrow(EntityNotFoundException::new);
 
         List<Chatroom> chatrooms = chatRoomRepository.findAllByUserId(userId);
         for (Chatroom chatroom : chatrooms) {
-
             Long chatroomId = chatroom.getId();
-            Chat recentChat = chatRepository.findTop1ByChatRoomIdOrderByCreatedAtDesc(chatroomId).orElseThrow(EntityNotFoundException::new);
-            User recentChatUser = recentChat.getUser();
+            List<User> participant = chatroom.getParticipant();
+            User opponent = participant.get(0).equals(currentUser)
+                    ? participant.get(1) : participant.get(0);
+            try {
+                Chat recentChat = chatRepository.findTop1ByChatroomIdOrderByCreatedAtDesc(chatroomId)
+                        .orElseThrow(EntityNotFoundException::new);
 
-            String recentChatContent = recentChat.getContent();
-            String nickname = recentChatUser.getNickname();
-            String profileUrl = recentChatUser.getProfileUrl();
-            LocalDateTime createdAt = recentChat.getCreatedAt();
+                String recentChatContent = recentChat.getContent();
+                String nickname = opponent.getNickname();
+                String profileUrl = opponent.getProfileUrl();
+                LocalDateTime createdAt = recentChat.getCreatedAt();
 
-            ChatRoomResponseDTO dto = ChatRoomResponseDTO.builder()
-                    .recentChat(recentChatContent)
-                    .chatroomId(chatroomId)
-                    .nickname(nickname)
-                    .profileUrl(profileUrl)
-                    .createdAt(createdAt)
-                    .build();
+                RecentChatResponseDTO dto = RecentChatResponseDTO.builder()
+                        .recentChat(recentChatContent)
+                        .chatroomId(chatroomId)
+                        .nickname(nickname)
+                        .profileUrl(profileUrl)
+                        .createdAt(createdAt)
+                        .build();
 
-            chatRoomResponseDTO.add(dto);
+                recentChatResponseDTO.add(dto);
+            } catch (EntityNotFoundException e) {
+                RecentChatResponseDTO dto = RecentChatResponseDTO.builder()
+                        .recentChat("")
+                        .chatroomId(chatroomId)
+                        .nickname(opponent.getNickname())
+                        .profileUrl(opponent.getProfileUrl())
+                        .createdAt(LocalDateTime.now())
+                        .build();
+
+                recentChatResponseDTO.add(dto);
+            }
         }
-        return chatRoomResponseDTO;
+        return recentChatResponseDTO;
     }
 
+    public OpponentResponseDTO getOpponent(Long chatroomId, Long currentUserId){
+        Chatroom chatroom = chatRoomRepository.findById(chatroomId).orElseThrow(EntityNotFoundException::new);
+        User currentUser = userRepository.findById(currentUserId).orElseThrow(EntityNotFoundException::new);
+
+        List<User> participant = chatroom.getParticipant();
+        User opponent = participant.get(0).equals(currentUser)
+                ? participant.get(1) : participant.get(0);
+
+        return OpponentResponseDTO.builder()
+                .id(opponent.getId())
+                .nickname(opponent.getNickname())
+                .profileUrl(opponent.getProfileUrl())
+                .build();
+    }
+
+    //개인챗 입장 시 채팅 내역 조회
     public List<ChatResponseDTO> findChats(Long chatroomId) {
         List<ChatResponseDTO> chatDTOList = new ArrayList<>();
         Chatroom chatroom = chatRoomRepository.findById(chatroomId).orElseThrow(EntityNotFoundException::new);
@@ -72,12 +100,14 @@ public class ChatRoomService {
             User user = chat.getUser();
 
             String nickname = user.getNickname();
+            Long userId = user.getId();
             String profileUrl = user.getProfileUrl();
             String content = chat.getContent();
             LocalDateTime createdAt = chat.getCreatedAt();
 
             ChatResponseDTO dto = ChatResponseDTO.builder()
                     .nickname(nickname)
+                    .userId(userId)
                     .profileUrl(profileUrl)
                     .content(content)
                     .createdAt(createdAt)
@@ -85,11 +115,10 @@ public class ChatRoomService {
 
             chatDTOList.add(dto);
         }
-
         return chatDTOList;
     }
 
-    public void saveChat(ChatPayloadDTO payloadDTO){
+    public void saveChat(ChatPayloadDTO payloadDTO) {
 
         Long userId = payloadDTO.getUserId();
         Long chatroomId = payloadDTO.getChatroomId();
@@ -100,12 +129,58 @@ public class ChatRoomService {
 
         Chat chat = Chat.builder()
                 .user(user)
-                .chatRoom(chatroom)
+                .chatroom(chatroom)
                 .content(content)
                 .createdAt(LocalDateTime.now())
                 .build();
 
         chatRepository.save(chat);
+    }
+
+    public NewChatroomResponseDTO createChatroom(Long requesterId, Long targetId) {
+        Long existChatroomId = findExistChatroomId(requesterId,targetId);
+
+        //채팅방 불러오기
+        if(existChatroomId != -1L){
+            return NewChatroomResponseDTO.builder()
+                    .chatroomId(existChatroomId)
+                    .p1Id(requesterId)
+                    .p2Id(targetId)
+                    .build();
+        }
+
+        //완전 새로운 채팅방 생성
+        User p1 = userRepository.findById(requesterId).orElseThrow(EntityNotFoundException::new);
+        User p2 = userRepository.findById(targetId).orElseThrow(EntityNotFoundException::new);
+
+        List<User> participants = List.of(p1, p2);
+
+        Chatroom newChatroom = Chatroom.builder()
+                .participant(participants)
+                .build();
+
+        chatRoomRepository.save(newChatroom);
+
+        return NewChatroomResponseDTO.builder()
+                .chatroomId(newChatroom.getId())
+                .p1Id(requesterId)
+                .p2Id(targetId)
+                .build();
+    }
+    
+    private Long findExistChatroomId(Long requesterId, Long targetId){
+
+        List<Chatroom> participatedChatrooms = chatRoomRepository.findAllByUserId(requesterId);
+
+        User targetUser = userRepository.findById(targetId).orElseThrow(EntityNotFoundException::new);
+
+        for (Chatroom participatedChatroom : participatedChatrooms) {
+            if(participatedChatroom.getParticipant().contains(targetUser)){
+                return participatedChatroom.getId();
+            }
+        }
+
+        return -1L;
     }
 
 }

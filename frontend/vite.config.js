@@ -8,7 +8,7 @@ export default defineConfig(({ mode }) => ({
   root: "client",
   server: {
     host: "::",
-    port: 8080,
+    port: 3000,
   },
   build: {
     outDir: "../dist/spa", // 빌드 결과물은 루트 기준으로 상위
