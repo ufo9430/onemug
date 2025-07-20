@@ -2,7 +2,10 @@ package com.onemug.notice.aspect;
 
 import com.onemug.global.dto.MembershipResponseDto;
 import com.onemug.global.entity.*;
+import com.onemug.membership.dto.SubscriptionCancelResponseDto;
+import com.onemug.newcreator.repository.CreatorRegisterRepository;
 import com.onemug.notice.service.NoticeService;
+import jakarta.persistence.EntityNotFoundException;
 import org.aspectj.lang.annotation.AfterReturning;
 import org.aspectj.lang.annotation.Aspect;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +19,9 @@ public class NoticeAspect {
 
     @Autowired
     private NoticeService noticeService;
+
+    @Autowired
+    private CreatorRegisterRepository creatorRepository;
 
     // 사용자 id 조회 - 사용자 이름 정보, targetId 해결
 
@@ -38,7 +44,7 @@ public class NoticeAspect {
         //String targetName, NoticeType type
     }
 
-    // 내 글에 댓글 - 댓글작성자 - 본인(댓글달린글작성자)
+    // todo: 내 글에 댓글 - 댓글작성자 - 본인(댓글달린글작성자)
     public void afterComment(Object result){
         Comment comment = (Comment) result;
         Long targetId = comment.getPost().getId(); //댓글 달린 게시글
@@ -49,28 +55,38 @@ public class NoticeAspect {
 
     }
 
-    // 내 글에 좋아요 - 작성자 - 본인
+    // todo: 내 글에 좋아요 - 작성자 - 본인
     public void afterLike(Object result){
         // Like Response DTO 나오면 구현
 
         //noticeService.save(senderId, receiverId, targetId, targetName, NoticeType.LIKE);
     }
 
-    // 유료 구독 결제 - 창작자(알림받는) - 구독자
+    // todo: 유료 구독 결제 - 창작자(알림받는) - 구독자
     public void afterSubscription(Object result){
-        //발신 - 멤버십 결제한 구독자
-        //수신 - 결제된 멤버십 가진 창작자
 
-        //noticeService.save(senderId, receiverId, targetId, targetName, NoticeType.SUBSCRIBE);
+        MembershipResponseDto responseDto =  (MembershipResponseDto) result;
+        Long receiverId = responseDto.getSubscriberId();
+        Long targetId = responseDto.getCreatorId();
+        String targetName = responseDto.getName();
+
+
+        Creator creator = creatorRepository.findById(targetId).orElseThrow(EntityNotFoundException::new);
+        Long senderId = creator.getUser().getId();
+
+        noticeService.save(senderId, receiverId, targetId, targetName, NoticeType.SUBSCRIBE);
     }
 
     // 유료 구독 해지 - 창작자 - 구독자 (해지 membership이 반환된다는 것을 전제로 작성)
+    @AfterReturning(pointcut = "execution(* com.onemug.membership.service.MembershipService.cancelSubscription(..))", returning = "result")
     public void afterSubscriptionCancel(Object result){
-        MembershipResponseDto membership = (MembershipResponseDto) result;
-        Long targetId = membership.getId(); //해지되는 멤버십 ID
-        String targetName = membership.getName(); //해지되는 멤버십 이름
-        Long senderId = membership.getCreatorId(); //발신 - 해지되는 멤버십 가진 창작자
-        Long receiverId = membership.getSubscriberId(); //수신 - 해지하는 구독자
+        SubscriptionCancelResponseDto responseDto = (SubscriptionCancelResponseDto) result;
+        Long targetId = responseDto.getCreatorId(); //해지되는 멤버십 ID 리액트에서 targetId로 프로필로 이동하니까
+        String targetName = responseDto.getMembershipName(); //해지되는 멤버십 이름
+        Long receiverId = responseDto.getUserId(); //수신 - 해지하는 구독자
+
+        Creator creator = creatorRepository.findById(targetId).orElseThrow(EntityNotFoundException::new);
+        Long senderId = creator.getUser().getId();
 
         noticeService.save(senderId, receiverId, targetId, targetName, NoticeType.UNSUBSCRIBE);
     }
