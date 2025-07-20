@@ -27,13 +27,6 @@ public class InsightService {
     @Autowired
     private MembershipHistoryRepository membershipHistoryRepository;
 
-    private final String CURRENT_VIEWS = "currentViews";
-    private final String PAST_VIEWS = "pastViews";
-    private final String CURRENT_INCOME = "currentIncome";
-    private final String PAST_INCOME = "pastIncome";
-    private final String PAST_PAST_INCOME = "pastPastIncome";
-    private final String CURRENT_SUBSCRIBERS = "currentSubscribers";
-
     public Map<String, Object> getInsights(Long userId, Long days){
         Map<String, Object> response = new HashMap<>();
 
@@ -43,25 +36,30 @@ public class InsightService {
         Long creatorId = creator.getId();
 
         // 기간 단위로 날짜 자르기
-        LocalDateTime startDate = LocalDateTime.now().minusDays(days);
-        LocalDateTime pastStartDate =  LocalDateTime.now().minusDays(days).minusDays(days);
-        LocalDateTime pastPastStartDate = LocalDateTime.now().minusDays(days).minusDays(days).minusDays(days);
+        LocalDateTime startDate = LocalDateTime.now().minusDays(days);;
 
 
-        Map<String, Integer> viewsMap = getViews(creatorId,startDate,pastStartDate);
-        Map<String, Integer> incomeMap = getIncome(creatorId, startDate, pastStartDate, pastPastStartDate);
+        Map<String, Integer> viewsMap = getViews(creatorId,startDate, days);
+        Map<String, Integer> incomeMap = getIncome(creatorId, startDate);
         Map<String, Integer> currentSubscribers = getCurrentSubscribers(creatorId, startDate);
 
         // 조회수 수집
-        response.put(CURRENT_VIEWS, viewsMap.get(CURRENT_VIEWS)); // 현재 기간 조회수
-        response.put(PAST_VIEWS, viewsMap.get(PAST_VIEWS)); // 지난 기간 조회수
+        response.put("views_chartData", viewsMap); // 현재 기간 조회수
         // 멤버십 수입 수집
-        response.put(CURRENT_INCOME, incomeMap.get(CURRENT_INCOME)); // 멤버십 수입(~일간)
-        response.put(PAST_INCOME, incomeMap.get(PAST_INCOME)); // 지난 멤버십 수입
-        response.put(PAST_PAST_INCOME, incomeMap.get(PAST_PAST_INCOME)); // 지지난 멤버십 수입
+        response.put("incomes", incomeMap); // 멤버십 수입(~일간)
+
+        response.put("subscribers", currentSubscribers);
+        // 조회수를 한 8개씩 뽑아두고싶어요
+        //글쵸 도와주시죠
         // 구독자 내역 수집
 
-        response.put(CURRENT_SUBSCRIBERS, currentSubscribers);
+
+        //totalSubscribers
+        Integer total = 0;
+        for (String key : currentSubscribers.keySet()) {
+            total += currentSubscribers.get(key);
+        }
+        response.put("totalSubscribers", total);
 
         return response;
     }
@@ -72,7 +70,6 @@ public class InsightService {
         // 창작자의 멤버십 종류(베이직, 프리미엄, VIP)를 이름만 추출해서 Repository로 카운트
         List<Membership> memberships = membershipHistoryRepository
                 .findMembershipsByCreatorIdAndCreatedAtAfter(creatorId, startDate);
-
         for (Membership membership : memberships) {
             String membershipName = membership.getName();
             if(!currentSubscribers.containsKey(membershipName)){
@@ -84,45 +81,39 @@ public class InsightService {
         return currentSubscribers;
     }
 
-    private Map<String, Integer> getIncome(Long creatorId, LocalDateTime startDate, LocalDateTime pastStartDate, LocalDateTime pastPastStartDate) {
+    private Map<String, Integer> getIncome(Long creatorId, LocalDateTime startDate) {
         Map<String, Integer> incomeMap = new  HashMap<>();
-        // 예) 7일간 대상 Creator의 멤버십 결제 내역 조회
+
         List<Membership> incomeMemberships = membershipHistoryRepository
                 .findMembershipsByCreatorIdAndCreatedAtAfter(creatorId, startDate);
-        List<Membership> pastIncomeMemberships = membershipHistoryRepository
-                .findMembershipsByCreatorIdAndCreatedAtAfter(creatorId, pastStartDate);
-        List<Membership> pastPastIncomeMemberships = membershipHistoryRepository
-                .findMembershipsByCreatorIdAndCreatedAtAfter(creatorId, pastPastStartDate);
 
         Integer totalCurrentIncome = 0;
-        Integer totalPastIncome = 0;
-        Integer totalPastPastIncome = 0;
 
         for (Membership incomeMembership : incomeMemberships) {
             totalCurrentIncome += incomeMembership.getPrice();
         }
-        for (Membership pastIncomeMembership : pastIncomeMemberships) {
-            totalPastIncome += pastIncomeMembership.getPrice();
-        }
-        for (Membership pastPastIncomeMembership : pastPastIncomeMemberships) {
-            totalPastPastIncome += pastPastIncomeMembership.getPrice();
-        }
 
-        incomeMap.put(CURRENT_INCOME, totalCurrentIncome);
-        incomeMap.put(PAST_INCOME, totalPastIncome);
-        incomeMap.put(PAST_PAST_INCOME, totalPastPastIncome);
+        incomeMap.put("total", totalCurrentIncome);
 
         return incomeMap;
     }
 
-    private Map<String, Integer> getViews(Long creatorId, LocalDateTime startDate, LocalDateTime pastStartDate) {
+    private Map<String, Integer> getViews(Long creatorId, LocalDateTime startDate, Long days) {
         Map<String, Integer> viewsMap = new  HashMap<>();
 
         Integer currentViews = postViewLogRepository.countPostViewLogsByCreatorIdAndStartDate(creatorId, startDate);
-        Integer pastViews = postViewLogRepository.countPostViewLogsByCreatorIdAndStartDate(creatorId, pastStartDate);
+        viewsMap.put("period1", currentViews);
 
-        viewsMap.put(CURRENT_VIEWS, currentViews);
-        viewsMap.put(PAST_VIEWS, pastViews);
+        for (int i = 1; i <= 7; i++){
+            String key = "period" + (i+1);
+            Integer current = postViewLogRepository
+                    .countPostViewLogsByCreatorIdAndStartDate(creatorId, startDate.minusDays(i * days));
+
+            Integer past = postViewLogRepository
+                    .countPostViewLogsByCreatorIdAndStartDate(creatorId, startDate.minusDays(i+1 * days));
+
+            viewsMap.put(key, current - past);
+        }
         return viewsMap;
     }
 }
