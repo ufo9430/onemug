@@ -34,6 +34,7 @@ public class Notice {
 
     private LocalDateTime createdAt;
 
+    @Column(name = "is_read")
     private boolean isRead;
 
     public void markAsRead() {
