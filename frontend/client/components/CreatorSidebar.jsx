@@ -8,22 +8,24 @@ import {
   Settings,
   LayoutDashboard
 } from "lucide-react"
+import axios from "@/lib/axios";
 
 const CreatorSidebar = ({ profile = {}, activeItem }) => {
+  const navigate = useNavigate()
   const [hasUnread, setHasUnread] = useState(false)
   useEffect(() => {
-    fetch("http://localhost:8080/notice/api/unread", {
-      credentials: "include",
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        setHasUnread(data.checkUnread === true)
-      })
-      .catch((err) => {
-        console.error("알림 상태를 불러오지 못했습니다:", err)
-      })
-  }, [])
-  const navigate = useNavigate()
+    const fetchNotice = async () => {
+      try {
+        const res = await axios.get("/notice/api/unread");
+
+        setHasUnread(res.data.checkUnread === true);
+      } catch (err) {
+        console.error("알림 상태를 불러오지 못했습니다:", err);
+      }
+    };
+
+    fetchNotice();
+  }, []);
 
   const navigationItems = [
     {

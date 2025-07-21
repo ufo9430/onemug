@@ -15,8 +15,7 @@ const getActiveItem = (pathname) => {
 
 const CreatorSidebarLayout = () => {
   const navigate = useNavigate()
-  const [sidebarProfile, setSidebarProfile] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [sidebarProfile, setSidebarProfile] = useState({})
   const { pathname } = useLocation()
   const activeItem = getActiveItem(pathname)
 
@@ -46,8 +45,6 @@ const CreatorSidebarLayout = () => {
           navigate("/welcome")
       })
   }, [navigate])
-
-  if (loading) return null
 
   return (
     <div className="flex">

@@ -17,8 +17,6 @@ import axios from "@/lib/axios";
 const Sidebar = ({ profile = {}, activeItem }) => {
   const navigate = useNavigate()
   const [hasUnread, setHasUnread] = useState(false)
-
-
   useEffect(() => {
     const fetchNotice = async () => {
       try {
