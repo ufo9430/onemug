@@ -1,5 +1,4 @@
 import React from "react"
-import Sidebar from "@/components/Sidebar"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 
@@ -65,7 +64,6 @@ const mockCreators = [
 export default function Subscriptions() {
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <Sidebar activeItem="subscriptions" />
 
       <div className="flex-1 flex flex-col w-full lg:w-auto">
         {/* Header */}

@@ -1,5 +1,4 @@
 import React from "react"
-import Sidebar from "@/components/Sidebar"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { Heart, MessageCircle } from "lucide-react"
 
@@ -41,8 +40,6 @@ const mockPosts = [
 export default function Recent() {
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <Sidebar activeItem="recent" />
-
       <div className="flex-1 flex flex-col w-full lg:w-auto">
         {/* Header */}
         <div className="bg-white border-b border-gray-200 px-4 lg:px-6 py-4 lg:py-5">

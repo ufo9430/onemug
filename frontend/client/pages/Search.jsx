@@ -1,6 +1,5 @@
 import React from "react"
 import { Heart, MessageCircle } from "lucide-react"
-import Sidebar from "../components/Sidebar"
 
 const Search = () => {
   const categories = [
@@ -43,9 +42,7 @@ const Search = () => {
 
   return (
     <div className="min-h-screen bg-brand-secondary flex">
-      {/* Sidebar */}
-      <Sidebar activeItem="search" />
-
+      
       {/* Main Content */}
       <div className="flex-1">
         {/* Header */}

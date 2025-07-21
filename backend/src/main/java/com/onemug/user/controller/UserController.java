@@ -13,9 +13,11 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.LongToDoubleFunction;
 
 @RestController
 @RequestMapping("/api/user")
+@CrossOrigin(origins = "http://localhost:3000", allowCredentials = "true")
 @RequiredArgsConstructor
 public class UserController {
 
@@ -32,11 +34,13 @@ public class UserController {
     //프로필 정보 리액트 전송용 api
     @GetMapping("/profile")
     public ResponseEntity<Map<String,Object>> getProfile(Authentication authentication){
-        if (authentication == null || !(authentication.getPrincipal() instanceof CustomUserDetails)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-        Long userId = userDetails.getUser().getId();
+//        if (authentication == null || !(authentication.getPrincipal() instanceof CustomUserDetails)) {
+//            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+//        }
+//        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+//        Long userId = userDetails.getUser().getId();
+        //todo:임시
+        Long userId = 1L;
 
         Map<String, Object> profile = userDetailsService.getProfile(userId);
 
