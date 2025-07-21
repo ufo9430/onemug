@@ -1,7 +1,6 @@
 import React, { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { ChevronDown, Image, Video } from "lucide-react"
-import CreatorSidebar from "../components/CreatorSidebar"
 
 const CreatePost = () => {
   const navigate = useNavigate()
@@ -36,8 +35,6 @@ const CreatePost = () => {
 
   return (
     <div className="min-h-screen bg-brand-secondary flex">
-      {/* Creator Sidebar */}
-      <CreatorSidebar activeItem="dashboard" />
 
       {/* Main Content */}
       <div className="flex-1">

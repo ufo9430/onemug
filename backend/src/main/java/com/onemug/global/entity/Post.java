@@ -54,4 +54,8 @@ public class Post {
         this.viewCount = 0;
         this.createdAt = LocalDateTime.now();
     }
+
+    public void addViewCount() {
+        this.viewCount++;
+    }
 }

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react"
 import { useParams, useSearchParams } from 'react-router-dom';
 import { Check, AlertCircle, Clock } from "lucide-react"
-import Sidebar from "../components/Sidebar"
 import PaymentModal from "./PaymentModal"
 
 const Membership = () => {
@@ -229,7 +228,6 @@ const Membership = () => {
   if (loading) {
     return (
       <div className="flex h-screen bg-gray-50">
-        <Sidebar />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500 mx-auto"></div>
@@ -261,7 +259,6 @@ const Membership = () => {
 
   return (
     <div className="flex h-screen bg-gray-50">
-      <Sidebar />
       <div className="flex-1 overflow-auto">
         <main className="max-w-6xl mx-auto p-6">
           <div className="space-y-6">

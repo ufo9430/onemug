@@ -1,8 +1,6 @@
 import React from "react"
 import { useNavigate } from "react-router-dom"
 import { Heart, MessageCircle, Users, Calendar } from "lucide-react"
-import CreatorSidebar from "../components/CreatorSidebar"
-
 const PostCard = ({
   id,
   title,
@@ -78,8 +76,6 @@ const CreatorDashboard = () => {
 
   return (
     <div className="min-h-screen bg-brand-secondary flex">
-      {/* Creator Sidebar */}
-      <CreatorSidebar activeItem="dashboard" />
 
       {/* Main Content */}
       <div className="flex-1">

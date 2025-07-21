@@ -1,7 +1,6 @@
 import React, { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { X, Minus } from "lucide-react"
-import CreatorSidebar from "../components/CreatorSidebar"
 
 const AddMembershipModal = ({ isOpen, onClose, onSave }) => {
   const [name, setName] = useState("")
@@ -263,8 +262,6 @@ const CreatorMembership = () => {
 
   return (
     <div className="min-h-screen bg-brand-secondary flex">
-      {/* Creator Sidebar */}
-      <CreatorSidebar activeItem="dashboard" />
 
       {/* Main Content */}
       <div className="flex-1">

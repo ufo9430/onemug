@@ -30,6 +30,8 @@ import CreatePost from "./pages/CreatePost"
 import CreatePostPublish from "./pages/CreatePostPublish"
 import NotFound from "./pages/NotFound"
 import Membership from "./pages/Membership"
+import SidebarLayout from "./pages/layout/SidebarLayout"
+import CreatorSidebarLayout from "./pages/layout/CreatorSidebarLayout"
 
 const queryClient = new QueryClient()
 
@@ -46,33 +48,39 @@ const App = () => (
           <Route path="/register/email" element={<EmailStep />} />
           <Route path="/register/password" element={<PasswordStep />} />
           <Route path="/register/nickname" element={<NicknameStep />} />
-          <Route path="/feed" element={<Feed />} />
-          <Route
-            path="/feed/creator"
-            element={<Feed hasCreatorAccount={true} />}
-          />
-          <Route path="/search" element={<Search />} />
-          <Route path="/messages" element={<Messages />} />
-          <Route path="/messages/:conversationId" element={<Conversation />} />
-          <Route path="/Membership/creator/:creatorId" element={<Membership />} />
-          <Route path="/notifications" element={<Notifications />} />
-          <Route path="/subscriptions" element={<Subscriptions />} />
-          <Route path="/bookmarks" element={<Bookmarks />} />
-          <Route path="/recent" element={<Recent />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/post/:id" element={<PostDetail />} />
           <Route path="/creator/signup" element={<CreatorSignup />} />
-          <Route path="/creator/dashboard" element={<CreatorDashboard />} />
-          <Route path="/creator/insights" element={<CreatorInsights />} />
-          <Route path="/creator/subscribers" element={<CreatorDashboard />} />
-          <Route path="/creator/communication" element={<CreatorDashboard />} />
-          <Route path="/creator/notifications" element={<CreatorDashboard />} />
-          <Route path="/creator/settings" element={<CreatorDashboard />} />
-          <Route path="/creator/post/new" element={<CreatePost />} />
-          <Route path="/creator/post/publish" element={<CreatePostPublish />} />
-          <Route path="/creator/post/:id" element={<CreatorPostDetail />} />
-          <Route path="/creator/membership" element={<CreatorMembership />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          {/* 일반 기능 레이아웃 */}
+          <Route element={<SidebarLayout />}>
+            <Route path="/feed" element={<Feed />} />
+            <Route
+              path="/feed/creator"
+              element={<Feed hasCreatorAccount={true} />}
+            />
+            <Route path="/search" element={<Search />} />
+            <Route path="/Membership/creator/:creatorId" element={<Membership />} />
+            <Route path="/subscriptions" element={<Subscriptions />} />
+            <Route path="/bookmarks" element={<Bookmarks />} />
+            <Route path="/recent" element={<Recent />} />
+            <Route path="/messages" element={<Messages />} />
+            <Route path="/messages/:conversationId" element={<Conversation />} />
+            <Route path="/notifications" element={<Notifications />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/post/:id" element={<PostDetail />} />
+          </Route>
+          {/* 창작자 기능 레이아웃 */}
+          <Route element={<CreatorSidebarLayout />}>
+            <Route path="/creator/dashboard" element={<CreatorDashboard />} />
+            <Route path="/creator/insights" element={<CreatorInsights />} />
+            <Route path="/creator/subscribers" element={<CreatorDashboard />} />
+            <Route path="/creator/messages" element={<Messages />} />
+            <Route path="/creator/messages/:conversationId" element={<Conversation />} />
+            <Route path="/creator/notifications" element={<Notifications />} />
+            <Route path="/creator/settings" element={<Settings />} />
+            <Route path="/creator/post/new" element={<CreatePost />} />
+            <Route path="/creator/post/publish" element={<CreatePostPublish />} />
+            <Route path="/creator/post/:id" element={<CreatorPostDetail />} />
+            <Route path="/creator/membership" element={<CreatorMembership />} />
+          </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
