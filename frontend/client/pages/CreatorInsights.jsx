@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { set } from "date-fns"
+import axios from "@/lib/axios";
 
 function formatLocalDateTimeToShortDate(dateTimeString) {
   const date = new Date(dateTimeString);
@@ -25,24 +26,16 @@ const CreatorInsights = () => {
     ]
   })
   const [viewsData, setViewsData] = useState({
-    total: "28,533",
+    total: "",
     chartData: [
-      { time: "10월", value: 31 }, // pastPastIncome 차트 데이터에 맞춰
-      { time: "11월", value: 35 }, // pastIncome
-      { time: "12월", value: 38 } // currentIncome
     ]
   })
 
   useEffect(() => {
-    fetch(`http://localhost:8080/c/insight?days=${selectedPeriod}`)
+    axios.get(`/c/insight?days=${selectedPeriod}`)
       .then(response => {
-        if (!response.ok) {
-          throw new Error("Network response was not ok")
-        }
-        return response.json()
-      }).then(data => {
+        const data = response.data
         console.log("받은 데이터", data)
-        // 여기에 받은 데이터를 상태로 설정하거나 필요한 작업을 수행
         setMembershipData({
           total: data.incomes.total
         })
@@ -57,6 +50,9 @@ const CreatorInsights = () => {
           total: data.currentViews,
           chartData: data.views_chartData
         })
+      })
+      .catch(error => {
+        console.error("Network response was not ok", error)
       })
   }, [selectedPeriod])
 
