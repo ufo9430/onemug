@@ -2,7 +2,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { Heart, MessageCircle } from "lucide-react";
-import Sidebar from "../components/Sidebar";
 import debounce from "lodash.debounce";
 import api from "@shared/api";
 const PAGE_SIZE = 20;

@@ -4,6 +4,7 @@ import { Search, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import axios from "@/lib/axios";
 
 function formatRelativeTime(timestamp) {
   const now = new Date();
@@ -44,18 +45,11 @@ export default function Messages() {
   //여기서 fetch 사용
 
   useEffect(() => {
-    fetch("http://localhost:8080/community", {
-      method: "GET",
-    })
+    axios
+      .get("/community")
       .then((response) => {
-        if (!response.ok) {
-          throw new Error("서버 응답 실패");
-        }
-        return response.json();
-      })
-      .then((data) => {
-        console.log(data);
-        setConversations(data);
+        console.log(response.data);
+        setConversations(response.data);
       })
       .catch((error) => {
         console.error("Error:", error);

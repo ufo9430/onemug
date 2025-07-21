@@ -5,8 +5,10 @@ import com.onemug.user.model.CustomUserDetails;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -20,12 +22,11 @@ public class CreatorRegisterController {
 
     @PostMapping
     public ResponseEntity<String> register(@RequestBody Map<String, String> payload, Authentication authentication){
-        Long userId = 4L; //todo: 임시
-        if(authentication != null){
-            CustomUserDetails userDetail = (CustomUserDetails) authentication.getPrincipal();
-            userId = userDetail.getUser().getId();
+        if (authentication == null || !(authentication.getPrincipal() instanceof Jwt jwt)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
+        Long userId = Long.valueOf(authentication.getName());
 
         String introduce = payload.get("introduce");
 
