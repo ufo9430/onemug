@@ -53,4 +53,13 @@ public interface MembershipRepository extends JpaRepository<Membership, Long> {
      */
     @Query("SELECT COUNT(m) > 0 FROM Membership m WHERE m.id = :membershipId AND m.id IN (SELECT s.id FROM User u JOIN u.subscribed s WHERE u.id = :userId) AND m.status = 'ACTIVE' AND m.expiresAt > :currentDate")
     boolean existsActiveSubscriptionByUserIdAndMembershipId(@Param("userId") Long userId, @Param("membershipId") Long membershipId, @Param("currentDate") LocalDateTime currentDate);
+
+
+    @Query("SELECT m.creator.id FROM Membership m " +
+            "WHERE m.user.id = :userId " +
+            "AND m.status = 'ACTIVE' " +
+            "AND m.isTemplate = false " +
+            "AND (m.expiresAt IS NULL OR m.expiresAt > CURRENT_TIMESTAMP)")
+    List<Long> findActiveCreatorIdsByUserId(@Param("userId") Long userId);
+
 }
