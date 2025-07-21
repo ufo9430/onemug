@@ -12,7 +12,7 @@ import EmailStep from "./pages/register/EmailStep"
 import PasswordStep from "./pages/register/PasswordStep"
 import NicknameStep from "./pages/register/NicknameStep"
 import Feed from "./pages/Feed"
-import Search from "./pages/Search"
+import Explore from "./pages/Explore" 
 import PostDetail from "./pages/PostDetail"
 import Messages from "./pages/Messages"
 import Conversation from "./pages/Conversation"
@@ -29,6 +29,7 @@ import CreatorInsights from "./pages/CreatorInsights"
 import CreatePost from "./pages/CreatePost"
 import CreatePostPublish from "./pages/CreatePostPublish"
 import NotFound from "./pages/NotFound"
+import Membership from "./pages/Membership"
 
 const queryClient = new QueryClient()
 
@@ -50,9 +51,10 @@ const App = () => (
             path="/feed/creator"
             element={<Feed hasCreatorAccount={true} />}
           />
-          <Route path="/search" element={<Search />} />
+          <Route path="/explore" element={<Explore />} />
           <Route path="/messages" element={<Messages />} />
           <Route path="/messages/:conversationId" element={<Conversation />} />
+          <Route path="/Membership/creator/:creatorId" element={<Membership />} />
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/subscriptions" element={<Subscriptions />} />
           <Route path="/bookmarks" element={<Bookmarks />} />

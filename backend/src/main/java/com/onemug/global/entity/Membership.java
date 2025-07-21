@@ -2,6 +2,7 @@ package com.onemug.global.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.sql.Restriction;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -17,15 +18,12 @@ public class Membership {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
     private String name;
-
     private Integer price;
 
     @ManyToOne
     @JoinColumn(name = "creator_id")
     private Creator creator;
-
     private LocalDateTime createdAt;
     
     // 추가 필드들

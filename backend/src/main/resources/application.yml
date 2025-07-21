@@ -2,7 +2,8 @@ spring:
   config:
     import:
       - classpath:db.properties
-      - classpath:oauth.properties
+      #- classpath:oauth.properties
+
   datasource:
     driver: ${db.driver}
     url: ${db.url}

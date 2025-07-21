@@ -15,8 +15,6 @@ import java.util.List;
 @Repository
 public interface PostRepository extends JpaRepository<Post, Long> {
 
-
-
     /** 창작자 본인 글 목록 (Creator dashboard) */
     @Query("""
         select p
@@ -33,10 +31,12 @@ public interface PostRepository extends JpaRepository<Post, Long> {
         where p.creator.id in :creatorIds
         order by p.createdAt desc
         """)
-    Page<Post> findByCreatorIdInOrderByCreatedAtDesc(@Param("creatorIds") List<Long> creatorIds,
-                                                     Pageable pageable);
+    Page<Post> findByCreatorIdInOrderByCreatedAtDesc(
+            @Param("creatorIds") List<Long> creatorIds,
+            Pageable pageable
+    );
 
-    /** 구독하지 않은 창작자 글 – Explore 용 */
+    /** ─── Explore: 구독하지 않은 창작자의 글 (전체) ─── */
     @Query("""
         select p
         from Post p
@@ -45,9 +45,12 @@ public interface PostRepository extends JpaRepository<Post, Long> {
         where s.id is null
         order by p.viewCount desc, p.createdAt desc
         """)
-    Page<Post> findExplorePosts(@Param("userId") Long userId, Pageable pageable);
+    Page<Post> findExplorePosts(
+            @Param("userId") Long userId,
+            Pageable pageable
+    );
 
-    /** Explore + 카테고리 필터 */
+    /** ─── Explore: 구독하지 않은 창작자의 글 (카테고리 필터) ─── */
     @Query("""
         select p
         from Post p
@@ -57,50 +60,54 @@ public interface PostRepository extends JpaRepository<Post, Long> {
           and p.category.id = :categoryId
         order by p.viewCount desc, p.createdAt desc
         """)
-    Page<Post> findExplorePostsByCategory(@Param("userId") Long userId,
-                                          @Param("categoryId") Long categoryId,
-                                          Pageable pageable);
+    Page<Post> findExplorePostsByCategory(
+            @Param("userId") Long userId,
+            @Param("categoryId") Long categoryId,
+            Pageable pageable
+    );
 
-    /* ────────────────────── 🔍 통합 검색 메서드 ───────────────────── */
-
-    /**
-     * FULLTEXT 통합 검색 (제목 + 내용 + 카테고리명).
-     *  - MATCH(title,content) + 2×MATCH(category.name) 로 가중 정렬
-     *  - 엔티티 매핑을 위해 SELECT 절은 p.* 만 남기고,
-     *    점수 계산은 ORDER BY 식 안에서 수행한다.
-     */
+    /* ────────────────────── 🔍 FULLTEXT + LIKE 페일백 통합 검색 ───────────────────── */
     @Query(value = """
-    SELECT p.*
-    FROM   post p
-    JOIN   category c ON p.category_id = c.id
-    WHERE  (
-             MATCH(p.title, p.content) AGAINST (:#{#cond.q} IN BOOLEAN MODE)
-          OR MATCH(c.name)             AGAINST (:#{#cond.q} IN BOOLEAN MODE)
-          )
-      AND  (
-             :#{#cond.categoryIds == null || #cond.categoryIds.isEmpty()} = TRUE
-          OR p.category_id IN (:#{#cond.categoryIds})
-          )
-    ORDER BY
-          (MATCH(p.title, p.content) AGAINST (:#{#cond.q} IN BOOLEAN MODE)
-         + 2 * MATCH(c.name)         AGAINST (:#{#cond.q} IN BOOLEAN MODE)) DESC,
-          p.view_count DESC,
-          p.created_at DESC
-    """,
+        SELECT p.*
+        FROM   post p
+        JOIN   category c ON p.category_id = c.id
+        WHERE  (
+                 /* FULLTEXT (제목+내용) */
+                 MATCH(p.title, p.content) AGAINST (:#{#cond.q} IN BOOLEAN MODE)
+              OR MATCH(c.name)             AGAINST (:#{#cond.q} IN BOOLEAN MODE)
+                 /* AND 페일백: 제목/내용 LIKE */
+              OR p.title   LIKE CONCAT('%', :#{#cond.q}, '%')
+              OR p.content LIKE CONCAT('%', :#{#cond.q}, '%')
+              )
+          AND  (
+                 :#{#cond.categoryIds == null || #cond.categoryIds.isEmpty()} = TRUE
+              OR p.category_id IN (:#{#cond.categoryIds})
+              )
+        ORDER BY
+              /* FULLTEXT 스코어 가중치 합산 */
+              (MATCH(p.title, p.content) AGAINST (:#{#cond.q} IN BOOLEAN MODE)
+             + 2 * MATCH(c.name)         AGAINST (:#{#cond.q} IN BOOLEAN MODE)) DESC,
+              p.view_count DESC,
+              p.created_at DESC
+        """,
             countQuery = """
-    SELECT COUNT(*)
-    FROM   post p
-    JOIN   category c ON p.category_id = c.id
-    WHERE  (
-             MATCH(p.title, p.content) AGAINST (:#{#cond.q} IN BOOLEAN MODE)
-          OR MATCH(c.name)             AGAINST (:#{#cond.q} IN BOOLEAN MODE)
-          )
-      AND  (
-             :#{#cond.categoryIds == null || #cond.categoryIds.isEmpty()} = TRUE
-          OR p.category_id IN (:#{#cond.categoryIds})
-          )
-    """,
+        SELECT COUNT(*)
+        FROM   post p
+        JOIN   category c ON p.category_id = c.id
+        WHERE  (
+                 MATCH(p.title, p.content) AGAINST (:#{#cond.q} IN BOOLEAN MODE)
+              OR MATCH(c.name)             AGAINST (:#{#cond.q} IN BOOLEAN MODE)
+              OR p.title   LIKE CONCAT('%', :#{#cond.q}, '%')
+              OR p.content LIKE CONCAT('%', :#{#cond.q}, '%')
+              )
+          AND  (
+                 :#{#cond.categoryIds == null || #cond.categoryIds.isEmpty()} = TRUE
+              OR p.category_id IN (:#{#cond.categoryIds})
+              )
+        """,
             nativeQuery = true)
-    Page<Post> searchPosts(@Param("cond") SearchCond cond, Pageable pageable);
-
+    Page<Post> searchPosts(
+            @Param("cond") SearchCond cond,
+            Pageable pageable
+    );
 }
