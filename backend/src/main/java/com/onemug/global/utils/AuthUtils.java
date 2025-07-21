@@ -7,6 +7,8 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 // OAuth2User와 UserDetails 모두에게 userId를 추출할 수 있게 하는 유틸 클래스
 public class AuthUtils {
     public static Long extractUserId(Object principal, UserRepository userRepository) {
+        System.out.println("PRINCIPAL CLASS = " + (principal != null ? principal.getClass() : "null"));
+        System.out.println("PRINCIPAL VALUE = " + principal);
         if (principal instanceof OAuth2User oAuth2User) {
             return userRepository.findByEmail(oAuth2User.getAttribute("email"))
                     .orElseThrow()

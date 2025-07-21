@@ -1,7 +1,7 @@
 import React, { useState } from "react"
 import { useNavigate, useLocation } from "react-router-dom"
 import { ChevronDown, Upload } from "lucide-react"
-
+import axios from "@/lib/axios";
 
 const CreatePostPublish = () => {
   const navigate = useNavigate()
@@ -12,9 +12,6 @@ const CreatePostPublish = () => {
   const [showVisibilityDropdown, setShowVisibilityDropdown] = useState(false)
   const [thumbnail, setThumbnail] = useState(null)
   const [thumbnailPreview, setThumbnailPreview] = useState(null)
-
-  // 로그인 정보로 creatorId를 가져왔다고 가정
-  const creatorId = 4
 
   const visibilityOptions = [
     { value: "public", label: "전체 공개" },
@@ -54,36 +51,40 @@ const CreatePostPublish = () => {
     const postData = {
       title,
       categoryId,
-      content,
-      creatorId
+      content
       // 필요에 따라 PostCreateRequestDto에 맞게 필드 추가
     };
 
-    try {
-      const response = await fetch('http://localhost:8080/c/post/add', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          // 인증이 필요하면 예를 들어 토큰 추가
-          // 'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify(postData),
-        credentials: 'include', // 쿠키 기반 인증이면 포함
-      });
+    console.log(postData);
 
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Post created:', data);
-        navigate('/creator/dashboard');
-      } else {
-        // 에러 처리
-        console.error('Failed to create post:', response.status);
-        // 필요하면 사용자에게 알림 등
-      }
+    try {
+      const response = await axios.post(
+          'http://localhost:8080/c/post/add',
+          postData,
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              // 'Authorization': `Bearer ${token}`, // 필요시 토큰
+            },
+            withCredentials: true, // 쿠키 인증이면 이 옵션 필수
+          }
+      );
+
+      console.log('Post created:', response.data);
+      navigate('/creator/dashboard');
     } catch (error) {
-      console.error('Error while creating post:', error);
+      if (error.response) {
+        // 서버가 4xx, 5xx 에러 응답을 보냈을 때
+        console.error('Failed to create post:', error.response.status);
+      } else if (error.request) {
+        // 요청은 되었지만 응답이 없는 경우
+        console.error('No response from server:', error.request);
+      } else {
+        // 요청 설정 중 에러
+        console.error('Error setting up request:', error.message);
+      }
     }
-  };
+  }
 
   const handleCancel = () => {
     navigate("/creator/dashboard")

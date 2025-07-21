@@ -14,7 +14,4 @@ public class PostCreateRequestDto {
 
     @NotNull
     private Long categoryId;
-
-    @NotNull
-    private Long creatorId;
 }

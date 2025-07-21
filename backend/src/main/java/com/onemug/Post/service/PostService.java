@@ -1,7 +1,6 @@
 package com.onemug.Post.service;
 
 import com.onemug.Post.dto.PostCreateRequestDto;
-import com.onemug.Post.dto.PostResponseDTO;
 import com.onemug.Post.dto.PostUpdateRequestDto;
 import com.onemug.Post.repository.PostRepository;
 import com.onemug.global.entity.Category;
@@ -29,7 +28,7 @@ public class PostService {
         return postRepository.findById(id).orElse(null);
     }
 
-    public PostResponseDTO writePost(PostCreateRequestDto dto, Long creatorId) {
+    public Post writePost(PostCreateRequestDto dto, Long creatorId) {
         Creator creator = creatorRegisterRepository.findById(creatorId).orElseThrow();
 
         Post post = Post.builder()
@@ -38,16 +37,13 @@ public class PostService {
                 .category(new Category(dto.getCategoryId(), "커피", 0, null))
                 .creator(creator)
                 .build();
-        postRepository.save(post);
-
-        return PostResponseDTO.from(post);
+        return postRepository.save(post);
     }
 
-    public PostResponseDTO updatePost(Long id, PostUpdateRequestDto dto) {
+    public Post updatePost(Long id, PostUpdateRequestDto dto) {
         Post post = getPost(id);
         post.update(dto.getTitle(), dto.getContent());
-        Post saved = postRepository.save(post);
-        return PostResponseDTO.from(saved);
+        return postRepository.save(post);
     }
     public void deletePost(Long id) {
         postRepository.deleteById(id);

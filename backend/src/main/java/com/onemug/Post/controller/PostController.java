@@ -4,7 +4,7 @@ import com.onemug.Post.dto.PostCreateRequestDto;
 import com.onemug.Post.dto.PostResponseDTO;
 import com.onemug.Post.dto.PostUpdateRequestDto;
 import com.onemug.Post.service.PostService;
-import com.onemug.global.utils.AuthUtils;
+import com.onemug.global.entity.Creator;
 import com.onemug.global.entity.Post;
 import com.onemug.newcreator.repository.CreatorRegisterRepository;
 import com.onemug.user.repository.UserRepository;
@@ -15,7 +15,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequiredArgsConstructor
@@ -39,21 +41,34 @@ public class PostController {
     }
 
     @PostMapping("/c/post/add")
-    public ResponseEntity<PostResponseDTO> writePost(@RequestBody PostCreateRequestDto dto, @AuthenticationPrincipal Object principal) {
-        Long creatorId = AuthUtils.extractUserId(principal, userRepository);
+    public ResponseEntity<PostResponseDTO> writePost(@RequestBody PostCreateRequestDto dto, @AuthenticationPrincipal Jwt jwt) {
+        System.out.println("=== JWT PRINCIPAL ===");
+        System.out.println(jwt);
+        System.out.println("Token Value = " + jwt.getTokenValue());
+        System.out.println("Claims = " + jwt.getClaims());
+
+        Long userId = Long.parseLong(jwt.getSubject()); // sub == userId
+
+        // userId로 creator 조회
+        Creator creator = creatorRegisterRepository.findByUserId(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Creator not found"));
+
+        Long creatorId = creator.getId();
 
         if (!creatorRegisterRepository.existsById(creatorId)) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }
 
-        PostResponseDTO response = postService.writePost(dto, creatorId);
+        Post post = postService.writePost(dto, creatorId);
+        PostResponseDTO response = PostResponseDTO.from(post);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @PutMapping("/c/post/update/{id}")
     public ResponseEntity<PostResponseDTO> updatePost(@PathVariable Long id,
                                                       @RequestBody PostUpdateRequestDto dto) {
-        PostResponseDTO updatedPost = postService.updatePost(id, dto);
+        Post post = postService.updatePost(id, dto);
+        PostResponseDTO updatedPost = PostResponseDTO.from(post);
         return ResponseEntity.ok(updatedPost);
     }
 
