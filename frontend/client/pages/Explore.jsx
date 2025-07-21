@@ -8,7 +8,7 @@ import Sidebar from "../components/Sidebar";
 import api from "@shared/api";
 
 const PAGE_SIZE = 20;
-const userId = localStorage.getItem("userId");
+// const userId = localStorage.getItem("userId");
 
 const categories = [
   { id: null, label: "전체" },
@@ -28,9 +28,15 @@ const Explore = () => {
   const navigate = useNavigate();
 
   const fetchFeed = async ({ pageParam = 0 }) => {
+    const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+    console.log("JWT Token:", token);
+
+    const headers = {
+      Authorization: `Bearer ${token}`,
+    };
     // 탐색 모드 기본 파라미터
     const exploreParams = new URLSearchParams();
-    exploreParams.append("user", userId);
+    // exploreParams.append("user", userId);
     if (activeCategory !== null) {
       exploreParams.append("category", activeCategory);
     }
@@ -41,7 +47,7 @@ const Explore = () => {
     const raw = query.trim();
     // 공백만 입력된 상태면 탐색 모드 그대로
     if (!raw) {
-      const { data } = await api.get("/explore", { params: exploreParams });
+      const { data } = await api.get("/explore", { params: exploreParams, headers, });
       return data;
     }
 
@@ -56,7 +62,7 @@ const Explore = () => {
     searchParams.append("size", PAGE_SIZE);
 
 
-    const { data } = await api.get("/search", { params: searchParams });
+    const { data } = await api.get("/search", { params: searchParams, headers, });
     return data;
   };
 
