@@ -3,6 +3,14 @@ import { useNavigate } from "react-router-dom"
 import CreatorSidebar from "../components/CreatorSidebar"
 import { set } from "date-fns"
 
+function formatLocalDateTimeToShortDate(dateTimeString) {
+  const date = new Date(dateTimeString);
+  const year = date.getFullYear().toString().slice(2); // "25"
+  const month = String(date.getMonth() + 1).padStart(2, '0'); // "07"
+  const day = String(date.getDate()).padStart(2, '0'); // "21"
+  return `${year}.${month}.${day}`;
+}
+
 const CreatorInsights = () => {
   const navigate = useNavigate()
   const [selectedPeriod, setSelectedPeriod] = useState("30")
@@ -20,9 +28,9 @@ const CreatorInsights = () => {
   const [viewsData, setViewsData] = useState({
     total: "28,533",
     chartData: [
-      { month: "10월", height: 31 }, // pastPastIncome 차트 데이터에 맞춰
-      { month: "11월", height: 35 }, // pastIncome
-      { month: "12월", height: 38 } // currentIncome
+      { time: "10월", value: 31 }, // pastPastIncome 차트 데이터에 맞춰
+      { time: "11월", value: 35 }, // pastIncome
+      { time: "12월", value: 38 } // currentIncome
     ]
   })
 
@@ -36,10 +44,8 @@ const CreatorInsights = () => {
     }).then(data => {
       console.log("받은 데이터",data)
       // 여기에 받은 데이터를 상태로 설정하거나 필요한 작업을 수행
-
-
       setMembershipData({
-        total: data.currentIncome
+        total: data.incomes.total
       })
       setSubscribersData({
         total: data.totalSubscribers,
@@ -50,17 +56,7 @@ const CreatorInsights = () => {
       })
       setViewsData({
         total: data.currentViews,
-        chartData: [
-          //todo: 이부분 구체화
-          { month: "10월", height: 31 }, // pastPastIncome 차트 데이터에 맞춰
-          { month: "11월", height: 8 }, // pastIncome
-          { month: "11월", height: 5 }, // pastIncome
-          { month: "11월", height: 7 }, // pastIncome
-          { month: "11월", height: 10 }, // pastIncome
-          { month: "11월", height: 20 }, // pastIncome
-          { month: "11월", height: 35 }, // pastIncome
-          { month: "12월", height: 38 } // currentIncome
-        ]
+        chartData: data.views_chartData
       })
     })
   }, [selectedPeriod])
@@ -83,11 +79,10 @@ const CreatorInsights = () => {
   // 막대그래프 chartData 처리
   const chartBarMaxHeight = 200 // px, 가장 높은 막대의 높이
   const chartData = viewsData.chartData
-  const maxValue = Math.max(...chartData.map(item => item.height))
-  const middleValue = Math.floor(maxValue / 2);
+  const maxValue = Math.max(...chartData.map(item => item.value))
   const normalizedChartData = chartData.map(item => ({
     ...item,
-    barHeight: Math.round((item.height / maxValue) * chartBarMaxHeight)
+    barHeight: Math.round((item.value / maxValue) * chartBarMaxHeight)
   }))
 
   return (
@@ -133,7 +128,7 @@ const CreatorInsights = () => {
                   총 멤버십 수입
                 </h3>
                 <div className="text-2xl font-bold text-gray-900 mb-2">
-                  {membershipData.total}
+                  {membershipData.total+"원"}
                 </div>
                 <div className="text-sm text-gray-500 mb-4">
                   기간 : {selectedPeriod} 일
@@ -146,7 +141,7 @@ const CreatorInsights = () => {
                   총 구독자
                 </h3>
                 <div className="text-2xl font-bold text-gray-900 mb-2">
-                  {subscribersData.total}
+                  {subscribersData.total+"명"}
                 </div>
                 <div className="text-sm text-gray-500 mb-6">
                   기간 : {selectedPeriod} 일
@@ -191,14 +186,14 @@ const CreatorInsights = () => {
                   {normalizedChartData.map((item, index) => (
                     <div key={index} className="flex flex-col items-center">
                       <span className="text-xs text-gray-500">
-                        {item.height}
+                        {item.value}
                       </span>
                       <div
                         className="w-4 bg-brand-primary rounded-sm mb-1"
                         style={{ height: `${item.barHeight}px` }}
                       />
                       <span className="text-xs text-gray-500">
-                        {item.month}
+                        {formatLocalDateTimeToShortDate(item.time)}
                       </span>
                     </div>
                   ))}

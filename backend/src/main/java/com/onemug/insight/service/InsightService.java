@@ -39,12 +39,12 @@ public class InsightService {
         LocalDateTime startDate = LocalDateTime.now().minusDays(days);;
 
 
-        Map<String, Integer> viewsMap = getViews(creatorId,startDate, days);
+        List<Map<String, Object>> chartData = getViews(creatorId,startDate, days);
         Map<String, Integer> incomeMap = getIncome(creatorId, startDate);
         Map<String, Integer> currentSubscribers = getCurrentSubscribers(creatorId, startDate);
 
         // 조회수 수집
-        response.put("views_chartData", viewsMap); // 현재 기간 조회수
+        response.put("views_chartData", chartData); // 현재 기간 조회수
         // 멤버십 수입 수집
         response.put("incomes", incomeMap); // 멤버십 수입(~일간)
 
@@ -98,22 +98,31 @@ public class InsightService {
         return incomeMap;
     }
 
-    private Map<String, Integer> getViews(Long creatorId, LocalDateTime startDate, Long days) {
-        Map<String, Integer> viewsMap = new  HashMap<>();
+    private List<Map<String, Object>> getViews(Long creatorId, LocalDateTime startDate, Long days) {
+        List<Map<String, Object>> mapList = new ArrayList<>();
+        Map<String, Object> viewsMap = new  HashMap<>();
 
         Integer currentViews = postViewLogRepository.countPostViewLogsByCreatorIdAndStartDate(creatorId, startDate);
-        viewsMap.put("period1", currentViews);
+        viewsMap.put("time", startDate.plusDays(days));
+        viewsMap.put("value", currentViews);
 
-        for (int i = 1; i <= 7; i++){
-            String key = "period" + (i+1);
+        mapList.add(viewsMap);
+
+        for (int i = 0; i <= 6; i++){
+            viewsMap = new HashMap<>();
+
             Integer current = postViewLogRepository
                     .countPostViewLogsByCreatorIdAndStartDate(creatorId, startDate.minusDays(i * days));
 
             Integer past = postViewLogRepository
-                    .countPostViewLogsByCreatorIdAndStartDate(creatorId, startDate.minusDays(i+1 * days));
+                    .countPostViewLogsByCreatorIdAndStartDate(creatorId, startDate.minusDays((i+1) * days));
 
-            viewsMap.put(key, current - past);
+            viewsMap.put("time", startDate.minusDays((i)*days));
+            viewsMap.put("value", past - current);
+
+            mapList.add(viewsMap);
         }
-        return viewsMap;
+
+        return mapList;
     }
 }
