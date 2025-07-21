@@ -25,6 +25,11 @@ public class Membership {
     @JoinColumn(name = "creator_id")
     private Creator creator;
     private LocalDateTime createdAt;
+
+    //G1
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User user;
     
     // 추가 필드들
     private String status;
@@ -35,6 +40,12 @@ public class Membership {
     @OneToMany
     private List<Benefit> benefitList = new ArrayList<>();
 
+
+    // ★ G1
+    @Column(name = "is_template")
+    private Boolean isTemplate;
+
+
     // creatorName을 동적으로 가져오는 메서드
     public String getCreatorName() {
         if (creator != null && creator.getUser() != null) {
@@ -42,4 +53,5 @@ public class Membership {
         }
         return "Unknown Creator";
     }
+
 }

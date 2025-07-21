@@ -1,4 +1,3 @@
-// src/main/java/com/onemug/Post/repository/PostRepository.java
 package com.onemug.Post.repository;
 
 import com.onemug.global.entity.Post;
@@ -11,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Set;
 
 @Repository
 public interface PostRepository extends JpaRepository<Post, Long> {
@@ -36,78 +36,79 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             Pageable pageable
     );
 
-    /** ─── Explore: 구독하지 않은 창작자의 글 (전체) ─── */
+    /** ─── Explore: 본인 글만 제외 (구독자 없음) ─── */
+    Page<Post> findAllByCreatorIdNot(Long creatorId, Pageable pageable);
+    Page<Post> findAllByCreatorIdNotAndCategoryId(Long creatorId, Long categoryId, Pageable pageable);
+
+    /** ─── Explore: 본인 + 구독자 글 제외 (구독자 있음, 전체) ─── */
     @Query("""
         select p
         from Post p
-        join p.creator c
-        left join c.subscriber s on s.id = :userId
-        where s.id is null
+        where p.creator.id <> :userId
+          and p.creator.id not in :subscribedCreatorIds
         order by p.viewCount desc, p.createdAt desc
-        """)
+    """)
     Page<Post> findExplorePosts(
             @Param("userId") Long userId,
+            @Param("subscribedCreatorIds") List<Long> subscribedCreatorIds,
             Pageable pageable
     );
 
-    /** ─── Explore: 구독하지 않은 창작자의 글 (카테고리 필터) ─── */
+    /** ─── Explore: 본인 + 구독자 글 제외 (구독자 있음, 카테고리 필터) ─── */
     @Query("""
         select p
         from Post p
-        join p.creator c
-        left join c.subscriber s on s.id = :userId
-        where s.id is null
+        where p.creator.id <> :userId
+          and p.creator.id not in :subscribedCreatorIds
           and p.category.id = :categoryId
         order by p.viewCount desc, p.createdAt desc
-        """)
+    """)
     Page<Post> findExplorePostsByCategory(
             @Param("userId") Long userId,
+            @Param("subscribedCreatorIds") List<Long> subscribedCreatorIds,
             @Param("categoryId") Long categoryId,
             Pageable pageable
     );
 
     /* ────────────────────── 🔍 FULLTEXT + LIKE 페일백 통합 검색 ───────────────────── */
     @Query(value = """
-        SELECT p.*
-        FROM   post p
-        JOIN   category c ON p.category_id = c.id
-        WHERE  (
-                 /* FULLTEXT (제목+내용) */
-                 MATCH(p.title, p.content) AGAINST (:#{#cond.q} IN BOOLEAN MODE)
-              OR MATCH(c.name)             AGAINST (:#{#cond.q} IN BOOLEAN MODE)
-                 /* AND 페일백: 제목/내용 LIKE */
-              OR p.title   LIKE CONCAT('%', :#{#cond.q}, '%')
-              OR p.content LIKE CONCAT('%', :#{#cond.q}, '%')
-              )
-          AND  (
-                 :#{#cond.categoryIds == null || #cond.categoryIds.isEmpty()} = TRUE
-              OR p.category_id IN (:#{#cond.categoryIds})
-              )
-        ORDER BY
-              /* FULLTEXT 스코어 가중치 합산 */
-              (MATCH(p.title, p.content) AGAINST (:#{#cond.q} IN BOOLEAN MODE)
-             + 2 * MATCH(c.name)         AGAINST (:#{#cond.q} IN BOOLEAN MODE)) DESC,
-              p.view_count DESC,
-              p.created_at DESC
-        """,
+    SELECT p.*
+    FROM   post p
+    JOIN   category c ON p.category_id = c.id
+    WHERE  (
+             MATCH(p.title, p.content) AGAINST (:q IN BOOLEAN MODE)
+          OR MATCH(c.name)             AGAINST (:q IN BOOLEAN MODE)
+          OR p.title   LIKE CONCAT('%', :q, '%')
+          OR p.content LIKE CONCAT('%', :q, '%')
+          )
+      AND  (
+             :categoryIds IS NULL
+          OR p.category_id IN (:categoryIds)
+          )
+    ORDER BY p.view_count DESC, p.created_at DESC
+    """,
             countQuery = """
-        SELECT COUNT(*)
-        FROM   post p
-        JOIN   category c ON p.category_id = c.id
-        WHERE  (
-                 MATCH(p.title, p.content) AGAINST (:#{#cond.q} IN BOOLEAN MODE)
-              OR MATCH(c.name)             AGAINST (:#{#cond.q} IN BOOLEAN MODE)
-              OR p.title   LIKE CONCAT('%', :#{#cond.q}, '%')
-              OR p.content LIKE CONCAT('%', :#{#cond.q}, '%')
-              )
-          AND  (
-                 :#{#cond.categoryIds == null || #cond.categoryIds.isEmpty()} = TRUE
-              OR p.category_id IN (:#{#cond.categoryIds})
-              )
-        """,
+    SELECT COUNT(*)
+    FROM   post p
+    JOIN   category c ON p.category_id = c.id
+    WHERE  (
+             MATCH(p.title, p.content) AGAINST (:q IN BOOLEAN MODE)
+          OR MATCH(c.name)             AGAINST (:q IN BOOLEAN MODE)
+          OR p.title   LIKE CONCAT('%', :q, '%')
+          OR p.content LIKE CONCAT('%', :q, '%')
+          )
+      AND  (
+             :categoryIds IS NULL
+          OR p.category_id IN (:categoryIds)
+          )
+    """,
             nativeQuery = true)
     Page<Post> searchPosts(
-            @Param("cond") SearchCond cond,
+            @Param("q") String q,
+            @Param("categoryIds") List<Long> categoryIds,
             Pageable pageable
     );
+
+
+
 }
