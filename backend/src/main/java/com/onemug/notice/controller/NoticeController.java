@@ -1,5 +1,4 @@
 package com.onemug.notice.controller;
-
 import com.onemug.notice.dto.NoticeInfoResponseDTO;
 import com.onemug.notice.service.NoticeService;
 import com.onemug.user.model.CustomUserDetails;
@@ -8,7 +7,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
 import java.util.Map;
 

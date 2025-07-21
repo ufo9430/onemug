@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import {
@@ -9,11 +10,13 @@ import {
   Settings,
   Home,
   CheckSquare,
+
 } from "lucide-react"
 
 const Sidebar = ({ profile = {}, activeItem }) => {
   const navigate = useNavigate()
   const [hasUnread, setHasUnread] = useState(false)
+
 
   useEffect(() => {
     fetch("http://localhost:8080/notice/api/unread", {
@@ -100,6 +103,7 @@ const Sidebar = ({ profile = {}, activeItem }) => {
         </nav>
       </div>
 
+
       {/* Bottom Action */}
       <div className="p-4 border-t">
         {profile.isCreator ? (
@@ -126,7 +130,7 @@ const Sidebar = ({ profile = {}, activeItem }) => {
         )}
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default Sidebar
+export default Sidebar;

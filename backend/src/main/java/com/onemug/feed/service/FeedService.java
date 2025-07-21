@@ -21,10 +21,14 @@ public class FeedService {
 
     public Page<PostDto> getFeed(Long userId, Pageable pageable) {
 
-        // 1. 구독한 Creator ID 꺼내오기
+        //  구독한 Creator ID 꺼내오기
         List<Long> creatorIds = creatorRepo.findCreatorIdsBySubscriberId(userId);
-        if (creatorIds.isEmpty()) return Page.empty(pageable);
 
+        if (creatorIds.isEmpty()) {
+            return Page.empty(pageable);
+        }
+
+        //  구독된 크리에이터 글 조회 후 DTO 변환
         return postRepo
                 .findByCreatorIdInOrderByCreatedAtDesc(creatorIds, pageable)
                 .map(p -> PostDto.builder()

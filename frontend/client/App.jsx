@@ -12,7 +12,7 @@ import EmailStep from "./pages/register/EmailStep"
 import PasswordStep from "./pages/register/PasswordStep"
 import NicknameStep from "./pages/register/NicknameStep"
 import Feed from "./pages/Feed"
-import Search from "./pages/Search"
+import Explore from "./pages/Explore" 
 import PostDetail from "./pages/PostDetail"
 import Messages from "./pages/Messages"
 import Conversation from "./pages/Conversation"
@@ -48,6 +48,21 @@ const App = () => (
           <Route path="/register/email" element={<EmailStep />} />
           <Route path="/register/password" element={<PasswordStep />} />
           <Route path="/register/nickname" element={<NicknameStep />} />
+          <Route path="/feed" element={<Feed />} />
+          <Route
+            path="/feed/creator"
+            element={<Feed hasCreatorAccount={true} />}
+          />
+          <Route path="/explore" element={<Explore />} />
+          <Route path="/messages" element={<Messages />} />
+          <Route path="/messages/:conversationId" element={<Conversation />} />
+          <Route path="/Membership/creator/:creatorId" element={<Membership />} />
+          <Route path="/notifications" element={<Notifications />} />
+          <Route path="/subscriptions" element={<Subscriptions />} />
+          <Route path="/bookmarks" element={<Bookmarks />} />
+          <Route path="/recent" element={<Recent />} />
+          <Route path="/settings" element={<Settings />} />
+          <Route path="/post/:id" element={<PostDetail />} />
           <Route path="/creator/signup" element={<CreatorSignup />} />
           {/* 일반 기능 레이아웃 */}
           <Route element={<SidebarLayout />}>
