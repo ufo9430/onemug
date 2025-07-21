@@ -37,9 +37,9 @@ public class SecurityConfig {
                 })  // csrf 활성화
                 .cors(Customizer.withDefaults()) // cors 활성화
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/search/**", "/explore/**", "/feed/**").permitAll()
-                        .anyRequest().authenticated()
+                        .anyRequest().permitAll()
+                        // .anyRequest().authenticated()
                 );
         http
                 .sessionManagement(session -> session.
