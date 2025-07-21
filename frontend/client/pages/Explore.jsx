@@ -8,7 +8,7 @@ import Sidebar from "../components/Sidebar";
 import api from "@shared/api";
 
 const PAGE_SIZE = 20;
-const DEV_USER_ID = 101; // TODO: 실제 로그인 유저 ID로 교체
+const userId = localStorage.getItem("userId");
 
 const categories = [
   { id: null, label: "전체" },
@@ -30,7 +30,7 @@ const Explore = () => {
   const fetchFeed = async ({ pageParam = 0 }) => {
     // 탐색 모드 기본 파라미터
     const exploreParams = new URLSearchParams();
-    exploreParams.append("user", DEV_USER_ID);
+    exploreParams.append("user", userId);
     if (activeCategory !== null) {
       exploreParams.append("category", activeCategory);
     }

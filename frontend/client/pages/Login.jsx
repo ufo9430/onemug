@@ -37,6 +37,12 @@ export default function Login() {
       });
 
       const token = response.data.token;
+      if (rememberMe) {
+        localStorage.setItem("token", token);
+      } else {
+        sessionStorage.setItem("token", token);
+      }
+
 
       localStorage.removeItem("token");
       sessionStorage.removeItem("token");
