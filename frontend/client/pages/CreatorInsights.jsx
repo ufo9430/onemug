@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
-import CreatorSidebar from "../components/CreatorSidebar"
 import { set } from "date-fns"
 
 function formatLocalDateTimeToShortDate(dateTimeString) {
@@ -36,31 +35,31 @@ const CreatorInsights = () => {
 
   useEffect(() => {
     fetch(`http://localhost:8080/c/insight?days=${selectedPeriod}`)
-    .then(response => {
-      if (!response.ok) {
-        throw new Error("Network response was not ok")
-      }
-      return response.json()
-    }).then(data => {
-      console.log("받은 데이터",data)
-      // 여기에 받은 데이터를 상태로 설정하거나 필요한 작업을 수행
-      setMembershipData({
-        total: data.incomes.total
-      })
-      setSubscribersData({
-        total: data.totalSubscribers,
-        breakdown: Object.entries(data.subscribers).map(([type, count]) => {
-          let color = "#591600"
-          return { type, count: `${count}명`, color }
+      .then(response => {
+        if (!response.ok) {
+          throw new Error("Network response was not ok")
+        }
+        return response.json()
+      }).then(data => {
+        console.log("받은 데이터", data)
+        // 여기에 받은 데이터를 상태로 설정하거나 필요한 작업을 수행
+        setMembershipData({
+          total: data.incomes.total
+        })
+        setSubscribersData({
+          total: data.totalSubscribers,
+          breakdown: Object.entries(data.subscribers).map(([type, count]) => {
+            let color = "#591600"
+            return { type, count: `${count}명`, color }
+          })
+        })
+        setViewsData({
+          total: data.currentViews,
+          chartData: data.views_chartData
         })
       })
-      setViewsData({
-        total: data.currentViews,
-        chartData: data.views_chartData
-      })
-    })
   }, [selectedPeriod])
-  
+
   // Mock data for insights
   //   {
   //   "currentIncome": 0,
@@ -87,8 +86,6 @@ const CreatorInsights = () => {
 
   return (
     <div className="min-h-screen bg-brand-secondary flex">
-      {/* Creator Sidebar */}
-      <CreatorSidebar activeItem="insights" />
 
       {/* Main Content */}
       <div className="flex-1">
@@ -109,11 +106,10 @@ const CreatorInsights = () => {
                 <button
                   key={period.value}
                   onClick={() => setSelectedPeriod(period.value)}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    selectedPeriod === period.value
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${selectedPeriod === period.value
                       ? "bg-brand-primary text-white"
                       : "bg-gray-50 text-gray-600 hover:bg-gray-100"
-                  }`}
+                    }`}
                 >
                   {period.label}
                 </button>
@@ -121,77 +117,56 @@ const CreatorInsights = () => {
             </div>
 
             {/* Metrics Cards - vertical layout */}
+            {/* Metrics Cards - horizontal for income + subscribers, vertical for views */}
             <div className="flex flex-col gap-6">
-              {/* Membership Income Card */}
-              <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-                <h3 className="text-base font-semibold text-gray-900 mb-4">
-                  총 멤버십 수입
-                </h3>
-                <div className="text-2xl font-bold text-gray-900 mb-2">
-                  {membershipData.total+"원"}
+              {/* 1. 수입 + 구독자 가로 정렬 */}
+              <div className="flex flex-col lg:flex-row gap-6">
+                {/* Membership Income Card */}
+                <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 flex-1">
+                  <h3 className="text-base font-semibold text-gray-900 mb-4">총 멤버십 수입</h3>
+                  <div className="text-2xl font-bold text-gray-900 mb-2">
+                    {membershipData.total + "원"}
+                  </div>
+                  <div className="text-sm text-gray-500 mb-4">
+                    기간 : {selectedPeriod} 일
+                  </div>
                 </div>
-                <div className="text-sm text-gray-500 mb-4">
-                  기간 : {selectedPeriod} 일
-                </div>
-              </div>
 
-              {/* Subscribers Card */}
-              <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-                <h3 className="text-base font-semibold text-gray-900 mb-4">
-                  총 구독자
-                </h3>
-                <div className="text-2xl font-bold text-gray-900 mb-2">
-                  {subscribersData.total+"명"}
-                </div>
-                <div className="text-sm text-gray-500 mb-6">
-                  기간 : {selectedPeriod} 일
-                </div>
-                {/* Subscriber Breakdown */}
-                <div className="space-y-3">
-                  {subscribersData.breakdown.map((item, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center justify-between"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div
-                          className="w-3 h-3 rounded-full"
-                          style={{ backgroundColor: item.color }}
-                        />
-                        <span className="text-sm text-gray-600">
-                          {item.type}
-                        </span>
+                {/* Subscribers Card */}
+                <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 flex-1">
+                  <h3 className="text-base font-semibold text-gray-900 mb-4">총 구독자</h3>
+                  <div className="text-2xl font-bold text-gray-900 mb-2">
+                    {subscribersData.total + "명"}
+                  </div>
+                  <div className="text-sm text-gray-500 mb-6">
+                    기간 : {selectedPeriod} 일
+                  </div>
+                  <div className="space-y-3">
+                    {subscribersData.breakdown.map((item, index) => (
+                      <div key={index} className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
+                          <span className="text-sm text-gray-600">{item.type}</span>
+                        </div>
+                        <span className="text-sm font-semibold text-gray-900">{item.count}</span>
                       </div>
-                      <span className="text-sm font-semibold text-gray-900">
-                        {item.count}
-                      </span>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               </div>
 
-              {/* Views Card */}
+              {/* 2. 조회수 세로 정렬 */}
               <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-                <h3 className="text-base font-semibold text-gray-900 mb-2">
-                  총 조회수
-                </h3>
+                <h3 className="text-base font-semibold text-gray-900 mb-2">총 조회수</h3>
                 <div className="text-sm text-gray-500 mb-2">
                   단위 기간 : {selectedPeriod} 일
                 </div>
-                <div className="text-2xl font-bold text-gray-900 mb-2">
-                  {viewsData.total}
-                </div>
-                {/* Mini Bar Chart */}
+                <div className="text-2xl font-bold text-gray-900 mb-2">{viewsData.total}</div>
                 <div className="bg-gray-50 rounded-lg mt-3 p-4 h-64 flex items-end justify-between gap-8">
                   {normalizedChartData.map((item, index) => (
                     <div key={index} className="flex flex-col items-center">
-                      <span className="text-xs text-gray-500">
-                        {item.value}
-                      </span>
-                      <div
-                        className="w-4 bg-brand-primary rounded-sm mb-1"
-                        style={{ height: `${item.barHeight}px` }}
-                      />
+                      <span className="text-xs text-gray-500">{item.value}</span>
+                      <div className="w-4 bg-brand-primary rounded-sm mb-1" style={{ height: `${item.barHeight}px` }} />
                       <span className="text-xs text-gray-500">
                         {formatLocalDateTimeToShortDate(item.time)}
                       </span>
