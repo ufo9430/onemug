@@ -43,13 +43,12 @@ public class SecurityConfig {
                         )
                         .successHandler((request, response, authentication) -> {
                             OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
-
                             String token = (String) oAuth2User.getAttributes().get("token");
 
-                            response.setContentType("application/json");
-                            response.setCharacterEncoding("UTF-8");
-                            response.getWriter().write("{\"token\": \"" + token + "\"}");
+                            String redirectUrl = "http://localhost:8081/oauth2/callback?token=" + token;
+                            response.sendRedirect(redirectUrl);
                         })
+
                 );
         http.
                 oauth2ResourceServer(oauth2 -> oauth2

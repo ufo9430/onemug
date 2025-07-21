@@ -22,7 +22,7 @@ public class User {
 
     @Builder.Default
     @Column(name = "profile_url")
-    private String profileUrl = "/images/default-profile.jpg";
+    private String profileUrl = "/image/profile/default-profile.jpg";
 
     @OneToMany
     private List<Membership> subscribed = new ArrayList<>();

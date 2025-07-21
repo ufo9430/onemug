@@ -1,6 +1,6 @@
 package com.onemug.user.controller;
 
-import com.onemug.global.entity.User;
+import com.onemug.user.dto.UserUpdateRequestDto;
 import com.onemug.user.model.CustomUserDetails;
 import com.onemug.user.service.CustomUserDetailsService;
 import com.onemug.user.service.UserService;
@@ -25,10 +25,17 @@ public class UserController {
 
     private final CustomUserDetailsService userDetailsService;
 
+    // 내 정보 조회
+    @GetMapping("/me")
+    public ResponseEntity<?> findByMyId(Authentication authentication) {
+        Long id = Long.valueOf(authentication.getName());
+        return ResponseEntity.ok(userService.findById(id));
+    }
+
     // 회원 정보 조회
-    @GetMapping("/{id}") 
-    public Optional<User> findById(@PathVariable Long id) {
-        return userService.findById(id);
+    @GetMapping("/{id}")
+    public ResponseEntity<?> findById(@PathVariable Long id) {
+        return ResponseEntity.ok(userService.findById(id));
     }
 
     //프로필 정보 리액트 전송용 api
@@ -49,9 +56,13 @@ public class UserController {
 
     // 회원 정보 수정
     @PreAuthorize("#id.toString() == authentication.name")
-    @PutMapping("/{id}") 
-    public User updateUser(@PathVariable Long id, @RequestBody User user) {
-        return userService.updateUser(id, user);
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody UserUpdateRequestDto userUpdateRequestDto) {
+        try {
+            return ResponseEntity.ok(userService.updateUser(id, userUpdateRequestDto));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
     }
 
     // 회원 삭제
