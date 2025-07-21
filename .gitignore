@@ -34,3 +34,4 @@ build/
 backend/src/main/resources/db.properties
 backend/src/main/resources/oauth.properties.DS_Store
 *.DS_Store
+.DS_Store
