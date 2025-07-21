@@ -84,7 +84,11 @@ const Feed = ({ hasCreatorAccount = false }) => {
     queryFn: () =>                             // 실제 호출 함수
       api
         .get("/feed", { params: { user: userId, page: 0, size: 20 } })
-        .then(res => res.data),
+        .then(res => res.data)
+        .catch(err => {
+          console.error("피드 로드 실패:", err);
+          throw err;
+        }),
     staleTime: 1000 * 60 * 5,                  // 5분 동안 신선 데이터로 간주
     keepPreviousData: true,                    // 페이지 전환 시 기존 데이터 유지
   })
@@ -102,10 +106,6 @@ const Feed = ({ hasCreatorAccount = false }) => {
   return (
     <div className="min-h-screen bg-brand-secondary flex">
 
- 
-      {/* Sidebar */}
-
-
       {/* 메인 */}
       <div className="flex-1">
         {/* 헤더 */}
@@ -119,20 +119,26 @@ const Feed = ({ hasCreatorAccount = false }) => {
         {/* 콘텐츠 */}
         <main className="bg-brand-secondary min-h-[calc(100vh-73px)] p-4 lg:p-8">
           <div className="max-w-4xl mx-auto space-y-6 lg:space-y-8">
-            {posts.map(post => (
-              <PostCard
-                key={post.id}
-                id={post.id}
-                title={post.title}
-                excerpt={post.content?.slice(0, 100) + "…"}
-                author={post.creatorNickname}
-                category={post.categoryName || "카테고리 미정"}
-                likes={post.likeCount}
-                comments={post.commentCount || 0}
-                image={post.coverImageUrl || "/placeholder.svg"}
-                authorAvatar={post.creatorAvatarUrl}
-              />
-            ))}
+            {posts.length === 0 ? (
+              <div className="py-16 text-center text-gray-500 text-lg">
+                좋아하는 창작자를 구독해보세요
+              </div>
+            ) : (
+              posts.map(post => (
+                <PostCard
+                  key={post.id}
+                  id={post.id}
+                  title={post.title}
+                  excerpt={post.content?.slice(0, 100) + "…"}
+                  author={post.creatorNickname}
+                  category={post.categoryName || "카테고리 미정"}
+                  likes={post.likeCount}
+                  comments={post.commentCount || 0}
+                  image={post.coverImageUrl || "/placeholder.svg"}
+                  authorAvatar={post.creatorAvatarUrl}
+                />
+              ))
+            )}
           </div>
         </main>
       </div>
