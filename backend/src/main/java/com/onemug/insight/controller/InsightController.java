@@ -3,8 +3,10 @@ package com.onemug.insight.controller;
 import com.onemug.insight.service.InsightService;
 import com.onemug.user.model.CustomUserDetails;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
@@ -22,11 +24,11 @@ public class InsightController {
 
     @GetMapping
     public ResponseEntity<Map<String,Object>> getInsights(@RequestParam Long days, Authentication authentication){
-        Long userId = 1L; //todo: 임시
-        if(authentication != null){
-            CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-            userId = userDetails.getUser().getId();
+        if (authentication == null || !(authentication.getPrincipal() instanceof Jwt jwt)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
+
+        Long userId = Long.valueOf(authentication.getName());
 
         return ResponseEntity.ok(insightService.getInsights(userId, days));
     }
