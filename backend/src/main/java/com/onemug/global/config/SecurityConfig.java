@@ -69,7 +69,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration cfg = new CorsConfiguration();
         cfg.setAllowedOrigins(List.of(
-                "http://localhost:3000"           // ← 프론트 포트
+                "http://localhost:3000", "http://localhost:8081"           // ← 프론트 포트
         ));
         cfg.setAllowedMethods(List.of("*"));  // GET, POST 등 모두 허용
         cfg.setAllowedHeaders(List.of("*"));  // 모든 헤더 허용
