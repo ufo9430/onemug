@@ -47,13 +47,14 @@ const Explore = () => {
 
     // 검색 모드: Boolean 모드 접두사 검색(*) 적용
     const searchParams = new URLSearchParams();
-    searchParams.append("cond.q", `${raw}*`);
+    searchParams.append("q", `${raw}*`);
     if (activeCategory !== null) {
-      searchParams.append("cond.categoryIds", activeCategory);
+       searchParams.append("categoryIds", activeCategory);
     }
-    searchParams.append("cond.target", "POST");
+    searchParams.append("target", "POST");
     searchParams.append("page", pageParam);
     searchParams.append("size", PAGE_SIZE);
+
 
     const { data } = await api.get("/search", { params: searchParams });
     return data;
@@ -104,7 +105,6 @@ const Explore = () => {
             className="flex-1 text-sm py-2 px-3 border border-gray-300 rounded-md"
             onChange={debounce((e) => setQuery(e.target.value), 300)}
           />
-          <h1 className="text-xl font-semibold text-gray-900">탐색</h1>
         </header>
 
         <main className="px-6 py-4">
@@ -145,6 +145,9 @@ const Explore = () => {
                 className="p-4 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer"
               >
                 <h2 className="text-lg font-semibold mb-2">{post.title}</h2>
+                <p className="text-xs text-gray-500 mb-1">
+                  {post.categoryName}
+                </p>
                 <p className="text-sm text-gray-600 mb-2">{post.summary}</p>
                 <div className="flex items-center space-x-4 text-sm text-gray-500">
                   <div className="flex items-center space-x-1">
