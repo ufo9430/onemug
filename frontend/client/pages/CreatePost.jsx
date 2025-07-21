@@ -9,20 +9,23 @@ const CreatePost = () => {
   const [category, setCategory] = useState("")
   const [content, setContent] = useState("")
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false)
+  const [selectedCategoryName, setSelectedCategoryName] = useState("");
 
-  const categories = [
-    "원두 · 기기 리뷰",
-    "카페 탐방",
-    "레시피 공유",
-    "창업/운영",
-    "홈카페 팁"
-  ]
+  const categoryMap = {
+    "원두 · 기기 리뷰": 1,
+    "카페 탐방": 2,
+    "레시피 공유": 3,
+    "창업/운영": 4,
+    "홈카페 팁": 5
+  }
+
+  const categoryId = categoryMap[selectedCategoryName];
 
   const handleNext = () => {
-    if (title && category && content) {
+    if (title && categoryId && content) {
       // Navigate to publishing options page
       navigate("/creator/post/publish", {
-        state: { title, category, content }
+        state: { title, categoryId, content }
       })
     }
   }
@@ -74,26 +77,26 @@ const CreatePost = () => {
                   className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-white text-left focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent flex items-center justify-between"
                 >
                   <span
-                    className={category ? "text-gray-900" : "text-gray-400"}
+                    className={categoryId ? "text-gray-900" : "text-gray-400"}
                   >
-                    {category || "카테고리를 선택하세요"}
+                    {selectedCategoryName || "카테고리를 선택하세요"}
                   </span>
                   <ChevronDown className="w-5 h-5 text-gray-400" />
                 </button>
 
                 {showCategoryDropdown && (
                   <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
-                    {categories.map(cat => (
-                      <button
-                        key={cat}
-                        onClick={() => {
-                          setCategory(cat)
-                          setShowCategoryDropdown(false)
-                        }}
-                        className="w-full px-4 py-3 text-left hover:bg-gray-50 first:rounded-t-lg last:rounded-b-lg"
-                      >
-                        {cat}
-                      </button>
+                    {Object.keys(categoryMap).map(cat => (
+                        <button
+                            key={cat}
+                            onClick={() => {
+                              setSelectedCategoryName(cat);
+                              setShowCategoryDropdown(false);
+                            }}
+                            className="w-full px-4 py-3 text-left hover:bg-gray-50 first:rounded-t-lg last:rounded-b-lg"
+                        >
+                          {cat}
+                        </button>
                     ))}
                   </div>
                 )}
@@ -141,7 +144,7 @@ const CreatePost = () => {
               </button>
               <button
                 onClick={handleNext}
-                disabled={!title || !category || !content}
+                disabled={!title || !categoryId || !content}
                 className="px-8 py-3 bg-brand-primary text-white rounded-lg text-lg font-medium hover:bg-brand-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 다음

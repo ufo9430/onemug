@@ -1,6 +1,6 @@
 package com.onemug.comment.service;
 
-import com.onemug.Post.controller.PostController;
+import com.onemug.Post.service.PostService;
 import com.onemug.comment.dto.CommentRequestDto;
 import com.onemug.comment.dto.CommentResponseDTO;
 import com.onemug.comment.repository.CommentRepository;
@@ -18,7 +18,7 @@ import java.util.List;
 public class CommentService {
     private final CommentRepository commentRepository;
     private final UserRepository userRepository;
-    private final PostController postService;
+    private final PostService postService;
 
     public List<Comment> getAllComment(Long postId) {
         return commentRepository.findByPost_idOrderByCreatedAtDesc(postId);

@@ -6,12 +6,15 @@ import CreatorSidebar from "../components/CreatorSidebar"
 const CreatePostPublish = () => {
   const navigate = useNavigate()
   const location = useLocation()
-  const { title, category, content } = location.state || {}
+  const { title, categoryId, content } = location.state || {}
 
   const [visibility, setVisibility] = useState("")
   const [showVisibilityDropdown, setShowVisibilityDropdown] = useState(false)
   const [thumbnail, setThumbnail] = useState(null)
   const [thumbnailPreview, setThumbnailPreview] = useState(null)
+
+  // 로그인 정보로 creatorId를 가져왔다고 가정
+  const creatorId = 4
 
   const visibilityOptions = [
     { value: "public", label: "전체 공개" },
@@ -22,10 +25,10 @@ const CreatePostPublish = () => {
 
   // Redirect if no content from previous step
   React.useEffect(() => {
-    if (!title || !category || !content) {
+    if (!title || !categoryId || !content) {
       navigate("/creator/post/new")
     }
-  }, [title, category, content, navigate])
+  }, [title, categoryId, content, navigate])
 
   const handleThumbnailUpload = event => {
     const file = event.target.files?.[0]
@@ -41,25 +44,46 @@ const CreatePostPublish = () => {
 
   const handlePrevious = () => {
     navigate("/creator/post/new", {
-      state: { title, category, content }
+      state: { title, categoryId, content }
     })
   }
 
-  const handlePublish = () => {
-    if (visibility) {
-      // Here you would typically send the data to your backend
-      console.log("Publishing post:", {
-        title,
-        category,
-        content,
-        visibility,
-        thumbnail
-      })
+  const handlePublish = async () => {
+    if (!visibility) return;
 
-      // Navigate back to dashboard after publishing
-      navigate("/creator/dashboard")
+    const postData = {
+      title,
+      categoryId,
+      content,
+      creatorId
+      // 필요에 따라 PostCreateRequestDto에 맞게 필드 추가
+    };
+
+    try {
+      const response = await fetch('http://localhost:8080/c/post/add', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          // 인증이 필요하면 예를 들어 토큰 추가
+          // 'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(postData),
+        credentials: 'include', // 쿠키 기반 인증이면 포함
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Post created:', data);
+        navigate('/creator/dashboard');
+      } else {
+        // 에러 처리
+        console.error('Failed to create post:', response.status);
+        // 필요하면 사용자에게 알림 등
+      }
+    } catch (error) {
+      console.error('Error while creating post:', error);
     }
-  }
+  };
 
   const handleCancel = () => {
     navigate("/creator/dashboard")
