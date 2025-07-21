@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import Sidebar from "@/components/Sidebar";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { ChevronDown } from "lucide-react";
@@ -128,7 +127,6 @@ export default function Notifications() {
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <Sidebar activeItem="notifications" />
 
       <div className="flex-1 flex flex-col w-full lg:w-auto">
         {/* Header */}

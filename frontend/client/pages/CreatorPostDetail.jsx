@@ -1,7 +1,6 @@
 import React, { useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import { Heart, MessageCircle, Edit, Trash2 } from "lucide-react"
-import CreatorSidebar from "../components/CreatorSidebar"
 import CommentsModal from "../components/CommentsModal"
 
 const RelatedPostCard = ({ id, title, category, likes, comments, image }) => {
@@ -72,8 +71,6 @@ const CreatorPostDetail = () => {
 
   return (
     <div className="min-h-screen bg-brand-secondary flex">
-      {/* Creator Sidebar */}
-      <CreatorSidebar activeItem="dashboard" />
 
       {/* Main Content */}
       <div className="flex-1">

@@ -1,5 +1,4 @@
 import React from "react"
-import Sidebar from "@/components/Sidebar"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { Heart, MessageCircle } from "lucide-react"
 
@@ -41,7 +40,6 @@ const mockPosts = [
 export default function Bookmarks() {
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <Sidebar activeItem="bookmarks" />
 
       <div className="flex-1 flex flex-col w-full lg:w-auto">
         {/* Header */}

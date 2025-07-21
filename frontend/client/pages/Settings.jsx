@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react"
-import Sidebar from "../components/Sidebar"
 import { Button } from "../components/ui/button"
 import { Input } from "../components/ui/input"
 import { Avatar, AvatarImage, AvatarFallback } from "../components/ui/avatar"
@@ -170,7 +169,6 @@ export default function Settings() {
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <Sidebar activeItem="settings" />
 
       <div className="flex-1 flex flex-col w-full lg:w-auto">
         {/* Header */}
