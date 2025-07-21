@@ -3,6 +3,9 @@ package com.onemug.global.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.ArrayList;
+import java.util.List;
+
 
 @Getter
 @Entity
@@ -17,7 +20,6 @@ public class Category {
     private String name;
     private Integer viewCount;
 
-    @OneToOne
-    @JoinColumn(name = "post_id")
-    private Post post;
+    @OneToMany(mappedBy = "category", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Post> post = new ArrayList<>();
 }

@@ -1,3 +1,4 @@
+// src/main/java/com/onemug/explore/controller/ExploreController.java
 package com.onemug.explore.controller;
 
 import com.onemug.explore.dto.ExplorePostDto;
@@ -22,10 +23,10 @@ public class ExploreController {
     @Operation(summary = "Explore – 구독 안 한 창작자 글 조회")
     @GetMapping
     public ResponseEntity<Page<ExplorePostDto>> explore(
-            @RequestParam("user") Long userId,           // 임시
+            @RequestParam("user") Long userId,                      // 로그인 유저 ID (임시)
             @RequestParam(value = "category", required = false) Long categoryId,
-            @ParameterObject Pageable pageable) {
-
+            @ParameterObject Pageable pageable
+    ) {
         Page<ExplorePostDto> body = exploreService.getExplorePosts(userId, categoryId, pageable);
         return ResponseEntity.ok(body);
     }

@@ -38,6 +38,7 @@ public class CustomUserDetailsService implements UserDetailsService {
         response.put("userId", userId);
         response.put("nickname", user.getNickname());
         response.put("profileUrl", user.getProfileUrl());
+
         response.put("email", user.getEmail());
         response.put("isCreator", isCreator);
         return response;
