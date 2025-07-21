@@ -48,6 +48,7 @@ const App = () => (
           <Route path="/register/email" element={<EmailStep />} />
           <Route path="/register/password" element={<PasswordStep />} />
           <Route path="/register/nickname" element={<NicknameStep />} />
+          <Route path="/creator/signup" element={<CreatorSignup />} />
           {/* 일반 기능 레이아웃 */}
           <Route element={<SidebarLayout />}>
             <Route path="/feed" element={<Feed />} />
@@ -68,7 +69,6 @@ const App = () => (
           </Route>
           {/* 창작자 기능 레이아웃 */}
           <Route element={<CreatorSidebarLayout />}>
-            <Route path="/creator/signup" element={<CreatorSignup />} />
             <Route path="/creator/dashboard" element={<CreatorDashboard />} />
             <Route path="/creator/insights" element={<CreatorInsights />} />
             <Route path="/creator/subscribers" element={<CreatorDashboard />} />
