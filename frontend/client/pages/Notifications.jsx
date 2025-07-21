@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { ChevronDown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { use } from "react";
+import axios from "@/lib/axios";
 
 // notice 응답 데이터 (response dto)
 // [
@@ -55,29 +55,24 @@ export default function Notifications() {
   const [notifications, setNotifications] = useState([]);
 
   useEffect(() => {
-    fetch("http://localhost:8080/notice", {
-      method: "GET",
-    })
+    axios
+      .get("/notice")
       .then((response) => {
-        if (!response.ok) {
-          throw new Error("서버 응답 실패");
-        }
-        return response.json();
-      })
-      .then((data) => {
+        const data = response.data;
         console.log("받은 데이터", data);
+
         const mapped = data.map((n) => ({
-          // 알림 데이터 매핑
-          id: n.noticeId, // 알림의 고유 ID (React key용 + 읽음 처리용)
-          title: `${n.targetUserNickname}님이 ${n.content}`, // 메시지 텍스트 조합 //content(noticeType의 메시지내용)
-          description: n.targetName, // 글 제목 or 멤버십 이름
-          targetId: n.targetId, // 상세페이지 이동용 (글 or 멤버십 ID)
-          timestamp: formatRelativeTime(n.createdAt), //createdAt을 변환해야함 (formatRelativeTime)
+          id: n.noticeId,
+          title: `${n.targetUserNickname}님이 ${n.content}`,
+          description: n.targetName,
+          targetId: n.targetId,
+          timestamp: formatRelativeTime(n.createdAt),
           avatar: n.targetUserProfileUrl,
-          isUnread: !n.read, // 읽지 않은 알림 여부
-          isRecent: checkIsRecent(n.createdAt), //createdAt을 변환해야함(checkIsRecent) //최근, 지난 알림 구분
-          type: n.noticeType, //알림 종류
+          isUnread: !n.read,
+          isRecent: checkIsRecent(n.createdAt),
+          type: n.noticeType,
         }));
+
         console.log("변환한 데이터", mapped);
         setNotifications(mapped);
       })
@@ -103,22 +98,14 @@ export default function Notifications() {
   // 모든 알림을 읽음 처리하는 함수
   // 이를 통해 UI에서 읽지 않은 알림 표시를 제거
   const handleMarkAllAsRead = () => {
-    // 백엔드에 모든 알림 읽음 처리 요청
-    // POST 요청을 보내어 모든 알림을 읽음 처리
-    fetch("http://localhost:8080/notice/read-all", {
-      method: "POST",
-    })
+    axios
+      .post("http://localhost:8080/notice/read-all")
       .then((response) => {
-        // 성공적으로 읽음 처리되면 프론트 상태 업데이트 (isUnread → false)
-        if (response.ok) {
-          console.log("성공");
-          setNotifications((prev) =>
-            prev.map((n) => ({ ...n, isUnread: false })),
-          );
-          location.reload();
-        } else {
-          console.log("오류발생");
-        }
+        console.log("성공");
+        setNotifications((prev) =>
+          prev.map((n) => ({ ...n, isUnread: false }))
+        );
+        location.reload();
       })
       .catch((error) => {
         console.error("Error marking all as read:", error);

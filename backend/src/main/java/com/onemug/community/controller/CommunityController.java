@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -24,16 +25,15 @@ public class CommunityController {
     private ChatRoomService chatRoomService;
 
     @GetMapping
-    public List<RecentChatResponseDTO> findChatRooms(HttpServletRequest request, HttpServletResponse response,
+    public ResponseEntity<List<RecentChatResponseDTO>> findChatRooms(HttpServletRequest request, HttpServletResponse response,
                                                      Authentication authentication) {
-        Long userId = 1L; //todo: 임시
-
-        if(authentication != null){
-            CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-            userId = userDetails.getUser().getId();
+        if (authentication == null || !(authentication.getPrincipal() instanceof Jwt jwt)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        return chatRoomService.browseChatrooms(userId);
+        Long userId = Long.valueOf(authentication.getName());
+
+        return ResponseEntity.ok(chatRoomService.browseChatrooms(userId));
     }
 
 
@@ -45,28 +45,30 @@ public class CommunityController {
     }
 
     @GetMapping("/{chatroomId}/opponent")
-    public OpponentResponseDTO findOpponent(@PathVariable Long chatroomId, Authentication authentication){
-        Long userId = 1L; //todo: 임시
+    public ResponseEntity<OpponentResponseDTO> findOpponent(@PathVariable Long chatroomId, Authentication authentication){
+        if (authentication == null || !(authentication.getPrincipal() instanceof Jwt jwt)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
 
+        Long userId = Long.valueOf(authentication.getName());
         if(authentication != null){
             CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
             userId = userDetails.getUser().getId();
         }
 
-        return chatRoomService.getOpponent(chatroomId,userId);
+        return ResponseEntity.ok(chatRoomService.getOpponent(chatroomId,userId));
     }
 
     // 새 채팅방을 만드는 get 요청, 채팅방 생성 이후 리디렉션은 프론트 파트에서 담당
     @GetMapping("/new/{targetId}")
-    public NewChatroomResponseDTO enterChatroom(@PathVariable Long targetId, HttpServletRequest request, HttpServletResponse response, Authentication authentication) {
-        Long senderId = 1L; //todo: 임시
-
-        if(authentication != null){
-            CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-            senderId = userDetails.getUser().getId();
+    public ResponseEntity<NewChatroomResponseDTO> enterChatroom(@PathVariable Long targetId, HttpServletRequest request, HttpServletResponse response, Authentication authentication) {
+        if (authentication == null || !(authentication.getPrincipal() instanceof Jwt jwt)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
+
+        Long userId = Long.valueOf(authentication.getName());
         //채팅방 조회 및 생성
-        return chatRoomService.createChatroom(senderId, targetId);
+        return ResponseEntity.ok(chatRoomService.createChatroom(userId, targetId));
     }
 
 

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { Camera } from "lucide-react"
+import axios from "axios"
 
 const CreatorSignup = () => {
   const navigate = useNavigate()
@@ -9,9 +10,9 @@ const CreatorSignup = () => {
 
   // handle user data fetching
   useEffect(() => {
-    fetch("/api/user/profile")
-      .then(response => response.json())
-      .then(data => {
+    axios.get("/api/user/profile")
+      .then(response => {
+        const data = response.data
         if (data.profileUrl) {
           setProfileImage(data.profileImage)
         }
@@ -21,31 +22,24 @@ const CreatorSignup = () => {
       })
   }, [])
 
-  const handleSubmit = e => {
+  const handleSubmit = async e => {
     e.preventDefault()
     if (introduction.trim()) {
-      fetch("http://localhost:8080/c/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
+      try {
+        const response = await axios.post("/c/register", {
           introduce: introduction.trim()
-        })
-      })
-        .then(response => {
-          if (!response.ok) {
-            throw new Error("회원가입 실패")
+        }, {
+          headers: {
+            "Content-Type": "application/json"
           }
         })
-        .then(data => {
-          console.log("회원가입 성공:", data)
-          navigate("/creator/dashboard")
-        }).catch(error => {
-          console.error("회원가입 오류:", error)
-          alert("회원가입에 실패했습니다. 홈으로 이동합니다.")
-          navigate("/")
-        })
+        console.log("회원가입 성공:", response.data)
+        navigate("/creator/dashboard")
+      } catch (error) {
+        console.error("회원가입 오류:", error)
+        alert("회원가입에 실패했습니다. 홈으로 이동합니다.")
+        navigate("/")
+      }
     }
   }
 

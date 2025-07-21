@@ -32,9 +32,5 @@ build/
 ### VS Code ###
 .vscode/
 backend/src/main/resources/db.properties
-backend/src/main/resources/oauth.properties.DS_Store
-*.DS_Store
-.DS_Store
-.DS_Store
-.DS_Store
 backend/src/main/resources/oauth.properties
+backend/src/main/resources/static
