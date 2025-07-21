@@ -6,6 +6,8 @@ import Sidebar from "../components/Sidebar";
 import debounce from "lodash.debounce";
 import api from "@shared/api";  
 const PAGE_SIZE = 20;
+import React from "react"
+
 
 const Search = () => {
   const [query, setQuery] = useState("");
@@ -66,8 +68,6 @@ const Search = () => {
 
   return (
     <div className="min-h-screen bg-brand-secondary flex">
-      <Sidebar activeItem="search" />
-
       <div className="flex-1">
         {/* Header */}
         <header className="h-[73px] bg-white border-b border-gray-200 flex items-center px-6 gap-4">

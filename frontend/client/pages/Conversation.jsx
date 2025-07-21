@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react"
 import { useParams, useNavigate } from "react-router-dom"
-import Sidebar from "@/components/Sidebar"
+
 import { ChevronLeft, Send } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -130,7 +130,6 @@ export default function Conversation() {
   if (!mockUser) {
     return (
       <div className="flex min-h-screen bg-gray-50">
-        <Sidebar activeItem="messages" />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <h2 className="text-xl font-semibold text-gray-900 mb-2">

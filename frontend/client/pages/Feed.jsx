@@ -101,8 +101,10 @@ const Feed = ({ hasCreatorAccount = false }) => {
 
   return (
     <div className="min-h-screen bg-brand-secondary flex">
-      {/* 사이드바 */}
-      <Sidebar hasCreatorAccount={hasCreatorAccount} activeItem="feed" />
+
+ 
+      {/* Sidebar */}
+
 
       {/* 메인 */}
       <div className="flex-1">

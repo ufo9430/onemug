@@ -10,3 +10,4 @@ public class NewChatroomResponseDTO {
     private Long p1Id;
     private Long p2Id;
 }
+

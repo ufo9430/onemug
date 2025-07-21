@@ -23,7 +23,7 @@ public class AuthService {
 
         CustomUserDetails userDetails = (CustomUserDetails) auth.getPrincipal();
         User user = userDetails.getUser();
-
+        System.out.println(user);
         return jwtTokenProvider.createToken(user);
     }
 

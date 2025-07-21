@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import Sidebar from "@/components/Sidebar";
 import { Search, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -75,7 +74,6 @@ export default function Messages() {
     //   }
     // ]
     <div className="flex min-h-screen bg-gray-50">
-      <Sidebar activeItem="messages" />
 
       <div className="flex-1 flex flex-col w-full lg:w-auto">
         {/* Header */}

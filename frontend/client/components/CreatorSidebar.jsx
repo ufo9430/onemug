@@ -1,4 +1,4 @@
-import React from "react"
+import {React, useEffect, useState} from "react"
 import { useNavigate } from "react-router-dom"
 import {
   BarChart3,
@@ -9,7 +9,20 @@ import {
   LayoutDashboard
 } from "lucide-react"
 
-const CreatorSidebar = ({ activeItem = "dashboard", className = "" }) => {
+const CreatorSidebar = ({ profile = {}, activeItem }) => {
+  const [hasUnread, setHasUnread] = useState(false)
+  useEffect(() => {
+    fetch("http://localhost:8080/notice/api/unread", {
+      credentials: "include",
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        setHasUnread(data.checkUnread === true)
+      })
+      .catch((err) => {
+        console.error("알림 상태를 불러오지 못했습니다:", err)
+      })
+  }, [])
   const navigate = useNavigate()
 
   const navigationItems = [
@@ -32,10 +45,10 @@ const CreatorSidebar = ({ activeItem = "dashboard", className = "" }) => {
       path: "/creator/subscribers"
     },
     {
-      id: "communication",
+      id: "messages",
       label: "소통",
       icon: Mail,
-      path: "/creator/communication"
+      path: "/creator/messages"
     },
     {
       id: "notifications",
@@ -56,25 +69,24 @@ const CreatorSidebar = ({ activeItem = "dashboard", className = "" }) => {
   }
 
   return (
-    <div
-      className={`w-full lg:w-80 h-screen bg-white border-r border-gray-200 flex flex-col fixed lg:relative z-10 lg:z-auto ${className}`}
-    >
-      {/* Header */}
-      <div className="h-[89px] border-b border-gray-200 flex items-center px-[52px]">
+    <div className="flex flex-col min-h-screen w-full lg:w-80 bg-white border-r border-gray-200">
+   {/* Header */}
+      <div className="h-[45px] border-b border-gray-200 flex items-center px-[26px]">
         <h1 className="text-xl font-bold text-gray-900">OneMug</h1>
       </div>
+<div className="flex flex-col flex-grow">
 
       {/* User Profile */}
       <div className="p-4">
         <div className="bg-gray-50 rounded-lg p-3 flex items-center gap-3">
           <img
-            src="https://cdn.builder.io/api/v1/image/assets/TEMP/6539a7b51be212286986ed75ddba09863d0830dc?width=96"
-            alt="User"
+            src={profile.profileUrl || "/default-profile.png"}
+            alt={profile.nickname || "프로필 이미지"}
             className="w-12 h-12 rounded-full"
           />
           <div>
-            <div className="font-semibold text-gray-900">김민정</div>
-            <div className="text-sm text-gray-500">minjung_kim@abc.abc</div>
+            <div className="font-semibold text-gray-900">{profile.nickname}</div>
+            <div className="text-sm text-gray-500">{profile.email}</div>
           </div>
         </div>
       </div>
@@ -85,6 +97,7 @@ const CreatorSidebar = ({ activeItem = "dashboard", className = "" }) => {
           {navigationItems.map(item => {
             const IconComponent = item.icon
             const isActive = activeItem === item.id
+            const isNotification = item.id === "notifications"
 
             return (
               <button
@@ -96,26 +109,29 @@ const CreatorSidebar = ({ activeItem = "dashboard", className = "" }) => {
                     : "hover:bg-gray-50 text-gray-600"
                 }`}
               >
-                <IconComponent
-                  className={`w-5 h-5 ${
-                    isActive ? "text-white" : "text-gray-600"
-                  }`}
-                />
-                <span
-                  className={`font-medium ${
-                    isActive ? "text-white" : "text-gray-600"
-                  }`}
-                >
-                  {item.label}
-                </span>
+                <div className="relative">
+
+                  <IconComponent
+                    className={`w-5 h-5 ${
+                      isActive ? "text-white" : "text-gray-600"
+                    }`}
+                  />
+                  {isNotification && hasUnread && (
+                        <span className="absolute -top-1 -right-1 bg-red-500 rounded-full w-2.5 h-2.5" />
+                      )}
+                </div>
+                  <span className={`font-medium ${ isActive ? "text-white" : "text-gray-600" }`}>
+                    {item.label}
+                  </span>
               </button>
             )
           })}
         </div>
       </nav>
+  </div>
 
       {/* Bottom Action - Switch to General Account */}
-      <div className="p-4 space-y-4">
+      <div className="p-4 border-t">
         <button
           onClick={() => navigate("/feed")}
           className="w-full bg-brand-primary text-white rounded-lg py-3 px-6 font-medium hover:bg-brand-primary/90 transition-colors text-sm"

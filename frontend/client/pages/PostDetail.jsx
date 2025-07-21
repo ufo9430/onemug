@@ -1,7 +1,6 @@
 import React, { useState } from "react"
 import { Heart, MessageCircle } from "lucide-react"
 import CommentsModal from "../components/CommentsModal"
-import Sidebar from "../components/Sidebar"
 
 const RelatedPostCard = ({ title, category, likes, comments, image }) => {
   return (
@@ -59,8 +58,6 @@ const PostDetail = () => {
 
   return (
     <div className="min-h-screen bg-brand-secondary flex">
-      {/* Sidebar */}
-      <Sidebar activeItem="feed" />
 
       {/* Main Content */}
       <div className="flex-1">
