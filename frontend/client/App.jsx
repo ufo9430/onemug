@@ -1,10 +1,11 @@
+// App.jsx
 import "./global.css";
 
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Index from "./pages/Index";
 import Welcome from "./pages/Welcome";
 import Login from "./pages/Login";
@@ -13,7 +14,6 @@ import PasswordStep from "./pages/register/PasswordStep";
 import NicknameStep from "./pages/register/NicknameStep";
 import Feed from "./pages/Feed";
 import Explore from "./pages/Explore";
-import Search from "./pages/Search";
 import PostDetail from "./pages/PostDetail";
 import Messages from "./pages/Messages";
 import Conversation from "./pages/Conversation";
@@ -59,7 +59,8 @@ const App = () => (
               path="/feed/creator"
               element={<Feed hasCreatorAccount={true} />}
             />
-            <Route path="/search" element={<Search />} />
+            {/* 기존 search 라우트는 explore로 리다이렉트 */}
+            <Route path="/search" element={<Navigate to="/explore" replace />} />
             <Route
               path="/Membership/creator/:creatorId"
               element={<Membership />}
