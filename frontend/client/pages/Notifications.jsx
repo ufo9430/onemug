@@ -56,7 +56,7 @@ export default function Notifications() {
 
   useEffect(() => {
     axios
-      .get("http://localhost:8080/notice")
+      .get("/notice")
       .then((response) => {
         const data = response.data;
         console.log("받은 데이터", data);
