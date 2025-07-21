@@ -39,7 +39,7 @@ public class SecurityConfig {
     @Order(1)
     public SecurityFilterChain publicSecurityFilterChain(HttpSecurity http) throws Exception {
         http
-                .securityMatcher("/auth/**", "/login/**", "/register/**", "/oauth2/**") // 공개 경로만 이 체인 사용
+                .securityMatcher("/auth/**", "/login/**", "/register/**", "/oauth2/**", "/image/**") // 공개 경로만 이 체인 사용
                 .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
                 .csrf(csrf -> csrf.disable())
                 .cors(Customizer.withDefaults())

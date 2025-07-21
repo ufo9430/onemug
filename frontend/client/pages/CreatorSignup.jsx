@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { Camera } from "lucide-react"
-import axios from "axios"
+import axios from "@/lib/axios";
 
 const CreatorSignup = () => {
   const navigate = useNavigate()
