@@ -1,5 +1,6 @@
-import { useState } from "react"
-import { useNavigate } from "react-router-dom"
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import axios from "@/lib/axios";
 
 const ProgressDots = ({ currentStep, totalSteps }) => (
   <div className="flex justify-center gap-2 mb-8">
@@ -12,44 +13,59 @@ const ProgressDots = ({ currentStep, totalSteps }) => (
       />
     ))}
   </div>
-)
+);
 
 export default function NicknameStep() {
-  const navigate = useNavigate()
-  const [nickname, setNickname] = useState("")
+  const navigate = useNavigate();
+  const [nickname, setNickname] = useState("");
 
-  const handleSubmit = e => {
-    e.preventDefault()
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     if (nickname.trim() && isValidNickname(nickname)) {
       // Store nickname and complete registration
-      localStorage.setItem("registration_nickname", nickname)
+      localStorage.setItem("registration_nickname", nickname);
 
       // Get stored registration data
-      const email = localStorage.getItem("registration_email")
-      const password = localStorage.getItem("registration_password")
+      const email = localStorage.getItem("registration_email");
+      const password = localStorage.getItem("registration_password");
 
       // Here you would typically call your registration API
-      console.log("Registration data:", { email, password, nickname })
+      console.log("Registration data:", { email, password, nickname });
 
-      // Clean up localStorage
-      localStorage.removeItem("registration_email")
-      localStorage.removeItem("registration_password")
-      localStorage.removeItem("registration_nickname")
+      try {
+        const res = await axios.post(
+          "/auth/signup",
+          {
+            email,
+            password,
+            nickname,
+          },
+          { withCredentials: true },
+        );
 
-      // Navigate to feed or login
-      navigate("/feed")
+        // 가입 완료 후 localStorage 정리
+        localStorage.removeItem("registration_email");
+        localStorage.removeItem("registration_password");
+
+        alert("회원가입 성공");
+
+        navigate("/login");
+      } catch (err) {
+        console.error("회원가입 실패:", err);
+        alert("회원가입 중 문제가 발생했습니다.");
+      }
     }
-  }
+  };
 
-  const isValidNickname = name => {
+  const isValidNickname = (name) => {
     // Check for Korean, English, or numbers only
-    const regex = /^[가-힣a-zA-Z0-9]+$/
-    return regex.test(name) && name.length >= 2 && name.length <= 20
-  }
+    const regex = /^[가-힣a-zA-Z0-9]+$/;
+    return regex.test(name) && name.length >= 2 && name.length <= 20;
+  };
 
   const handleLogin = () => {
-    navigate("/login")
-  }
+    navigate("/login");
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-4">
@@ -89,7 +105,7 @@ export default function NicknameStep() {
               type="text"
               id="nickname"
               value={nickname}
-              onChange={e => setNickname(e.target.value)}
+              onChange={(e) => setNickname(e.target.value)}
               placeholder="2-20자의 닉네임을 입력해주세요"
               className="w-full px-4 py-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-transparent outline-none transition-colors text-base"
               required
@@ -132,5 +148,5 @@ export default function NicknameStep() {
         </div>
       </div>
     </div>
-  )
+  );
 }

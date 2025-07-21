@@ -4,10 +4,8 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import { Heart, MessageCircle } from "lucide-react";
 import Sidebar from "../components/Sidebar";
 import debounce from "lodash.debounce";
-import api from "@shared/api";  
+import api from "@shared/api";
 const PAGE_SIZE = 20;
-import React from "react"
-
 
 const Search = () => {
   const [query, setQuery] = useState("");
@@ -22,8 +20,8 @@ const Search = () => {
     params.append("page", pageParam);
     params.append("size", PAGE_SIZE);
 
-     const { data } = await api.get("/search", { params });
-     return data;
+    const { data } = await api.get("/search", { params });
+    return data;
   };
 
   const {
@@ -33,15 +31,15 @@ const Search = () => {
     isFetchingNextPage,
     isLoading,
     isError,
-    error
+    error,
   } = useInfiniteQuery({
-  queryKey: ["search", query, activeCategory],
-  queryFn: fetchSearch,
-  getNextPageParam: lastPage =>
-    lastPage.last ? undefined : lastPage.number + 1,
-});
+    queryKey: ["search", query, activeCategory],
+    queryFn: fetchSearch,
+    getNextPageParam: (lastPage) =>
+      lastPage.last ? undefined : lastPage.number + 1,
+  });
 
-  const posts = data ? data.pages.flatMap(p => p.content) : [];
+  const posts = data ? data.pages.flatMap((p) => p.content) : [];
 
   // infinite scroll observer
   useEffect(() => {
@@ -61,10 +59,10 @@ const Search = () => {
     { id: 4, label: "개발" },
     { id: 5, label: "라이프스타일" },
     { id: 6, label: "여행" },
-    { id: 7, label: "건강" }
+    { id: 7, label: "건강" },
   ];
 
-  const handleInputChange = debounce(e => setQuery(e.target.value), 300);
+  const handleInputChange = debounce((e) => setQuery(e.target.value), 300);
 
   return (
     <div className="min-h-screen bg-brand-secondary flex">
@@ -88,7 +86,7 @@ const Search = () => {
                 카테고리
               </h2>
               <div className="flex flex-wrap gap-3">
-                {categories.map(cat => (
+                {categories.map((cat) => (
                   <button
                     key={cat.id ?? "all"}
                     className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
@@ -109,7 +107,7 @@ const Search = () => {
             {isError && <p>{error.message}</p>}
 
             <div className="space-y-6">
-              {posts.map(post => (
+              {posts.map((post) => (
                 <article
                   key={`${post.type}-${post.id}`}
                   className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow overflow-hidden cursor-pointer"
@@ -157,9 +155,7 @@ const Search = () => {
                         </button>
                         <button className="flex items-center gap-2 text-gray-600">
                           <MessageCircle className="w-5 h-5" />
-                          <span className="text-sm">
-                            {post.commentCount}
-                          </span>
+                          <span className="text-sm">{post.commentCount}</span>
                         </button>
                       </div>
                     )}
