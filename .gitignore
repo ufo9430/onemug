@@ -34,3 +34,5 @@ build/
 backend/src/main/resources/db.properties
 backend/src/main/resources/oauth.properties
 backend/src/main/resources/static
+
+.DS_Store

@@ -99,7 +99,7 @@ export default function Notifications() {
   // 이를 통해 UI에서 읽지 않은 알림 표시를 제거
   const handleMarkAllAsRead = () => {
     axios
-      .post("http://localhost:8080/notice/read-all")
+      .post("/notice/read-all")
       .then((response) => {
         console.log("성공");
         setNotifications((prev) =>

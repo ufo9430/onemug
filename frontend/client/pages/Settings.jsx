@@ -165,6 +165,7 @@ export default function Settings() {
 
       setUserInfo(res.data);
       alert("프로필 저장 완료");
+      location.reload();
     } catch (err) {
       console.error("저장 중 오류 발생:", err);
       alert("저장 중 오류가 발생했습니다.");
