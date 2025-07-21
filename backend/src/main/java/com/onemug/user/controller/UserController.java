@@ -1,8 +1,6 @@
 package com.onemug.user.controller;
 
-import com.onemug.global.entity.User;
 import com.onemug.user.dto.UserUpdateRequestDto;
-import com.onemug.user.model.CustomUserDetails;
 import com.onemug.user.service.CustomUserDetailsService;
 import com.onemug.user.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -10,11 +8,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
-import java.util.Optional;
-import java.util.function.LongToDoubleFunction;
 
 @RestController
 @RequestMapping("/api/user")
@@ -43,29 +40,12 @@ public class UserController {
 
     //프로필 정보 리액트 전송용 api
     @GetMapping("/profile")
-    public ResponseEntity<Map<String,Object>> getProfile(Authentication authentication){
-//        if (authentication == null || !(authentication.getPrincipal() instanceof CustomUserDetails)) {
-//            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-//        }
-//        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-//        Long userId = userDetails.getUser().getId();
-        //todo:임시
-        Long userId = 1L;
-
-        Map<String, Object> profile = userDetailsService.getProfile(userId);
-
-        return ResponseEntity.ok(profile);
-    }
-
-    //프로필 정보 리액트 전송용 api
-    @GetMapping("/profile")
-    public ResponseEntity<Map<String,Object>> getProfile(Authentication authentication){
-        if (authentication == null || !(authentication.getPrincipal() instanceof CustomUserDetails)) {
+    public ResponseEntity<Map<String, Object>> getProfile(Authentication authentication) {
+        if (authentication == null || !(authentication.getPrincipal() instanceof Jwt jwt)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-        Long userId = userDetails.getUser().getId();
 
+        Long userId = Long.valueOf(authentication.getName());
         Map<String, Object> profile = userDetailsService.getProfile(userId);
 
         return ResponseEntity.ok(profile);
