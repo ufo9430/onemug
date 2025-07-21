@@ -36,7 +36,26 @@ public class Post {
         this.content = content;
     }
 
-    public void addViewCount(){
+    public void incrementViewCount() {
+        this.viewCount = this.viewCount + 1;
+    }
+
+    public void incrementLikeCount() {
+        this.likeCount = this.likeCount + 1;
+    }
+
+    public void decrementLikeCount() {
+        this.likeCount = this.likeCount > 0 ? this.likeCount - 1 : 0;
+    }
+
+    @PrePersist
+    public void prePersist() {
+        this.likeCount = 0;
+        this.viewCount = 0;
+        this.createdAt = LocalDateTime.now();
+    }
+
+    public void addViewCount() {
         this.viewCount++;
     }
 }

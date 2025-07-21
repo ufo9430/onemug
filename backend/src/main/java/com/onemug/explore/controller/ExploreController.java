@@ -10,6 +10,8 @@ import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -23,10 +25,12 @@ public class ExploreController {
     @Operation(summary = "Explore – 구독 안 한 창작자 글 조회")
     @GetMapping
     public ResponseEntity<Page<ExplorePostDto>> explore(
-            @RequestParam("user") Long userId,                      // 로그인 유저 ID (임시)
+//            @RequestParam("user") Long userId,                      // 로그인 유저 ID (임시)
             @RequestParam(value = "category", required = false) Long categoryId,
-            @ParameterObject Pageable pageable
+            @ParameterObject Pageable pageable,
+            @AuthenticationPrincipal Jwt jwt
     ) {
+        Long userId = Long.parseLong(jwt.getSubject());
         Page<ExplorePostDto> body = exploreService.getExplorePosts(userId, categoryId, pageable);
         return ResponseEntity.ok(body);
     }

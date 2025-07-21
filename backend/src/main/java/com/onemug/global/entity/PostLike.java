@@ -2,27 +2,32 @@ package com.onemug.global.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+
 import java.time.LocalDateTime;
 
 @Getter
 @Entity
-@Table(name = "post_like")
-@IdClass(PostLikeId.class)
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Builder
 public class PostLike {
+    @EmbeddedId
+    private LikeId id;
 
-    @Id
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
+    @MapsId("userId")
     @JoinColumn(name = "user_id")
     private User user;
 
-    @Id
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
+    @MapsId("postId")
     @JoinColumn(name = "post_id")
     private Post post;
 
-    @Column(name = "liked_at")
     private LocalDateTime likedAt;
+
+    @PrePersist
+    public void prePersist() {
+        this.likedAt = LocalDateTime.now();
+    }
 }
