@@ -1,5 +1,6 @@
-import { useState } from "react"
-import { useNavigate } from "react-router-dom"
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import axios from "@/lib/axios";
 
 const ProgressDots = ({ currentStep, totalSteps }) => (
   <div className="flex justify-center gap-2 mb-8">
@@ -12,24 +13,39 @@ const ProgressDots = ({ currentStep, totalSteps }) => (
       />
     ))}
   </div>
-)
+);
 
 export default function EmailStep() {
-  const navigate = useNavigate()
-  const [email, setEmail] = useState("")
+  const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+  const [emailError, setEmailError] = useState("");
 
-  const handleSubmit = e => {
-    e.preventDefault()
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    const res = await axios.post(
+      "/auth/check-email",
+      { email },
+      {
+        withCredentials: false, // ← 명시적으로 끄기
+      },
+    );
+
+    if (res.data.exists) {
+      setEmailError("이미 등록된 이메일입니다.");
+      return;
+    }
+
     if (email.trim()) {
       // Store email in localStorage or context
-      localStorage.setItem("registration_email", email)
-      navigate("/register/password")
+      localStorage.setItem("registration_email", email);
+      navigate("/register/password");
     }
-  }
+  };
 
   const handleLogin = () => {
-    navigate("/login")
-  }
+    navigate("/login");
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-4">
@@ -69,11 +85,21 @@ export default function EmailStep() {
               type="email"
               id="email"
               value={email}
-              onChange={e => setEmail(e.target.value)}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                setEmailError("");
+              }}
               placeholder="example@email.com"
-              className="w-full px-4 py-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-transparent outline-none transition-colors text-base"
+              className={`w-full px-4 py-4 border ${
+                emailError ? "border-red-500" : "border-gray-300"
+              } rounded-lg focus:ring-2 ${
+                emailError ? "focus:ring-red-500" : "focus:ring-brand-primary"
+              } focus:border-transparent outline-none transition-colors text-base`}
               required
             />
+            {emailError && (
+              <p className="mt-2 text-sm text-red-500">{emailError}</p>
+            )}
           </div>
 
           {/* Next Button */}
@@ -97,5 +123,5 @@ export default function EmailStep() {
         </div>
       </div>
     </div>
-  )
+  );
 }
