@@ -165,34 +165,11 @@ const PostDetail = () => {
                 {postData.title}
               </h1>
 
-              {/*/!* Subtitle *!/*/}
-              {/*<p className="text-lg text-gray-600 mb-8 leading-relaxed">*/}
-              {/*  같은 생두라도 로스터마다 풍미가 어떻게 달라지는지 비교했습니다.*/}
-              {/*  홈카페 유저와 바리스타 모두에게 유용한 정리입니다.*/}
-              {/*</p>*/}
-
               {/* Article Body */}
               <div className="prose prose-lg max-w-none">
                 <p className="text-gray-700 leading-relaxed mb-6">
                   {postData.content}
                 </p>
-
-                {/*<div className="my-8">*/}
-                {/*  <img*/}
-                {/*    src="https://cdn.builder.io/api/v1/image/assets/TEMP/80f000c642a1c9e726fd73f625fb6fc2ea2a1514?width=1472"*/}
-                {/*    alt="Coffee comparison"*/}
-                {/*    className="w-full rounded-lg"*/}
-                {/*  />*/}
-                {/*</div>*/}
-
-                {/*<h2 className="text-2xl font-bold text-gray-900 mb-4">*/}
-                {/*  주요 발견사항*/}
-                {/*</h2>*/}
-                {/*<p className="text-gray-700 leading-relaxed">*/}
-                {/*  블루보틀은 깔끔한 산미, 스타벅스는 바디감이 좋았고, 로컬*/}
-                {/*  로스터리 A가 가장 인상적이었습니다. 같은 생두라도 로스터의*/}
-                {/*  철학에 따라 완전히 다른 커피가 된다는 것을 확인했어요.*/}
-                {/*</p>*/}
               </div>
 
               {/* Interaction Buttons */}

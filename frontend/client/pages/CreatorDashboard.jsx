@@ -80,6 +80,8 @@ const CreatorDashboard = () => {
 
   useEffect(() => {
     const fetchPosts = async () => {
+      console.log("profile", profile)
+      if(!profile) return;
       try {
         const res = await axios.get(`/user/${profile.creatorId}/posts`);
         console.log(res.data);
