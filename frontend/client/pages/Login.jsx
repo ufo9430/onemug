@@ -37,21 +37,13 @@ export default function Login() {
       });
 
       const token = response.data.token;
+      const userId = response.data.userId;
       if (rememberMe) {
         localStorage.setItem("token", token);
+         localStorage.setItem("userId", userId);
       } else {
         sessionStorage.setItem("token", token);
-      }
-
-
-      localStorage.removeItem("token");
-      sessionStorage.removeItem("token");
-
-      // 예: 로컬 스토리지에 저장 (rememberMe에 따라 다르게)
-      if (rememberMe) {
-        localStorage.setItem("token", token);
-      } else {
-        sessionStorage.setItem("token", token);
+        sessionStorage.setItem("userId", userId);
       }
 
       alert("로그인 성공");
