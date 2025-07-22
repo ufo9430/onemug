@@ -1,5 +1,6 @@
 package com.onemug.dashboard.service;
 
+import com.onemug.dashboard.dto.CreatorMembershipRequestDTO;
 import com.onemug.dashboard.dto.CreatorMembershipResponseDTO;
 import com.onemug.feed.repository.CreatorRepository;
 import com.onemug.global.entity.Benefit;
@@ -8,7 +9,11 @@ import com.onemug.global.entity.Membership;
 import com.onemug.membership.repository.MembershipRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cglib.core.Local;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -33,15 +38,15 @@ public class DashboardMembershipService {
 
         for (Membership membership : byCreatorId) {
             List<Benefit> benefits = membership.getBenefits();
-            Map<Long, String> benefitMap = new HashMap<>();
+            List<String> benefitList = new ArrayList<>();
             for (Benefit benefit : benefits) {
-                benefitMap.put(benefit.getId(), benefit.getContent());
+                benefitList.add(benefit.getContent());
             }
             CreatorMembershipResponseDTO dto = CreatorMembershipResponseDTO.builder()
-                    .membershipId(membership.getId())
+                    .id(membership.getId())
                     .name(membership.getMembershipName())
                     .price(membership.getPrice())
-                    .benefits(benefitMap)
+                    .benefits(benefitList)
                     .build();
 
             dtoList.add(dto);
@@ -51,6 +56,50 @@ public class DashboardMembershipService {
     }
     //내 멤버십 추가
 
+    public CreatorMembershipResponseDTO addMembership(CreatorMembershipRequestDTO requestDTO,
+                                                      Long userId){
+        Creator creator = creatorRepository.findByUserId(userId).orElseThrow(EntityNotFoundException::new);
+
+        Membership newMembership = Membership.builder()
+                .creator(creator)
+                .status(Membership.SubscriptionStatus.ACTIVE)
+                .price(requestDTO.getPrice())
+                .membershipName(requestDTO.getName())
+                .autoRenew(false)
+                .isTemplate(true)
+                .build();
+
+        //benefits
+        List<Benefit> benefits = new ArrayList<>();
+        for (String benefitStr : requestDTO.getBenefits()) {
+            Benefit benefit = Benefit.builder()
+                    .membership(newMembership)
+                    .content(benefitStr)
+                    .build();
+            benefits.add(benefit);
+        }
+
+        membershipRepository.save(newMembership);
+
+        return CreatorMembershipResponseDTO.builder()
+                .id(newMembership.getId())
+                .name(newMembership.getMembershipName())
+                .price(newMembership.getPrice())
+                .benefits(requestDTO.getBenefits())
+                .build();
+    }
     //내 멤버십 삭제
+
+    public boolean deleteMembership(Long userId, Long membershipId){
+        Creator creator = creatorRepository.findByUserId(userId).orElseThrow(EntityNotFoundException::new);
+        Membership membership = membershipRepository.findById(membershipId).orElseThrow(EntityNotFoundException::new);
+
+        if(!membership.getCreator().equals(creator)){
+            return false;
+        }
+
+        membershipRepository.delete(membership);
+        return true;
+    }
 
 }

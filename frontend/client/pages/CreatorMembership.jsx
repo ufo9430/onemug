@@ -1,11 +1,12 @@
-import React, { useState } from "react"
+import React, { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { X, Minus } from "lucide-react"
+import axios from "@/lib/axios";
+import { data } from "autoprefixer";
 
 const AddMembershipModal = ({ isOpen, onClose, onSave }) => {
   const [name, setName] = useState("")
   const [price, setPrice] = useState("")
-  const [description, setDescription] = useState("")
   const [benefits, setBenefits] = useState([""])
 
   const addBenefit = () => {
@@ -24,17 +25,24 @@ const AddMembershipModal = ({ isOpen, onClose, onSave }) => {
 
   const handleSave = () => {
     if (name && price) {
+      axios.post("/c/membership/new", {
+      name,
+      price: parseInt(price),
+      benefits: benefits.filter(b => b.trim())
+    })
+    .then(response => {
+      console.log("멤버십 추가 성공:", response.data)
       onSave({
-        name,
-        price: parseInt(price),
-        description,
-        benefits: benefits.filter(b => b.trim())
+        id: response.data.id, // 서버에서 생성된 ID 사용
+        name: response.data.name,
+        price: response.data.price,
+        benefits: response.data.benefits.filter(b => b.trim())
       })
       setName("")
       setPrice("")
-      setDescription("")
       setBenefits([""])
       onClose()
+    })
     }
   }
 
@@ -83,19 +91,6 @@ const AddMembershipModal = ({ isOpen, onClose, onSave }) => {
               onChange={e => setPrice(e.target.value)}
               placeholder="0"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent"
-            />
-          </div>
-
-          {/* Description */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-900 mb-2">
-              설명
-            </label>
-            <textarea
-              value={description}
-              onChange={e => setDescription(e.target.value)}
-              rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent resize-none"
             />
           </div>
 
@@ -158,13 +153,6 @@ const AddMembershipModal = ({ isOpen, onClose, onSave }) => {
 const MembershipCard = ({ membership, onDelete }) => {
   return (
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 relative">
-      {membership.isPopular && (
-        <div className="absolute top-4 right-4">
-          <span className="bg-red-100 text-red-600 px-2 py-1 rounded text-xs font-medium">
-            인기
-          </span>
-        </div>
-      )}
 
       <h3 className="text-lg font-semibold text-gray-900 mb-2">
         {membership.name}
@@ -205,48 +193,20 @@ const MembershipCard = ({ membership, onDelete }) => {
 const CreatorMembership = () => {
   const navigate = useNavigate()
   const [showAddModal, setShowAddModal] = useState(false)
-  const [memberships, setMemberships] = useState([
-    {
-      id: "1",
-      name: "무료 멤버십",
-      price: 0,
-      description: "기본적인 콘텐츠에 접근할 수 있습니다.",
-      benefits: ["무료 공개 컨텐츠", "커뮤니티 참여"]
-    },
-    {
-      id: "2",
-      name: "프리미엄 멤버십",
-      price: 15000,
-      description: "모든 프리미엄 콘텐츠와 특별 혜택을 제공합니다.",
-      benefits: [
-        "월 8회 독점 콘텐츠",
-        "라이브 스트리밍 참여",
-        "1:1 질문 답변",
-        "월간 디지털 굿즈"
-      ],
-      isPopular: true
-    },
-    {
-      id: "3",
-      name: "VIP 멤버십",
-      price: 30000,
-      description:
-        "최고급 멤버십으로 모든 혜택과 개인 맞춤 서비스를 제공합니다.",
-      benefits: [
-        "무제한 독점 콘텐츠",
-        "개인 맞춤 콘텐츠 요청",
-        "월 1회 개인 상담",
-        "한정판 굿즈 우선 구매"
-      ]
-    },
-    {
-      id: "4",
-      name: "ㅁㄴㅇㄹ",
-      price: 3415,
-      description: "1234",
-      benefits: ["ㄴㅇㄹㅁㅇ", "ㅁㄴㅇㄹ"]
+  const [memberships, setMemberships] = useState([])
+
+  useEffect(() => {
+    const fetchMemberships = async () => {
+      try {
+        const response = await axios.get("/c/membership")
+        console.log("멤버십 목록:", response.data)
+        setMemberships(response.data)
+      } catch (error) {
+        console.error("멤버십 데이터를 불러오지 못했습니다:", error)
+      }
     }
-  ])
+    fetchMemberships()
+  }, [])
 
   const handleAddMembership = newMembership => {
     const membership = {
@@ -257,6 +217,14 @@ const CreatorMembership = () => {
   }
 
   const handleDeleteMembership = id => {
+    axios.delete(`/c/membership/delete?membershipId=${id}`)
+      .then(() => {
+        console.log("멤버십 삭제 성공")
+      })
+      .catch(err => {
+        console.error("멤버십 삭제 실패", err)
+      })
+    // 로컬 상태에서도 삭제
     setMemberships(memberships.filter(m => m.id !== id))
   }
 
