@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/api/payments")
+@RequestMapping("/payments")
 @RequiredArgsConstructor
 @Slf4j
 public class PaymentController {
@@ -28,15 +28,28 @@ public class PaymentController {
     public ResponseEntity<PaymentConfirmResponseDto> confirmPayment(
             @RequestBody PaymentConfirmRequestDto request,
             @RequestHeader("User-Id") Long userId) {
+        log.info("===== 결제 확인 API 시작: userId={}, orderId={}, paymentKey={} =====", 
+                userId, request.getOrderId(), request.getPaymentKey());
+                
         try {
-            log.info("결제 확인 요청: userId={}, orderId={}, paymentKey={}", 
-                    userId, request.getOrderId(), request.getPaymentKey());
-            
             // 요청에 사용자 ID 설정
             request.setUserId(userId);
+            log.debug("사용자 ID 설정 완료: userId={}", userId);
             
+            // 디버그: 요청 객체 내용 출력
+            log.debug("결제 확인 요청 내용: orderId={}, membershipId={}, amount={}", 
+                    request.getOrderId(), request.getMembershipId(), request.getAmount());
+                    
             // 결제 확인 처리
-            PaymentConfirmResponseDto response = paymentService.confirmPayment(request);
+            PaymentConfirmResponseDto response = null;
+            try {
+                response = paymentService.confirmPayment(request);
+                log.debug("PaymentService.confirmPayment() 호출 완료: response.status={}", 
+                          response != null ? response.getStatus() : "null");
+            } catch (Exception e) {
+                log.error("PaymentService.confirmPayment() 호출 중 예외 발생: ", e);
+                throw e;
+            }
             
             if ("SUCCESS".equals(response.getStatus())) {
                 log.info("결제 확인 성공: userId={}, orderId={}, subscriptionId={}", 
@@ -49,8 +62,8 @@ public class PaymentController {
             }
             
         } catch (Exception e) {
-            log.error("결제 확인 API 처리 중 오류 발생: userId={}, orderId={}", 
-                    userId, request.getOrderId(), e);
+            log.error("결제 확인 API 처리 중 오류 발생: userId={}, orderId={}, 예외 클래스={}, 메시지={}", 
+                    userId, request.getOrderId(), e.getClass().getName(), e.getMessage(), e);
             
             PaymentConfirmResponseDto errorResponse = PaymentConfirmResponseDto.builder()
                     .status("ERROR")
@@ -58,6 +71,9 @@ public class PaymentController {
                     .build();
             
             return ResponseEntity.internalServerError().body(errorResponse);
+        } finally {
+            log.info("===== 결제 확인 API 종료: userId={}, orderId={} =====", 
+                    userId, request.getOrderId());
         }
     }
     

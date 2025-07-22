@@ -34,9 +34,9 @@ public class Payment {
     
     @Column(nullable = false)
     private Long userId; // 결제한 사용자 ID
-    
+
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "membership_id")
+    @JoinColumn(name = "membership_id", nullable = true) // nullable=true 명시적 추가
     private Membership membership; // 결제한 멤버십
     
     @Enumerated(EnumType.STRING)

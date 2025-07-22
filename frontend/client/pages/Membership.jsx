@@ -1,144 +1,316 @@
 import React, { useState, useEffect } from "react"
-import { useParams, useSearchParams } from 'react-router-dom';
+import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { Check, AlertCircle, Clock } from "lucide-react"
 import PaymentModal from "./PaymentModal"
 import axios from "@/lib/axios";
 
+// axios 기본 URL 설정
+axios.defaults.baseURL = 'http://localhost:8080';
+
 const Membership = () => {
     const { creatorId } = useParams(); // URL에서 creatorId 추출
     const [searchParams, setSearchParams] = useSearchParams();
+    const navigate = useNavigate(); // React Router navigate 훅 추가
   const [memberships, setMemberships] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
   const [selectedMembership, setSelectedMembership] = useState(null)
   const [selectionResult, setSelectionResult] = useState(null)
+  const [hasFreeMembership, setHasFreeMembership] = useState(false)
+  const [currentSubscriptions, setCurrentSubscriptions] = useState([]) // 현재 구독 목록
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [showPaymentModal, setShowPaymentModal] = useState(false)
+  const [paymentStatus, setPaymentStatus] = useState('') // 'processing', 'success', 'fail'
+  const [resultMessage, setResultMessage] = useState('')
   const [autoRenew, setAutoRenew] = useState(true)
   const [paymentMethod, setPaymentMethod] = useState("카드")
-  const [showPaymentModal, setShowPaymentModal] = useState(false)
-  const [hasFreeMembership, setHasFreeMembership] = useState(false) // 무료 멤버십 구독 여부
+  const [paymentOrderId, setPaymentOrderId] = useState(null)
+  const [paymentAmount, setPaymentAmount] = useState(null)
 
-  // JWT 토큰 가져오는 함수
+  // JWT 토큰에서 사용자 ID 추출하는 함수
+  const getUserIdFromToken = (token) => {
+    if (!token) {
+      console.log('JWT 토큰이 없습니다');
+      return null;
+    }
+    
+    try {
+      console.log('JWT 토큰 디코딩 시도:', token.substring(0, 20) + '...');
+      
+      // JWT 토큰의 페이로드(payload) 부분 디코딩
+      const parts = token.split('.');
+      if (parts.length !== 3) {
+        console.error('유효하지 않은 JWT 토큰 형식입니다:', token);
+        return null;
+      }
+      
+      const base64Url = parts[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      
+      // base64 디코딩을 위한 패딩 추가
+      const pad = '='.repeat((4 - base64.length % 4) % 4);
+      const base64Padded = base64 + pad;
+      
+      // 디코딩 시도
+      let jsonPayload;
+      try {
+        jsonPayload = decodeURIComponent(
+          atob(base64Padded)
+            .split('')
+            .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+            .join('')
+        );
+      } catch (e) {
+        console.error('base64 디코딩 실패:', e);
+        
+        // 다른 방법으로 디코딩 시도
+        try {
+          jsonPayload = window.atob(base64Padded);
+          console.log('Raw decoded payload:', jsonPayload);
+        } catch (e2) {
+          console.error('alternative decoding also failed:', e2);
+          return null;
+        }
+      }
+      
+      try {
+        const payload = JSON.parse(jsonPayload);
+        console.log('JWT 페이로드:', payload);
+        
+        // 페이로드에서 userId 또는 sub 필드를 찾아 반환
+        // Spring Security는 일반적으로 'sub' 필드에 사용자 식별자를 저장
+        const userId = payload.userId || payload.sub || payload.id || null;
+        console.log('JWT 토큰에서 추출한 userId:', userId);
+        return userId;
+      } catch (parseError) {
+        console.error('JSON 파싱 실패:', parseError, 'raw payload:', jsonPayload);
+        return null;
+      }
+    } catch (error) {
+      console.error('JWT 토큰 디코딩 중 오류 발생:', error);
+      return null;
+    }
+  };
+
+  // JWT 토큰 및 User-Id 가져오는 함수
   const getAuthHeaders = () => {
     const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+    // 먼저 저장소에서 userId 직접 조회
+    let userId = localStorage.getItem('userId') || sessionStorage.getItem('userId');
+    
+    // userId가 없으면 JWT 토큰에서 추출 시도
+    if (!userId && token) {
+      userId = getUserIdFromToken(token);
+      console.log('JWT 토큰에서 추출한 userId:', userId);
+      
+      // 추출한 userId 저장소에 캐싱
+      if (userId) {
+        if (localStorage.getItem('token')) {
+          localStorage.setItem('userId', userId);
+        } else if (sessionStorage.getItem('token')) {
+          sessionStorage.setItem('userId', userId);
+        }
+      }
+    }
+    
     return {
       'Content-Type': 'application/json',
-      'Authorization': token ? `Bearer ${token}` : ''
+      'Authorization': token ? `Bearer ${token}` : '',
+      'User-Id': userId || ''
     };
   };
 
-  // 결제 결과 처리
   useEffect(() => {
-    const paymentStatus = searchParams.get('payment');
-    const membershipId = searchParams.get('membershipId');
-    const creatorId = searchParams.get('creatorId');
-    const membershipName = searchParams.get('membershipName');
-    const price = searchParams.get('price');
-    const paymentKey = searchParams.get('paymentKey');
-    const paymentOrderId = searchParams.get('orderId');
-    const paymentAmount = searchParams.get('amount');
-    const paymentMethodType = searchParams.get('method');
-
-    console.log('URL 파라미터:', {
-      paymentStatus,
-      membershipId,
-      creatorId,
-      membershipName,
-      price,
-      paymentKey,
-      paymentOrderId,
-      paymentAmount,
-      paymentMethodType
+    // URL 파라미터에서 결제 관련 정보 가져오기
+    const query = new URLSearchParams(location.search);
+    
+    const paymentKey = query.get('paymentKey');
+    const orderId = query.get('orderId');
+    const amount = query.get('amount');
+    
+    console.log(' URL 파라미터 디버깅:', {
+      현재URL: window.location.href,
+      search파라미터: location.search,
+      paymentKey: paymentKey,
+      orderId: orderId,
+      amount: amount
     });
     
-    // 결제 성공 시 구독 생성 요청
-    if (paymentStatus === 'success') {
-      console.log('결제 성공 처리 시작');
+    // URL에 결제 정보가 있으면 결제 확인 처리
+    if (paymentKey && orderId && amount) {
+      console.log(' 결제 콜백 URL 감지됨:', { paymentKey, orderId, amount });
+      setPaymentStatus('processing'); // 결제 처리 중 상태로 변경
+      setResultMessage('결제 확인 중입니다...');
       
-      // 멤버십 ID가 있는 경우에만 구독 생성 요청
-      if (membershipId) {
-        // 문자열 값을 적절한 숫자로 변환
-        const numericMembershipId = Number(membershipId);
-        const numericCreatorId = Number(creatorId);
-        const numericPrice = Number(price);
+      // 로컬 스토리지에서 결제 요청 데이터 가져오기
+      const paymentOrderId = orderId;
+      const paymentAmount = amount;
+      const membershipId = localStorage.getItem('selectedMembershipId');
+      const creatorId = localStorage.getItem('selectedCreatorId');
+      
+      // 사용자 ID 확인
+      let currentUserId = localStorage.getItem('userId') || sessionStorage.getItem('userId');
+      
+      // userId가 없으면 JWT 토큰에서 추출 시도
+      if (!currentUserId) {
+        const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+        if (token) {
+          currentUserId = getUserIdFromToken(token);
+          
+          // 추출한 userId 저장소에 캐싱
+          if (currentUserId) {
+            if (localStorage.getItem('token')) {
+              localStorage.setItem('userId', currentUserId);
+            } else if (sessionStorage.getItem('token')) {
+              sessionStorage.setItem('userId', currentUserId);
+            }
+          }
+        }
+      }
+      
+      console.log('로컬 스토리지 데이터:', { 
+        selectedMembershipId: membershipId,
+        selectedCreatorId: creatorId,
+        currentUserId: currentUserId
+      });
+      
+      // 멤버십 정보가 없는 경우, 다시 멤버십 페이지로 돌아가 선택하도록 안내
+      if (!membershipId) {
+        console.error('선택한 멤버십 정보가 없습니다.');
+        setPaymentStatus('fail');
+        setResultMessage('선택한 멤버십 정보가 없습니다. 다시 멤버십을 선택해주세요.');
         
-        // 필수 파라미터 유효성 검증
-        if (isNaN(numericMembershipId) || isNaN(numericCreatorId) || !membershipName) {
-          console.error('필수 파라미터가 올바르지 않습니다:', { membershipId, creatorId, membershipName });
-          alert('결제는 성공했지만 필수 정보가 올바르지 않습니다. 관리자에게 문의하세요.');
-          setSearchParams({});
-          return;
+        // 사용자 ID가 있는지 확인 - 있다면 해당 크리에이터 멤버십 페이지로 리다이렉트
+        if (currentUserId && creatorId) {
+          setTimeout(() => {
+            navigate(`/membership/${creatorId}`);
+          }, 3000);
+        } else {
+          // 사용자 ID나 크리에이터 ID가 없으면 메인 멤버십 페이지로 이동
+          setTimeout(() => {
+            navigate('/membership');
+          }, 3000);
+        }
+        return;
+      }
+      
+      console.log('결제 확인에 사용할 사용자 ID:', currentUserId);
+      
+      // 문자열을 숫자로 명시적 변환
+      const numericUserId = parseInt(currentUserId, 10);
+      if (isNaN(numericUserId)) {
+        console.error('유효하지 않은 사용자 ID 형식입니다:', currentUserId);
+        setPaymentStatus('fail');
+        setResultMessage('로그인 정보가 올바르지 않습니다. 다시 로그인해주세요.');
+        
+        // 3초 후 로그인 페이지로 이동
+        setTimeout(() => {
+          navigate('/login');
+        }, 3000);
+        return;
+      }
+      
+      // 데이터 형식 변환 및 정제 (paymentKey 검증 강화)
+      if (!paymentKey || paymentKey.trim() === '') {
+        console.error('❌ paymentKey가 비어있습니다:', paymentKey);
+        setPaymentStatus('fail');
+        setResultMessage('결제 정보가 올바르지 않습니다. 다시 시도해주세요.');
+        return;
+      }
+      
+      if (!orderId || orderId.trim() === '') {
+        console.error('❌ orderId가 비어있습니다:', orderId);
+        setPaymentStatus('fail');
+        setResultMessage('주문 정보가 올바르지 않습니다. 다시 시도해주세요.');
+        return;
+      }
+      
+      // 백엔드 DTO 타입에 맞게 데이터 변환
+      const confirmData = {
+        paymentKey: String(paymentKey).trim(),
+        orderId: String(paymentOrderId).trim(),
+        amount: parseInt(paymentAmount, 10), // Long 타입으로 변환 (JavaScript에서는 number)
+        userId: numericUserId, // Long 타입으로 변환 
+        membershipId: parseInt(membershipId, 10) // Long 타입으로 변환
+      };
+      
+      console.log('✅ 최종 결제 확인 요청 데이터:', confirmData);
+      
+      try {
+        // 필수 데이터 재검증
+        if (!confirmData.paymentKey || !confirmData.orderId || !confirmData.amount || !confirmData.membershipId) {
+          throw new Error('필수 결제 정보가 누락되었습니다');
+        }
+
+        if (!numericUserId || isNaN(numericUserId)) {
+          throw new Error('유효한 사용자 ID가 없습니다. 다시 로그인해주세요');
         }
         
-        // 백엔드에서 기대하는 형식으로 구독 생성 요청 데이터 준비
-        const subscriptionData = {
-          membershipId: numericMembershipId,
-          creatorId: numericCreatorId,
-          membershipName: decodeURIComponent(membershipName),
-          orderId: paymentOrderId,
-          paymentMethod: paymentMethodType || 'TOSS',
-          price: numericPrice || 0,
-          autoRenew: true
+        // 숫자 타입 검증
+        if (isNaN(confirmData.amount) || confirmData.amount <= 0) {
+          throw new Error('유효하지 않은 결제 금액입니다');
+        }
+        
+        if (isNaN(confirmData.membershipId) || confirmData.membershipId <= 0) {
+          throw new Error('유효하지 않은 멤버십 ID입니다');
+        }
+        
+        // 백엔드에 결제 확인 요청 (단일 엔드포인트만 사용)
+        const apiUrl = '/payments/confirm';
+        
+        console.log(`🚀 API 호출 시작: ${apiUrl}`);
+        
+        const headers = {
+          ...getAuthHeaders(),
+          'User-Id': String(numericUserId), // 백엔드 @RequestHeader에서 Long으로 파싱됨
+          'Content-Type': 'application/json'
         };
         
-        // 디버깅을 위해 토큰 확인
-        const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-        console.log('현재 사용 중인 토큰:', token ? `${token.substring(0, 20)}...` : '토큰 없음');
+        console.log('📤 요청 헤더:', headers);
+        console.log('📤 요청 본문:', JSON.stringify(confirmData, null, 2));
         
-        console.log('구독 생성 요청 데이터:', subscriptionData);
+        axios.post(apiUrl, confirmData, { headers })
+          .then((response) => {
+            console.log('결제 확인 성공:', response.data);
+            setPaymentStatus('success');
+            setResultMessage('멤버십 구독이 완료되었습니다!');
+            
+            // 결제 완료 후 로컬 스토리지의 임시 정보 정리
+            localStorage.removeItem('selectedMembershipId');
+            localStorage.removeItem('selectedCreatorId');
+            
+            // 3초 후 메인 Feed로 이동
+            setTimeout(() => {
+              navigate('/feed'); // 메인 Feed 페이지로 이동
+            }, 3000);
+          })
+          .catch((error) => {
+            console.error('결제 확인 실패:', error.response || error);
+            
+            if (error.response && error.response.status === 400) {
+              console.log('400 에러 응답 세부 정보:', error.response.data);
+              console.log('요청 데이터 확인:', error.config?.data);
+            }
+            
+            handlePaymentError(error);
+          });
+      } catch (error) {
+        console.error('결제 확인 전처리 중 오류:', error);
+        setPaymentStatus('fail');
+        setResultMessage(error.message || '결제 처리 중 오류가 발생했습니다.');
         
-        // 백엔드에 구독 생성 요청
-        axios.post('/memberships/create', subscriptionData, {
-          headers: getAuthHeaders()
-        })
-        .then(response => {
-          console.log('구독 생성 결과:', response.data);
-          if (response.data.status === 'SUCCESS') {
-            alert('결제가 완료되었습니다! 멤버십이 활성화되었습니다.');
-            // 멤버십 목록 새로고침
-            fetchMemberships();
-          } else {
-            alert('결제는 완료되었지만 멤버십 활성화에 실패했습니다. 고객센터에 문의해주세요.');
-          }
-          
-          // 처리 완료 후 URL 파라미터 제거
-          setSearchParams({});
-        })
-        .catch(error => {
-          console.error('구독 생성 중 오류 발생:', error);
-          if (error.response) {
-            // 서버에서 응답을 받았지만 2xx 범위가 아닌 경우
-            console.error('서버 응답:', error.response.data);
-            console.error('상태 코드:', error.response.status);
-            console.error('헤더:', error.response.headers);
-            alert(`구독 생성 실패: ${error.response.status} - ${JSON.stringify(error.response.data)}`);
-          } else if (error.request) {
-            // 요청이 이루어졌으나 응답을 받지 못한 경우
-            console.error('요청은 전송되었지만 응답이 없습니다:', error.request);
-            alert('서버 응답이 없습니다. 네트워크 상태를 확인해주세요.');
-          } else {
-            // 요청 설정 중에 오류가 발생한 경우
-            console.error('요청 설정 중 오류 발생:', error.message);
-            alert(`오류 발생: ${error.message}`);
-          }
-          
-          // 오류 발생해도 URL 파라미터 제거
-          setSearchParams({});
-        });
-      } else {
-        alert('결제가 완료되었지만 멤버십 정보가 없습니다. 관리자에게 문의해주세요.');
-        setSearchParams({});
+        // 오류가 발생한 경우 5초 후 멤버십 페이지로 이동
+        setTimeout(() => {
+          navigate('/membership');
+        }, 5000);
       }
-    } else if (paymentStatus === 'fail') {
-      setError('결제에 실패했습니다. 다시 시도해주세요.');
-      // URL에서 쿼리 파라미터 제거
-      setSearchParams({});
     }
-  }, [searchParams, setSearchParams]);
+  }, [location]); // URL이 변경될 때마다 결제 확인 처리
 
   // 멤버십 목록 조회
   useEffect(() => {
     fetchMemberships()
     checkFreeMembershipStatus() // 무료 멤버십 구독 여부 확인
+    fetchCurrentSubscriptions() // 현재 구독 목록 가져오기
   }, [creatorId])
 
   // 무료 멤버십 생성 함수 (프론트엔드 하드코딩)
@@ -196,29 +368,26 @@ const Membership = () => {
       // 무료 멤버십을 배열 시작에 추가
       const allMemberships = [freeMembership, ...membershipsData];
       
-      // Benefits 및 멤버십 속성 디버깅 로그 추가
-      allMemberships.forEach((membership, index) => {
-        console.log(`멤버십 ${index + 1} [ID:${membership.id}]:`, {
-          name: membership.membershipName || membership.name,
-          price: membership.price,
-          isTemplate: membership.isTemplate,
-          benefits: membership.benefits,
-          creatorId: membership.creatorId
-        });
-      });
-      
       // 가격 오름차순으로 정렬
       const sortedMemberships = allMemberships.sort((a, b) => a.price - b.price);
       
       // 모든 멤버십을 표시
       setMemberships(sortedMemberships);
       
-      // 무료 멤버십이 하나도 없는 경우 디버그 로그 (이제 항상 있어야 함)
-      const freeMemberships = sortedMemberships.filter(m => m.price === 0);
-      console.log('무료 멤버십 템플릿 발견:', freeMemberships.length, '개', freeMemberships);
-      
     } catch (err) {
       console.error('멤버십 정보 불러오기 실패:', err);
+      console.error('오류 세부 정보:', {
+        message: err.message,
+        status: err.response?.status,
+        statusText: err.response?.statusText,
+        responseData: err.response?.data,
+        requestConfig: {
+          url: err.config?.url,
+          method: err.config?.method,
+          headers: err.config?.headers,
+          data: err.config?.data
+        }
+      });
       if (err.response) {
         console.error('오류 응답:', err.response.status, err.response.data);
       }
@@ -237,33 +406,120 @@ const Membership = () => {
   // 무료 멤버십 구독 여부 확인
   const checkFreeMembershipStatus = async () => {
     try {
+      // 사용자 ID 가져오기
+      const userId = localStorage.getItem('userId') || sessionStorage.getItem('userId');
+      
+      // 인증 헤더 준비
+      const headers = getAuthHeaders();
+      
+      if (!userId) {
+        console.warn('사용자 ID가 없어 구독 상태를 확인할 수 없습니다.');
+        return;
+      }
+      
+      console.log('내 구독 목록 조회 요청. 사용자 ID:', userId);
+      console.log('요청 헤더:', headers);
+      
       const response = await axios.get('/memberships/my-subscriptions', {
-        headers: getAuthHeaders()
+        headers,
+        params: { userId } // 쿼리 파라미터로 사용자 ID 전달
       });
       
       if (response.data) {
-        const subscriptions = response.data
+        const subscriptions = response.data;
+        console.log('내 구독 목록 조회 성공:', subscriptions);
         
         // 무료 멤버십 (가격이 0원인 활성 구독) 확인
         const hasFree = subscriptions.some(sub => 
           sub.price === 0 && 
           sub.status === 'ACTIVE' && 
           new Date(sub.expiresAt) > new Date()
-        )
+        );
         
-        setHasFreeMembership(hasFree)
-        console.log('무료 멤버십 구독 여부:', hasFree)
+        setHasFreeMembership(hasFree);
+        console.log('무료 멤버십 구독 여부:', hasFree);
       }
     } catch (error) {
-      console.error('무료 멤버십 구독 상태 확인 실패:', error)
+      console.error('무료 멤버십 구독 상태 확인 실패:', error);
+      console.error('오류 세부 정보:', {
+        message: error.message,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        responseData: error.response?.data,
+        requestConfig: {
+          url: error.config?.url,
+          method: error.config?.method,
+          headers: error.config?.headers,
+          data: error.config?.data
+        }
+      });
+      
+      // 인증 오류인 경우 로그인 페이지로 리다이렉트하지 않고 단순 로깅만
+      if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+        console.warn('구독 목록 조회 중 인증 오류 발생. 로그인 필요할 수 있음.');
+      }
     }
   }
+
+  // 현재 구독 목록 가져오기
+  const fetchCurrentSubscriptions = async () => {
+    try {
+      // 사용자 ID 가져오기
+      const userId = localStorage.getItem('userId') || sessionStorage.getItem('userId');
+      
+      // 인증 헤더 준비
+      const headers = getAuthHeaders();
+      
+      if (!userId) {
+        console.warn('사용자 ID가 없어 구독 목록을 가져올 수 없습니다.');
+        return;
+      }
+      
+      console.log('내 구독 목록 조회 요청. 사용자 ID:', userId);
+      console.log('요청 헤더:', headers);
+      
+      const response = await axios.get('/memberships/my-subscriptions', {
+        headers,
+        params: { userId } // 쿼리 파라미터로 사용자 ID 전달
+      });
+      
+      if (response.data) {
+        const subscriptions = response.data;
+        console.log('내 구독 목록 조회 성공:', subscriptions);
+        
+        setCurrentSubscriptions(subscriptions);
+      }
+    } catch (error) {
+      console.error('구독 목록 가져오기 실패:', error);
+      console.error('오류 세부 정보:', {
+        message: error.message,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        responseData: error.response?.data,
+        requestConfig: {
+          url: error.config?.url,
+          method: error.config?.method,
+          headers: error.config?.headers,
+          data: error.config?.data
+        }
+      });
+    }
+  };
 
   // 멤버십 선택 처리 - 새로운 API 구조에 맞게 수정
   const handleMembershipSelect = async (membership) => {
     try {
       setSelectedMembership(membership)
       setError(null)
+      
+      // 로컬 스토리지에 선택한 멤버십 정보 저장 (결제 콜백에서 사용)
+      localStorage.setItem('selectedMembershipId', membership.id);
+      localStorage.setItem('selectedCreatorId', creatorId ? creatorId : membership.creatorId);
+      
+      console.log('로컬 스토리지에 멤버십 정보 저장:', {
+        selectedMembershipId: membership.id,
+        selectedCreatorId: creatorId ? creatorId : membership.creatorId
+      });
       
       // 무료/유료 공통 처리 로직 - 유효성 검증
       // 구독 데이터 구성
@@ -324,6 +580,18 @@ const Membership = () => {
             }
           } catch (err) {
             console.error('무료 멤버십 생성 오류:', err);
+            console.error('오류 세부 정보:', {
+              message: err.message,
+              status: err.response?.status,
+              statusText: err.response?.statusText,
+              responseData: err.response?.data,
+              requestConfig: {
+                url: err.config?.url,
+                method: err.config?.method,
+                headers: err.config?.headers,
+                data: err.config?.data
+              }
+            });
             if (err.response) {
               console.error('오류 응답:', err.response.status, err.response.data);
               setError(`무료 멤버십 생성 오류: ${err.response.status} - ${err.response.data?.message || '알 수 없는 오류'}`);
@@ -401,7 +669,19 @@ const Membership = () => {
         setError(validationResult.errorMessage || '멤버십 구독에 실패했습니다.')
       }
     } catch (err) {
-      console.error('Error selecting membership:', err)
+      console.error('Error selecting membership:', err);
+      console.error('오류 세부 정보:', {
+        message: err.message,
+        status: err.response?.status,
+        statusText: err.response?.statusText,
+        responseData: err.response?.data,
+        requestConfig: {
+          url: err.config?.url,
+          method: err.config?.method,
+          headers: err.config?.headers,
+          data: err.config?.data
+        }
+      });
       setError('서버 연결에 실패했습니다.')
     }
   }
@@ -437,7 +717,19 @@ const Membership = () => {
           return
         }
       } catch (error) {
-        console.error('무료 멤버십 구독 중 오류:', error)
+        console.error('무료 멤버십 구독 중 오류:', error);
+        console.error('오류 세부 정보:', {
+          message: error.message,
+          status: error.response?.status,
+          statusText: error.response?.statusText,
+          responseData: error.response?.data,
+          requestConfig: {
+            url: error.config?.url,
+            method: error.config?.method,
+            headers: error.config?.headers,
+            data: error.config?.data
+          }
+        });
         setError('무료 멤버십 구독 중 오류가 발생했습니다.')
         return
       }
@@ -493,7 +785,19 @@ const Membership = () => {
         setSelectedMembership(null)
       }
     } catch (error) {
-      console.error('결제 후 구독 생성 중 오류:', error)
+      console.error('결제 후 구독 생성 중 오류:', error);
+      console.error('오류 세부 정보:', {
+        message: error.message,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        responseData: error.response?.data,
+        requestConfig: {
+          url: error.config?.url,
+          method: error.config?.method,
+          headers: error.config?.headers,
+          data: error.config?.data
+        }
+      });
       alert('결제는 완료되었지만 멤버십 활성화에 실패했습니다. 고객센터에 문의해주세요.')
       setShowPaymentModal(false)
     }
@@ -501,10 +805,85 @@ const Membership = () => {
 
   // 결제 실패 처리
   const handlePaymentFailed = (error) => {
-    console.error('결제 실패:', error)
+    console.error('결제 실패:', error);
+    console.error('오류 세부 정보:', {
+      message: error.message,
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      responseData: error.response?.data,
+      requestConfig: {
+        url: error.config?.url,
+        method: error.config?.method,
+        headers: error.config?.headers,
+        data: error.config?.data
+      }
+    });
     setShowPaymentModal(false)
     setError('결제에 실패했습니다. 다시 시도해주세요.')
   }
+
+  // 결제 오류 처리 함수
+  const handlePaymentError = (error) => {
+    console.error('결제 처리 중 오류 발생:', error);
+    
+    // 오류 응답이 있는 경우 상세 분석
+    if (error.response) {
+      const { status, data } = error.response;
+      console.error(`HTTP 상태 코드: ${status}`, data);
+      
+      // 상태 코드별 처리
+      switch (status) {
+        case 400: // Bad Request
+          setResultMessage('결제 정보가 올바르지 않습니다. 다시 시도해주세요.');
+          console.error('잘못된 요청 데이터:', data);
+          break;
+        case 401: // Unauthorized
+          setResultMessage('인증에 실패했습니다. 다시 로그인해주세요.');
+          // 3초 후 로그인 페이지로 리다이렉트
+          setTimeout(() => {
+            navigate('/login');
+          }, 3000);
+          break;
+        case 403: // Forbidden
+          setResultMessage('해당 작업에 대한 권한이 없습니다.');
+          break;
+        case 404: // Not Found
+          setResultMessage('결제 처리 API를 찾을 수 없습니다.');
+          break;
+        case 500: // Internal Server Error
+          setResultMessage('서버 오류가 발생했습니다. 나중에 다시 시도해주세요.');
+          break;
+        default:
+          setResultMessage(`결제 처리 중 오류가 발생했습니다. (${status})`);
+      }
+    } else if (error.request) {
+      // 요청은 보냈으나 응답을 받지 못한 경우
+      console.error('응답을 받지 못했습니다:', error.request);
+      setResultMessage('서버 응답이 없습니다. 인터넷 연결을 확인해주세요.');
+    } else {
+      // 요청 전송 단계에서 오류 발생
+      console.error('요청 설정 중 오류 발생:', error.message);
+      setResultMessage('결제 요청 중 오류가 발생했습니다.');
+    }
+    
+    // 결제 상태를 실패로 설정
+    setPaymentStatus('fail');
+    
+    // 오류 세부 정보 로깅 (개발 디버깅용)
+    if (error.config) {
+      console.log('요청 설정:', {
+        url: error.config.url,
+        method: error.config.method,
+        headers: error.config.headers,
+        data: error.config.data
+      });
+    }
+    
+    // 5초 후 멤버십 페이지로 리다이렉트
+    setTimeout(() => {
+      navigate('/membership');
+    }, 5000);
+  };
 
   const getButtonStyles = (variant) => {
     switch (variant) {
@@ -625,6 +1004,32 @@ const Membership = () => {
                   
                   console.log(`멤버십 렌더링 [${membershipId}]:`, { membershipName, price, isFree });
                   
+                  // 현재 구독 중인 멤버십인지 확인
+                  const isCurrentlySubscribed = currentSubscriptions.some(sub => {
+                    // 1. ID로 직접 매칭 (정확한 매칭)
+                    if (sub.id === membershipId || 
+                        sub.membershipId === membershipId ||
+                        sub.templateId === membershipId) {
+                      console.log(`✅ ID 매칭으로 구독 확인: ${membershipId}`);
+                      return true;
+                    }
+                    
+                    // 2. 멤버십 이름과 창작자로 매칭 (fallback)
+                    const subName = sub.membershipName || sub.name;
+                    const subCreatorName = sub.creatorName;
+                    
+                    if (subName === membershipName && subCreatorName === creatorName) {
+                      console.log(`✅ 이름+창작자 매칭으로 구독 확인: ${subName} by ${subCreatorName}`);
+                      return true;
+                    }
+                    
+                    return false;
+                  });
+                  
+                  if (isCurrentlySubscribed) {
+                    console.log(`🚫 중복 구독 방지: ${membershipName} (${creatorName})`);
+                  }
+                  
                   return (
                     <div
                       key={membershipId}
@@ -677,10 +1082,14 @@ const Membership = () => {
                         {/* Button */}
                         <button
                           onClick={() => handleMembershipSelect(membership)}
-                          className="w-full py-3 px-6 rounded-lg font-medium transition-colors bg-amber-500 hover:bg-amber-600 text-white"
-                          disabled={selectedMembership && selectedMembership.id === membershipId}
+                          className={`w-full py-3 px-6 rounded-lg font-medium transition-colors ${
+                            isCurrentlySubscribed 
+                              ? 'bg-gray-100 text-gray-500 cursor-not-allowed' 
+                              : 'bg-amber-500 hover:bg-amber-600 text-white'
+                          }`}
+                          disabled={isCurrentlySubscribed}
                         >
-                          {selectedMembership && selectedMembership.id === membershipId ? '선택 중...' : '멤버십 선택'}
+                          {isCurrentlySubscribed ? '이미 구독 중...' : '멤버십 선택'}
                         </button>
                       </div>
                     </div>
