@@ -367,4 +367,11 @@ public class MembershipController {
             return ResponseEntity.badRequest().body(SubscriptionCreateResponseDto.error(e.getMessage()));
         }
     }
+
+    @GetMapping("/count")
+    public ResponseEntity<Long> getMySubscriptionCount(@RequestHeader(value = "User-Id", required = false) Long userId) {
+        if (userId == null) return ResponseEntity.badRequest().build();
+        long count = membershipService.getMySubscriptions(userId).size();
+        return ResponseEntity.ok(count);
+    }
 }
