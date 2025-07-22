@@ -1,6 +1,5 @@
-
-import { useState, useEffect } from "react"
-import { useNavigate } from "react-router-dom"
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Search,
   Mail,
@@ -10,13 +9,13 @@ import {
   Settings,
   Home,
   CheckSquare,
-
-} from "lucide-react"
+} from "lucide-react";
+import { Avatar, AvatarImage, AvatarFallback } from "../components/ui/avatar";
 import axios from "@/lib/axios";
 
 const Sidebar = ({ profile = {}, activeItem }) => {
-  const navigate = useNavigate()
-  const [hasUnread, setHasUnread] = useState(false)
+  const navigate = useNavigate();
+  const [hasUnread, setHasUnread] = useState(false);
   useEffect(() => {
     const fetchNotice = async () => {
       try {
@@ -31,21 +30,30 @@ const Sidebar = ({ profile = {}, activeItem }) => {
     fetchNotice();
   }, []);
 
-
   const navigationItems = [
     { id: "feed", label: "피드", icon: Home, path: "/feed" },
-    { id: "search", label: "탐색", icon: Search, path: "/search" },
+    { id: "explore", label: "탐색", icon: Search, path: "/explore" },
     { id: "messages", label: "소통", icon: Mail, path: "/messages" },
-    { id: "subscriptions", label: "구독한 창작자", icon: CheckSquare, path: "/subscriptions" },
+    {
+      id: "subscriptions",
+      label: "구독한 창작자",
+      icon: CheckSquare,
+      path: "/subscriptions",
+    },
     { id: "notifications", label: "알림", icon: Bell, path: "/notifications" },
-    { id: "bookmarks", label: "좋아요한 글", icon: Bookmark, path: "/bookmarks" },
+    {
+      id: "bookmarks",
+      label: "좋아요한 글",
+      icon: Bookmark,
+      path: "/bookmarks",
+    },
     { id: "recent", label: "최근 본 글", icon: Clock, path: "/recent" },
     { id: "settings", label: "설정", icon: Settings, path: "/settings" },
-  ]
+  ];
 
   const handleNavigation = (path) => {
-    navigate(path)
-  }
+    navigate(path);
+  };
 
   return (
     <div className="flex flex-col min-h-screen w-full lg:w-80 bg-white border-r border-gray-200">
@@ -58,13 +66,22 @@ const Sidebar = ({ profile = {}, activeItem }) => {
         {/* User Profile */}
         <div className="p-4">
           <div className="bg-gray-50 rounded-lg p-3 flex items-center gap-3">
-            <img
-              src={`http://localhost:8080${profile.profileUrl}` || "/default-profile.png"}
-              alt={profile.nickname || "프로필 이미지"}
-              className="w-12 h-12 rounded-full"
-            />
+            <Avatar className="w-12 h-12">
+              <AvatarImage
+                src={
+                  `http://localhost:8080${profile.profileUrl}` ||
+                  "/default-profile.png"
+                }
+                alt={profile.nickname || "프로필 이미지"}
+              />
+              <AvatarFallback className="bg-brand-primary text-white font-semibold text-sm">
+                {profile.nickname?.charAt(0) || "닉"}
+              </AvatarFallback>
+            </Avatar>
             <div>
-              <div className="font-semibold text-gray-900">{profile.nickname}</div>
+              <div className="font-semibold text-gray-900">
+                {profile.nickname}
+              </div>
               <div className="text-sm text-gray-500">{profile.email}</div>
             </div>
           </div>
@@ -74,9 +91,9 @@ const Sidebar = ({ profile = {}, activeItem }) => {
         <nav className="flex-1 px-4">
           <div className="space-y-1">
             {navigationItems.map((item) => {
-              const Icon = item.icon
-              const isActive = activeItem === item.id
-              const isNotification = item.id === "notifications"
+              const Icon = item.icon;
+              const isActive = activeItem === item.id;
+              const isNotification = item.id === "notifications";
 
               return (
                 <button
@@ -89,21 +106,24 @@ const Sidebar = ({ profile = {}, activeItem }) => {
                   }`}
                 >
                   <div className="relative">
-                    <Icon className={`w-5 h-5 ${isActive ? "text-white" : "text-gray-600"}`} />
+                    <Icon
+                      className={`w-5 h-5 ${isActive ? "text-white" : "text-gray-600"}`}
+                    />
                     {isNotification && hasUnread && (
                       <span className="absolute -top-1 -right-1 bg-red-500 rounded-full w-2.5 h-2.5" />
                     )}
                   </div>
-                  <span className={`font-medium ${isActive ? "text-white" : "text-gray-600"}`}>
+                  <span
+                    className={`font-medium ${isActive ? "text-white" : "text-gray-600"}`}
+                  >
                     {item.label}
                   </span>
                 </button>
-              )
+              );
             })}
           </div>
         </nav>
       </div>
-
 
       {/* Bottom Action */}
       <div className="p-4 border-t">

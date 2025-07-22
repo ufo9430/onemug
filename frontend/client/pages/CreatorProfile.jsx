@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Heart, MessageCircle, Users } from "lucide-react";
+import { Heart, Mail, MessageCircle, Users } from "lucide-react";
+import { Avatar, AvatarImage, AvatarFallback } from "../components/ui/avatar";
 import axios from "@/lib/axios";
 
 const PostCard = ({
@@ -60,7 +61,8 @@ const PostCard = ({
   );
 };
 
-const CreatorDashboard = () => {
+const CreatorProfile = () => {
+  const { creatorId } = useParams();
   const [profile, setProfile] = useState(null);
   const [posts, setPosts] = useState([]);
   const navigate = useNavigate();
@@ -68,21 +70,18 @@ const CreatorDashboard = () => {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const res = await axios.get(`/dashboard/me`);
+        const res = await axios.get(`/c/${creatorId}`);
+        console.log(res.data);
+
         setProfile(res.data);
       } catch (err) {
         console.error("❌ 크리에이터 프로필 요청 실패", err);
       }
     };
 
-    fetchProfile();
-  }, []);
-
-  useEffect(() => {
     const fetchPosts = async () => {
       try {
-        const res = await axios.get(`/user/${profile.creatorId}/posts`);
-        console.log(res.data);
+        const res = await axios.get(`/user/${creatorId}/posts`);
 
         setPosts(res.data);
       } catch (err) {
@@ -90,8 +89,9 @@ const CreatorDashboard = () => {
       }
     };
 
+    fetchProfile();
     fetchPosts();
-  }, [profile]);
+  }, []);
 
   const samplePost = {
     id: "1",
@@ -116,14 +116,8 @@ const CreatorDashboard = () => {
             <div className="lg:hidden mr-4">
               <h2 className="text-lg font-bold text-gray-900">OneMug</h2>
             </div>
-            <h1 className="text-xl font-semibold text-gray-900">대시보드</h1>
+            <h1 className="text-xl font-semibold text-gray-900">프로필</h1>
           </div>
-          <button
-            onClick={() => navigate("/creator/post/new")}
-            className="bg-brand-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-brand-primary/90 transition-colors"
-          >
-            새 글 작성
-          </button>
         </header>
 
         {/* Tab Navigation */}
@@ -133,7 +127,7 @@ const CreatorDashboard = () => {
               홈
             </button>
             <button
-              onClick={() => navigate("/creator/membership")}
+              onClick={() => navigate(`/membership/creator/${creatorId}`)}
               className="bg-gray-50 text-gray-600 px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors"
             >
               멤버십
@@ -148,21 +142,34 @@ const CreatorDashboard = () => {
             <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-8">
               <div className="flex items-start gap-8">
                 {/* Profile Image */}
-                <img
-                  src={
-                    profile?.profileUrl
-                      ? `http://localhost:8080${profile.profileUrl}`
-                      : "/default-profile.png"
-                  }
-                  alt={profile?.nickname || "프로필 이미지"}
-                  className="w-[120px] h-[120px] rounded-full object-cover bg-gray-100"
-                />
+                <Avatar className="w-[120px] h-[120px]">
+                  <AvatarImage
+                    src={
+                      profile?.profileUrl
+                        ? `http://localhost:8080${profile?.profileUrl}`
+                        : "/default-profile.png"
+                    }
+                    alt={profile?.nickname || "프로필 이미지"}
+                    className="object-cover bg-gray-100"
+                  />
+                  <AvatarFallback className="bg-brand-primary text-white font-semibold text-2xl">
+                    {profile?.nickname?.charAt(0) || "닉"}
+                  </AvatarFallback>
+                </Avatar>
 
                 {/* Profile Info */}
                 <div className="flex-1">
-                  <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                    {profile?.nickname}
-                  </h2>
+                  <div className="flex items-center gap-2 mb-2">
+                    <h2 className="text-2xl font-bold text-gray-900">
+                      {profile?.nickname}
+                    </h2>
+                    <div
+                      className="bg-brand-primary text-white p-1.5 rounded-lg hover:bg-brand-primary/90 transition-colors cursor-pointer"
+                      onClick={() => navigate(`/community/${creatorId}`)}
+                    >
+                      <Mail className="w-5 h-5" />
+                    </div>
+                  </div>
 
                   {/* Stats */}
                   <div className="flex items-center gap-6 mb-4">
@@ -186,12 +193,12 @@ const CreatorDashboard = () => {
                     {profile?.introduceText}
                   </p>
 
-                  {/* Edit Profile Button */}
+                  {/* Membership Button */}
                   <button
                     className="bg-brand-primary text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-brand-primary/90 transition-colors"
-                    onClick={() => navigate("/creator/settings")}
+                    onClick={() => navigate(`/membership/creator/${creatorId}`)}
                   >
-                    프로필 편집
+                    멤버십 가입
                   </button>
                 </div>
               </div>
@@ -213,4 +220,4 @@ const CreatorDashboard = () => {
   );
 };
 
-export default CreatorDashboard;
+export default CreatorProfile;

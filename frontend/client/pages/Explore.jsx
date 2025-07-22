@@ -4,7 +4,6 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import debounce from "lodash.debounce";
 import { Heart, MessageCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import Sidebar from "../components/Sidebar";
 import api from "@shared/api";
 
 const PAGE_SIZE = 20;
@@ -18,7 +17,7 @@ const categories = [
   { id: 4, label: "개발" },
   { id: 5, label: "라이프스타일" },
   { id: 6, label: "여행" },
-  { id: 7, label: "건강" }
+  { id: 7, label: "건강" },
 ];
 
 const Explore = () => {
@@ -28,7 +27,8 @@ const Explore = () => {
   const navigate = useNavigate();
 
   const fetchFeed = async ({ pageParam = 0 }) => {
-    const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+    const token =
+      localStorage.getItem("token") || sessionStorage.getItem("token");
     console.log("JWT Token:", token);
 
     const headers = {
@@ -47,7 +47,10 @@ const Explore = () => {
     const raw = query.trim();
     // 공백만 입력된 상태면 탐색 모드 그대로
     if (!raw) {
-      const { data } = await api.get("/explore", { params: exploreParams, headers, });
+      const { data } = await api.get("/explore", {
+        params: exploreParams,
+        headers,
+      });
       return data;
     }
 
@@ -55,14 +58,16 @@ const Explore = () => {
     const searchParams = new URLSearchParams();
     searchParams.append("q", `${raw}*`);
     if (activeCategory !== null) {
-       searchParams.append("categoryIds", activeCategory);
+      searchParams.append("categoryIds", activeCategory);
     }
     searchParams.append("target", "POST");
     searchParams.append("page", pageParam);
     searchParams.append("size", PAGE_SIZE);
 
-
-    const { data } = await api.get("/search", { params: searchParams, headers, });
+    const { data } = await api.get("/search", {
+      params: searchParams,
+      headers,
+    });
     return data;
   };
 
@@ -84,9 +89,10 @@ const Explore = () => {
   });
 
   // 안전하게 content 배열 합치기
-  const posts = data?.pages
-    .filter((p) => p && Array.isArray(p.content))
-    .flatMap((p) => p.content) || [];
+  const posts =
+    data?.pages
+      .filter((p) => p && Array.isArray(p.content))
+      .flatMap((p) => p.content) || [];
 
   // 무한 스크롤 옵저버
   useEffect(() => {
@@ -100,8 +106,6 @@ const Explore = () => {
 
   return (
     <div className="min-h-screen bg-brand-secondary flex">
-      <Sidebar activeItem="explore" />
-
       <div className="flex-1">
         {/* 헤더: 검색창 + 제목 */}
         <header className="h-[73px] bg-white border-b border-gray-200 flex items-center px-6 gap-4">
@@ -138,7 +142,9 @@ const Explore = () => {
           {isError && <p className="text-red-500">{error.message}</p>}
           {!isLoading && !isError && posts.length === 0 && (
             <p className="text-center text-gray-500 py-8">
-              {query.trim() ? "검색 결과가 없습니다." : "탐색할 게시글이 없습니다."}
+              {query.trim()
+                ? "검색 결과가 없습니다."
+                : "탐색할 게시글이 없습니다."}
             </p>
           )}
 
