@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import api from "@/lib/axios";
+import axios from "@/lib/axios";
 import { Heart, MessageCircle } from "lucide-react";
 
 const PostCard = ({
@@ -66,7 +66,7 @@ const Feed = () => {
       navigate("/explore", { replace: true });
       return;
     }
-    api.get("/memberships/count", { headers: { "User-Id": userId } })
+    axios.get("/memberships/count", { headers: { "User-Id": userId } })
       .then(res => {
         setSubscriptionCount(res.data);
         if (res.data === 0) {
@@ -82,7 +82,7 @@ const Feed = () => {
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["feed", userId],
     queryFn: () =>
-      api.get("/feed", { params: { user: userId, page: 0, size: 20 } })
+      axios.get("/feed", { params: { user: userId, page: 0, size: 20 } })
         .then((res) => res.data),
     enabled: subscriptionCount > 0 // 구독이 있을 때만 fetch!
   });

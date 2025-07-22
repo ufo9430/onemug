@@ -157,7 +157,7 @@ const CreatorProfile = () => {
                   <AvatarImage
                     src={
                       profile?.profileUrl
-                        ? `http://localhost:8080${profile?.profileUrl}`
+                        ? `/api${profile?.profileUrl}`
                         : "/default-profile.png"
                     }
                     alt={profile?.nickname || "프로필 이미지"}

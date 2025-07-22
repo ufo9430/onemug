@@ -5,7 +5,7 @@ import PaymentModal from "./PaymentModal"
 import axios from "@/lib/axios";
 
 // axios 기본 URL 설정
-axios.defaults.baseURL = 'http://localhost:8080';
+axios.defaults.baseURL = '/api';
 
 const Membership = () => {
     const { creatorId } = useParams(); // URL에서 creatorId 추출

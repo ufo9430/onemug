@@ -4,7 +4,9 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import debounce from "lodash.debounce";
 import { Heart, MessageCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import api from "@shared/api";
+import axios from "@/lib/axios";
+
+
 
 const PAGE_SIZE = 20;
 // const userId = localStorage.getItem("userId");
@@ -45,7 +47,7 @@ const Explore = () => {
     const raw = query.trim();
     // 공백만 입력된 상태면 탐색 모드 그대로
     if (!raw) {
-      const { data } = await api.get("/explore", {
+      const { data } = await axios.get("/explore", {
         params: exploreParams,
         headers,
       });
@@ -62,7 +64,7 @@ const Explore = () => {
     searchParams.append("page", pageParam);
     searchParams.append("size", PAGE_SIZE);
 
-    const { data } = await api.get("/search", {
+    const { data } = await axios.get("/search", {
       params: searchParams,
       headers,
     });

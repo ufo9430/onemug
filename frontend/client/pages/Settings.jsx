@@ -225,7 +225,7 @@ export default function Settings() {
     setError(null);
 
     try {
-      const data = await api.getMySubscriptions();
+      const data = await axios.getMySubscriptions();
       setSubscriptions(data);
     } catch (err) {
       setError("구독 정보를 불러오는데 실패했습니다.");
@@ -255,7 +255,7 @@ export default function Settings() {
         });
         uploadedPath = uploadRes.data.profileUrl;
         setRawProfileUrl(uploadedPath);
-        setProfileImageUrl(`http://localhost:8080${uploadedPath}`);
+        setProfileImageUrl(`/api${uploadedPath}`);
       }
 
       // 2. 닉네임, 이미지 경로 업데이트
@@ -408,7 +408,7 @@ function ProfileSettings({ userInfo, onSave }) {
     if (userInfo) {
       setNickname(userInfo.nickname || "");
       setRawProfileUrl(userInfo.profileUrl || "");
-      setProfileImageUrl(`http://localhost:8080${userInfo.profileUrl}`);
+      setProfileImageUrl(`/api${userInfo.profileUrl}`);
     }
   }, [userInfo]);
 

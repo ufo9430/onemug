@@ -220,7 +220,7 @@ function NotificationItem({ notification, setNotifications }) {
   const handleClick = async () => {
     try {
       // 백엔드에 해당 알림 읽음 처리 요청
-      await fetch(`http://localhost:8080/notice/${notification.id}/read`, {
+      await fetch(`/api/notice/${notification.id}/read`, {
         method: "POST",
       });
 

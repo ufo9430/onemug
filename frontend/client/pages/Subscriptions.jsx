@@ -6,7 +6,7 @@ import axios from "@/lib/axios";
 import { jwtDecode } from 'jwt-decode';
 
 // axios 기본 URL 설정
-axios.defaults.baseURL = 'http://localhost:8080';
+axios.defaults.baseURL = '/api';
 
 export default function Subscriptions() {
   const navigate = useNavigate();

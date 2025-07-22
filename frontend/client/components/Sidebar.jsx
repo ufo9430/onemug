@@ -69,7 +69,7 @@ const Sidebar = ({ profile = {}, activeItem }) => {
             <Avatar className="w-12 h-12">
               <AvatarImage
                 src={
-                  `http://localhost:8080${profile.profileUrl}` ||
+                  `/api${profile.profileUrl}` ||
                   "/default-profile.png"
                 }
                 alt={profile.nickname || "프로필 이미지"}

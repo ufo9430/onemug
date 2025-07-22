@@ -71,7 +71,7 @@ const PostDetail = () => {
   useEffect(() => {
     const fetchPost = async () => {
       try {
-        const response = await axios.get(`http://localhost:8080/post/${id}`, {
+        const response = await axios.get(`/api/post/${id}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -91,7 +91,7 @@ const PostDetail = () => {
   useEffect(() => {
     const fetchComments = async (id) => {
       try {
-        const res = await axios.get(`http://localhost:8080/post/${id}/comments`);
+        const res = await axios.get(`/api/post/${id}/comments`);
         setCommentCount(res.data.length); // 댓글 개수 저장
         console.log("res.data", res.data);
       } catch (err) {
@@ -115,7 +115,7 @@ const PostDetail = () => {
   const handleLikeToggle = async () => {
     try {
       if (liked) {
-        await axios.delete(`http://localhost:8080/post/${id}/like`, {
+        await axios.delete(`/api/post/${id}/like`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -123,7 +123,7 @@ const PostDetail = () => {
         setLikeCount((prev) => prev - 1);
       } else {
         await axios.post(
-          `http://localhost:8080/post/${id}/like`,
+          `/api/post/${id}/like`,
           {},
           {   
             headers: {

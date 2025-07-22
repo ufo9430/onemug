@@ -5,7 +5,7 @@ import axios from "@/lib/axios";
 
 const SocialButton = ({ provider, icon, className, children }) => {
   const handleSocialLogin = () => {
-    window.location.href = `http://localhost:8080/oauth2/authorization/${provider}`;
+    window.location.href = `/api/oauth2/authorization/${provider}`;
   };
   return (
     <button

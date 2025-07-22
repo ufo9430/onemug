@@ -82,7 +82,7 @@ const CreatorSidebar = ({ profile = {}, activeItem }) => {
       <div className="p-4">
         <div className="bg-gray-50 rounded-lg p-3 flex items-center gap-3">
           <img
-            src={`http://localhost:8080${profile.profileUrl}` || "/default-profile.png"}
+            src={`/api${profile.profileUrl}` || "/default-profile.png"}
             alt={profile.nickname || "프로필 이미지"}
             className="w-12 h-12 rounded-full"
           />
