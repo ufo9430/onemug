@@ -125,6 +125,7 @@ const CreatorProfile = () => {
       console.error("채팅방 이동 실패", err);
     }
   };
+
   return (
     <div className="min-h-screen bg-brand-secondary flex">
       {/* Main Content */}
