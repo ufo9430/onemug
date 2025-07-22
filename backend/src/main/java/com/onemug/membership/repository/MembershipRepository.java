@@ -190,4 +190,6 @@ public interface MembershipRepository extends JpaRepository<Membership, Long> {
 
 
     Optional<Membership> findByOrderId(String orderId);
+
+    List<Membership> findByUserIdAndIsTemplateFalse(Long userId);
 }
