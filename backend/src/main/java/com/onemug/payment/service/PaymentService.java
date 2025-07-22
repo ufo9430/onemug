@@ -1,13 +1,12 @@
 package com.onemug.payment.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.onemug.payment.dto.PaymentConfirmRequestDto;
 import com.onemug.payment.dto.PaymentConfirmResponseDto;
 import com.onemug.payment.dto.TossPaymentResponseDto;
 import com.onemug.global.entity.Payment;
 import com.onemug.payment.repository.PaymentRepository;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
@@ -21,13 +20,13 @@ import java.util.Map;
 import java.util.Optional;
 
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class PaymentService {
-    
-    private final PaymentRepository paymentRepository;
-    private final RestTemplate restTemplate;
-    private final ObjectMapper objectMapper;
+    @Autowired
+    private PaymentRepository paymentRepository;
+
+    @Autowired
+    private RestTemplate restTemplate;
     
     @Value("${toss.payments.secret-key}")
     private String tossSecretKey;

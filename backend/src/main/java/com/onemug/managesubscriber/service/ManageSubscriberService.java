@@ -33,14 +33,14 @@ public class ManageSubscriberService {
         List<User> subscriber = creator.getSubscriber();
 
         for (User user : subscriber) {
-            List<Membership> activeSubscriptionsByUserId = membershipRepository.findActiveSubscriptionsByUserId(userId);
+            List<Membership> activeSubscriptionsByUserId = membershipRepository.findActiveSubscriptionsByUserId(userId, LocalDateTime.now());
             LocalDateTime joinDate = null;
             String membershipType = null;
 
             for (Membership membership : activeSubscriptionsByUserId) {
                 Long id = membership.getCreator().getId();
                 if(creatorId.equals(id)){
-                    membershipType = membership.getName();
+                    membershipType = membership.getMembershipName();
                     joinDate = membership.getSubscribedAt();
                     break;
                 }
