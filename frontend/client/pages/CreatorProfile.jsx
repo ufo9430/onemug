@@ -71,7 +71,6 @@ const CreatorProfile = () => {
     const fetchProfile = async () => {
       try {
         const res = await axios.get(`/c/${creatorId}`);
-        console.log(res.data);
 
         setProfile(res.data);
       } catch (err) {
@@ -82,8 +81,8 @@ const CreatorProfile = () => {
     const fetchPosts = async () => {
       try {
         const res = await axios.get(`/user/${creatorId}/posts`);
-
-        setPosts(res.data);
+        console.log("profile res.data", res.data);
+        setPosts(res.data.content);
       } catch (err) {
         console.error("❌ 게시글 불러오기 실패", err);
       }
@@ -221,7 +220,19 @@ const CreatorProfile = () => {
                 최근 게시글
               </h2>
               <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                <PostCard {...samplePost} />
+                {posts.map(post => (
+                    <PostCard
+                        key={post.id}
+                        id={post.id}
+                        title={post.title}
+                        excerpt={post.content}
+                        category={post.category.name}
+                        likes={post.likeCount}
+                        comments={post.commentCount ?? 0} // commentCount가 없다면 기본 0
+                        image={post.creator.user.profileImage}
+                        author={post.creator.user.nickname}
+                    />
+                ))}
               </div>
             </div>
           </div>
