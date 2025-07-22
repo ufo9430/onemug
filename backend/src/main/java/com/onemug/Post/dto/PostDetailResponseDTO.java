@@ -14,6 +14,8 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 public class PostDetailResponseDTO {
     private Long id;
+    private Long creator_id;
+    private String profile_url;
     private String title;
     private String content;
     private String categoryName;
@@ -25,6 +27,8 @@ public class PostDetailResponseDTO {
     public static PostDetailResponseDTO from(Post post, String authorName, Boolean liked) {
         return new PostDetailResponseDTO(
                 post.getId(),
+                post.getCreator().getId(),
+                post.getCreator().getUser().getProfileUrl(),
                 post.getTitle(),
                 post.getContent(),
                 post.getCategory().getName(),

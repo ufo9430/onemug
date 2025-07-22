@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Heart, MessageCircle } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import api from "@/lib/axios";
+import { Heart, MessageCircle } from "lucide-react";
 
 const PostCard = ({
   id,
@@ -58,67 +58,56 @@ const PostCard = ({
 
 const Feed = () => {
   const navigate = useNavigate();
-  const userId = localStorage.getItem("userId");
-
-  // ① 구독자 수 체크(초기엔 null)
+  const userId = localStorage.getItem("userId") || sessionStorage.getItem("userId");
   const [subscriptionCount, setSubscriptionCount] = useState(null);
 
   useEffect(() => {
-    // 구독자 수 체크 API 호출
-    api.get(`/api/subscriptions/count?userId=${userId}`)
+    if (!userId) {
+      navigate("/explore", { replace: true });
+      return;
+    }
+    api.get("/memberships/count", { headers: { "User-Id": userId } })
       .then(res => {
-        console.log("구독 카운트:", res.data); // 테스트
-        setSubscriptionCount(res.data.count); // 예: {count: 0} or {count: 2}
-        if (res.data.count === 0) {
+        setSubscriptionCount(res.data);
+        if (res.data === 0) {
           navigate("/explore", { replace: true });
         }
       })
-      .catch((err) => {
-         console.error("구독자 수 확인 실패", err);
+      .catch(() => {
         navigate("/explore", { replace: true });
       });
   }, [userId, navigate]);
 
-  // ② 구독 정보 확인 중일 때
+  // 항상 최상단에서 useQuery 선언 (조건부로 데이터를 fetch할 때는 enabled 사용)
+  const { data, isLoading, isError, error } = useQuery({
+    queryKey: ["feed", userId],
+    queryFn: () =>
+      api.get("/feed", { params: { user: userId, page: 0, size: 20 } })
+        .then((res) => res.data),
+    enabled: subscriptionCount > 0 // 구독이 있을 때만 fetch!
+  });
+
   if (subscriptionCount === null) {
     return <div className="p-8 text-center">구독 정보 확인 중...</div>;
   }
 
-  // ③ 구독자가 1명 이상일 때만 피드 fetch
-  const { data, isLoading, isError, error } = useQuery({
-    queryKey: ["feed", userId],
-    queryFn: () =>
-      api
-        .get("/feed", { params: { user: userId, page: 0, size: 20 } })
-        .then((res) => res.data),
-    staleTime: 1000 * 60 * 5,
-    keepPreviousData: true,
-    enabled: subscriptionCount > 0 // 구독 있을 때만 fetch
-  });
-
-  const posts = data?.content ?? [];
-
-  // 로딩 & 에러 처리
   if (isLoading) {
     return <div className="p-8 text-center">피드를 불러오는 중...</div>;
   }
+
   if (isError) {
-    return (
-      <div className="p-8 text-center text-red-500">
-        피드 로드 실패: {error?.message || "알 수 없는 오류"}
-      </div>
-    );
+    return <div className="p-8 text-center text-red-500">
+      피드 로드 실패: {error?.message || "알 수 없는 오류"}
+    </div>;
   }
+
+  const posts = data?.content ?? [];
 
   return (
     <div className="min-h-screen bg-brand-secondary flex">
+      {/* ... 이하 동일 */}
       <div className="flex-1">
-        <header className="h-[73px] bg-white border-b border-gray-200 flex items-center px-6">
-          <div className="lg:hidden mr-4">
-            <h2 className="text-lg font-bold text-gray-900">OneMug</h2>
-          </div>
-          <h1 className="text-xl font-semibold text-gray-900">피드</h1>
-        </header>
+        {/* ... */}
         <main className="bg-brand-secondary min-h-[calc(100vh-73px)] p-4 lg:p-8">
           <div className="max-w-4xl mx-auto space-y-6 lg:space-y-8">
             {posts.map((post) => (
@@ -141,5 +130,6 @@ const Feed = () => {
     </div>
   );
 };
+
 
 export default Feed;

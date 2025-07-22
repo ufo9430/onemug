@@ -91,9 +91,7 @@ const PostDetail = () => {
   useEffect(() => {
     const fetchComments = async (id) => {
       try {
-        const res = await axios.get(
-          `http://localhost:8080/post/${id}/comments`,
-        );
+        const res = await axios.get(`http://localhost:8080/post/${id}/comments`);
         setCommentCount(res.data.length); // 댓글 개수 저장
         console.log("res.data", res.data);
       } catch (err) {
@@ -127,7 +125,7 @@ const PostDetail = () => {
         await axios.post(
           `http://localhost:8080/post/${id}/like`,
           {},
-          {
+          {   
             headers: {
               Authorization: `Bearer ${token}`,
             },
@@ -170,7 +168,7 @@ const PostDetail = () => {
                 <button
                   type="button"
                   className="focus:outline-none"
-                  onClick={() => navigate(`/profile/${postData.creator_id}`)}
+                  onClick={() => navigate(`/profile/${postData.authorId}`)}
                   style={{ padding: 0, border: "none", background: "none" }}
                 >
                   <img

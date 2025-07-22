@@ -50,6 +50,10 @@ public class Membership {
     @Column(nullable = false)
     private Boolean isTemplate = false;  // true: 플랜 템플릿, false: 실제 구독
     
+    // 템플릿 기반 구독인 경우 원본 템플릿 ID 저장
+    @Column(nullable = true)
+    private Long templateId;  // 구독 시 참조한 템플릿 ID
+    
     // === 구독 상태 관리 ===
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -222,6 +226,7 @@ public class Membership {
                 .autoRenew(true)
                 .paymentMethod(null)
                 .orderId(null)
+                .templateId(this.id)  // 원본 템플릿 ID 저장
                 .build();
     }
     

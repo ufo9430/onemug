@@ -33,9 +33,9 @@ public class ManageSubscriberService {
         List<User> subscriber = creator.getSubscriber();
 
         for (User user : subscriber) {
-            List<Membership> activeSubscriptionsByUserId = membershipRepository.findActiveSubscriptionsByUserId(userId, LocalDateTime.now());
+            List<Membership> activeSubscriptionsByUserId = membershipRepository.findAllByUserAndStatus(user, Membership.SubscriptionStatus.ACTIVE);
             LocalDateTime joinDate = null;
-            String membershipType = null;
+            String membershipType = "없음";
 
             for (Membership membership : activeSubscriptionsByUserId) {
                 Long id = membership.getCreator().getId();

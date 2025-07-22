@@ -147,9 +147,9 @@ const CreatorSubscribers = () => {
                                         </SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="all">모든 멤버십</SelectItem>
-                                            <SelectItem value="무료">무료</SelectItem>
-                                            <SelectItem value="프리미엄">프리미엄</SelectItem>
-                                            <SelectItem value="VIP">VIP</SelectItem>
+                                            {[...new Set(subscribers.map(s => s.membershipType))].map(type => (
+                                                <SelectItem key={type} value={type}>{type}</SelectItem>
+                                            ))}
                                         </SelectContent>
                                     </Select>
                                 </div>

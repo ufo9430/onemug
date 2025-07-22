@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react"
-import axios from "axios"
+import axios from "@/lib/axios";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { Heart, MessageCircle } from "lucide-react"
 
@@ -8,11 +8,11 @@ export default function Recent({ userId }) {
 
   useEffect(() => {
     axios
-      .get(`/api/post-view-log-user/recent/${userId}`)
+      .get(`/api/post-view-log-user/recent`)
       .then(res => {
         // API 응답이 배열인지 객체인지 확인
         // 예를 들어, 만약 { content: [...] } 형식이라면
-        const data = Array.isArray(res.data) ? res.data : res.data.content || []
+        const data = Array.isArray(res) ? res : res.data || []
         setPosts(data)
       })
       .catch(err => {

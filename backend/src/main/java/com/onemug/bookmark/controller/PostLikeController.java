@@ -5,6 +5,10 @@ import com.onemug.feed.dto.PostDto;
 
 import com.onemug.global.entity.Post;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -15,10 +19,16 @@ import java.util.List;
 public class PostLikeController {
     private final PostLikeService postLikeService;
 
-    @GetMapping("/users/{userId}/liked-posts")
-    public List<PostDto> getLikedPosts(@PathVariable Long userId) {
+    @GetMapping("/users/liked-posts")
+    public ResponseEntity<List<PostDto>> getLikedPosts(Authentication authentication) {
+        if (authentication == null || !(authentication.getPrincipal() instanceof Jwt jwt)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        Long userId = Long.parseLong(authentication.getName());
+
         List<Post> posts = postLikeService.getLikedPosts(userId);
-        return posts.stream().map(PostDto::from).toList();
+        return ResponseEntity.ok(posts.stream().map(PostDto::from).toList());
     }
 
     @PostMapping("/posts/{postId}/like")

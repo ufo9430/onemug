@@ -35,13 +35,12 @@ const PaymentModal = ({ isOpen, onClose, membership, selectionResult, onPaymentS
         amount: membership.price,
         orderId: generateOrderId(),
         orderName: `${membership.creatorName} - ${membership.name}`,
-        successUrl: import.meta.env.VITE_TOSS_SUCCESS_URL || `${window.location.origin}/Membership/creator/${membership.creatorId}?payment=success`,
-        failUrl: import.meta.env.VITE_TOSS_FAIL_URL || `${window.location.origin}/Membership/creator/${membership.creatorId}?payment=fail`,
+        successUrl: `${window.location.origin}/Membership/creator/${membership.creatorId}?payment=success&membershipId=${membership.id}&creatorId=${membership.creatorId}&membershipName=${encodeURIComponent(membership.name || membership.membershipName)}&price=${membership.price}`,
+        failUrl: `${window.location.origin}/Membership/creator/${membership.creatorId}?payment=fail`,
         metadata: {
           membershipId: membership.id,
-          selectionId: selectionResult.selectionId,
-          creatorId: membership.creatorId,
-          userId: '1'
+          selectionId: selectionResult?.selectionId,
+          creatorId: membership.creatorId
         }
       };
 

@@ -33,6 +33,7 @@ public class MembershipResponseDto {
     private Long subscriberId;
     private String membershipName;
     private List<String> benefits;
+    private Long templateId; // 원본 멤버십 템플릿 ID 추가
 
     // Static factory method for Membership
     public static MembershipResponseDto from(Membership membership) {
@@ -56,6 +57,7 @@ public class MembershipResponseDto {
         dto.benefits = membership.getBenefits() != null 
             ? membership.getBenefits().stream().map(Benefit::getContent).collect(Collectors.toList())
             : List.of(); // 빈 리스트 반환
+        dto.templateId = membership.getTemplateId(); // 원본 멤버십 템플릿 ID 추가
         
         return dto;
     }

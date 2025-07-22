@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -394,6 +395,63 @@ public class MembershipService {
     // === 구독 생성 및 관리 ===
     
     /**
+     * 결제 완료 후 바로 ACTIVE 상태로 구독 생성
+     * @param membershipId 멤버십 템플릿 ID
+     * @param userId 사용자 ID
+     * @param orderId 결제 주문 ID
+     * @return 생성된 활성 구독의 ID
+     */
+    @Transactional
+    public Long createActiveSubscription(Long membershipId, Long userId, String orderId) {
+        try {
+            log.info("결제 완료 후 활성 구독 직접 생성: membershipId={}, userId={}, orderId={}", 
+                     membershipId, userId, orderId);
+            
+            // 1. 멤버십 템플릿 조회
+            Membership template = membershipRepository.findById(membershipId)
+                    .orElseThrow(() -> new IllegalArgumentException("멤버십 템플릿을 찾을 수 없습니다: " + membershipId));
+                    
+            if (!template.isTemplate()) {
+                throw new IllegalArgumentException("멤버십 템플릿이 아닙니다: " + membershipId);
+            }
+            
+            // 2. 사용자 조회
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + userId));
+                    
+            // 3. 중복 구독 확인 (창작자별로 활성 구독은 하나만 가능)
+            Long creatorId = template.getCreator().getId();
+            boolean hasDuplicate = checkDuplicateSubscription(user, membershipId, creatorId);
+            
+            if (hasDuplicate) {
+                log.warn("이미 해당 창작자의 활성 구독이 있습니다: userId={}, creatorId={}", userId, creatorId);
+                return null;
+            }
+            
+            // 4. 동일 창작자의 하위 가격 구독 취소
+            cancelLowerPriceSubscriptions(userId, creatorId, template.getPrice());
+            
+            // 5. 템플릿에서 구독 생성 - 바로 ACTIVE 상태로 설정
+            Membership subscription = template.createSubscriptionFor(user);
+            subscription.setStatus(Membership.SubscriptionStatus.ACTIVE);
+            subscription.setOrderId(orderId);
+            
+            // 6. 구독 저장
+            Membership savedSubscription = membershipRepository.save(subscription);
+            
+            log.info("활성 구독 생성 완료: id={}, 상태={}, 사용자={}, 주문ID={}",
+                     savedSubscription.getId(), savedSubscription.getStatus(),
+                     savedSubscription.getUser().getId(), savedSubscription.getOrderId());
+                     
+            return savedSubscription.getId();
+            
+        } catch (Exception e) {
+            log.error("활성 구독 생성 중 오류 발생: membershipId={}, userId={}", membershipId, userId, e);
+            return null;
+        }
+    }
+    
+    /**
      * 구독 생성 (MembershipSelection 통합)
      */
     @Transactional
@@ -532,14 +590,14 @@ public class MembershipService {
                 } 
                 // 현재 구독이 무료이고 선택한 멤버십이 유료인 경우 -> 업그레이드 가능
                 else if (currentMembership.getPrice() == 0 && selectedMembership.getPrice() > 0) {
-                    log.info("무료 -> 유료 멤버십 업그레이드 가능: userId={}, creatorId={}", 
-                            user.getId(), request.getCreatorId());
+                    log.info("무료 -> 유료 멤버십 업그레이드 가능: userId={}, creatorId={}, membershipId={}", 
+                            user.getId(), request.getCreatorId(), request.getMembershipId());
                     return MembershipValidationDto.successWithUpgrade(currentMembership.getId());
                 }
                 // 현재 구독이 유료이고 선택한 멤버십도 유료인 경우 -> 업그레이드/다운그레이드 가능
                 else if (currentMembership.getPrice() > 0 && selectedMembership.getPrice() > 0) {
-                    log.info("유료 -> 유료 멤버십 변경 가능: userId={}, creatorId={}", 
-                            user.getId(), request.getCreatorId());
+                    log.info("유료 -> 유료 멤버십 변경 가능: userId={}, creatorId={}, membershipId={}", 
+                            user.getId(), request.getCreatorId(), request.getMembershipId());
                     return MembershipValidationDto.successWithUpgrade(currentMembership.getId());
                 } 
                 // 그 외의 케이스 (유료 -> 무료)는 불가능
@@ -679,24 +737,209 @@ public class MembershipService {
             String previousStatus = membership.getStatus().name();
             boolean wasAutoRenew = membership.getAutoRenew() != null ? membership.getAutoRenew() : false;
             
-            // 구독 취소 처리
-            membership.cancel();
-            membershipRepository.save(membership);
+            // 구독 정보 저장 (응답용)
+            Long userId = membership.getUser().getId();
+            String membershipName = membership.getMembershipName();
+            Long creatorId = membership.getCreator().getId();
             
-            log.info("구독 취소 완료: membershipId={}", membershipId);
+            // 구독 취소 처리 - 데이터베이스에서 완전히 삭제
+            membershipRepository.delete(membership);
+            
+            log.info("구독 완전 삭제 완료: membershipId={}", membershipId);
             
             return SubscriptionCancelResponseDto.success(
                     membershipId,
-                    membership.getMembershipName(),
-                    membership.getCreator().getId(),
-                    membership.getUser().getId(),
+                    membershipName,
+                    creatorId,
+                    userId,
                     previousStatus,
-                    wasAutoRenew
-            );
+                    wasAutoRenew);
             
         } catch (Exception e) {
             log.error("구독 취소 중 오류 발생: membershipId={}", membershipId, e);
             return SubscriptionCancelResponseDto.error("구독 취소에 실패했습니다: " + e.getMessage(), membershipId, null);
+        }
+    }
+    
+    /**
+     * 결제 완료 후 구독 상태 업데이트
+     */
+    @Transactional
+    public boolean updateSubscriptionAfterPayment(String orderId) {
+        try {
+            log.info("결제 완료 후 구독 상태 업데이트 시작: orderId={}", orderId);
+            
+            // 주문 ID로 구독 조회
+            log.info("orderId로 구독 검색: {}", orderId);
+            Optional<Membership> membershipOpt = membershipRepository.findByOrderId(orderId);
+            
+            if (membershipOpt.isEmpty()) {
+                log.warn("주문 ID에 해당하는 구독을 찾을 수 없습니다: orderId={}", orderId);
+                
+                // 디버깅: 모든 pending 또는 cancelled 상태의 구독 조회
+                List<Membership> pendingOrCancelledMemberships = membershipRepository.findAll().stream()
+                        .filter(m -> m.getStatus() == Membership.SubscriptionStatus.PENDING || 
+                                     m.getStatus() == Membership.SubscriptionStatus.CANCELLED)
+                        .toList();
+                
+                log.info("현재 PENDING 또는 CANCELLED 상태인 모든 구독 목록 ({}개):", pendingOrCancelledMemberships.size());
+                pendingOrCancelledMemberships.forEach(m -> {
+                    log.info("  - ID: {}, 이름: {}, 상태: {}, 주문ID: {}, 가격: {}, 사용자ID: {}", 
+                            m.getId(), m.getMembershipName(), m.getStatus(), m.getOrderId(), 
+                            m.getPrice(), m.getUser() != null ? m.getUser().getId() : "NULL");
+                });
+                
+                return false;
+            }
+            
+            Membership membership = membershipOpt.get();
+            log.info("구독 찾음: id={}, status={}, name={}, price={}, orderId={}",
+                    membership.getId(), membership.getStatus(), 
+                    membership.getMembershipName(), membership.getPrice(), 
+                    membership.getOrderId());
+            
+            // 결제 대기 중 또는 취소된 구독을 활성화
+            if (membership.getStatus() == Membership.SubscriptionStatus.PENDING || 
+                membership.getStatus() == Membership.SubscriptionStatus.CANCELLED) {
+                log.info("구독 상태 업데이트 전: id={}, status={}", membership.getId(), membership.getStatus());
+                
+                // 구독 상태를 활성으로 변경
+                Membership.SubscriptionStatus previousStatus = membership.getStatus();
+                membership.setStatus(Membership.SubscriptionStatus.ACTIVE);
+                membershipRepository.save(membership);
+                
+                log.info("구독 상태 업데이트 완료: id={}, 이전 상태={}, 새 상태=ACTIVE", 
+                        membership.getId(), previousStatus);
+                return true;
+            } else {
+                log.warn("구독이 이미 활성화되었거나 예상치 못한 상태입니다: status={}", membership.getStatus());
+                return false;
+            }
+            
+        } catch (Exception e) {
+            log.error("구독 상태 업데이트 중 오류 발생: orderId={}", orderId, e);
+            return false;
+        }
+    }
+    
+    /**
+     * 사용자의 최신 PENDING 상태 구독을 찾아 활성화
+     * 결제 완료 후 주문 ID 불일치 문제 해결을 위한 fallback 메서드
+     */
+    @Transactional
+    public Long updateLatestPendingSubscription(Long userId, String newOrderId) {
+        try {
+            log.info("사용자의 최신 PENDING 구독 검색 시작: userId={}, newOrderId={}", userId, newOrderId);
+            
+            // 사용자 존재 확인
+            User user = userRepository.findById(userId)
+                    .orElse(null);
+            
+            if (user == null) {
+                log.warn("사용자를 찾을 수 없습니다: userId={}", userId);
+                return null;
+            }
+            
+            // 해당 사용자의 모든 구독 조회
+            List<Membership> userMemberships = membershipRepository.findByUserIdAndIsTemplateFalse(userId);
+            
+            // 최근 생성된 PENDING 상태 구독 찾기
+            Optional<Membership> pendingSubscription = userMemberships.stream()
+                    .filter(m -> m.getStatus() == Membership.SubscriptionStatus.PENDING)
+                    .max(Comparator.comparing(Membership::getCreatedAt));
+            
+            // PENDING 구독이 없는 경우, 최근 생성된 CANCELLED 구독을 대신 찾아본다
+            if (pendingSubscription.isEmpty()) {
+                log.warn("사용자의 PENDING 상태 구독을 찾을 수 없습니다. CANCELLED 상태 최신 구독을 확인합니다: userId={}", userId);
+                
+                // 최근 생성된 CANCELLED 상태 구독 찾기
+                pendingSubscription = userMemberships.stream()
+                        .filter(m -> m.getStatus() == Membership.SubscriptionStatus.CANCELLED)
+                        .max(Comparator.comparing(Membership::getCreatedAt));
+                
+                if (pendingSubscription.isEmpty()) {
+                    log.warn("사용자의 PENDING 또는 CANCELLED 상태 구독을 찾을 수 없습니다: userId={}", userId);
+                    
+                    // 디버깅: 사용자의 최근 5개 구독 상태 출력
+                    userMemberships.stream()
+                            .sorted(Comparator.comparing(Membership::getCreatedAt).reversed())
+                            .limit(5)
+                            .forEach(m -> {
+                                log.info("  - 최근 구독: ID={}, 상태={}, 생성일={}, 취소일={}, 가격={}원, 주문ID={}", 
+                                        m.getId(), m.getStatus(), m.getCreatedAt(), 
+                                        m.getCancelledAt(), m.getPrice(), m.getOrderId());
+                            });
+                    
+                    return null;
+                }
+                
+                log.info("CANCELLED 상태의 최신 구독을 발견했습니다. 결제 완료로 활성화를 진행합니다.");
+            }
+            
+            Membership subscription = pendingSubscription.get();
+            log.info("구독 찾음: id={}, status={}, name={}, createdAt={}, orderId={}",
+                    subscription.getId(), subscription.getStatus(), 
+                    subscription.getMembershipName(), subscription.getCreatedAt(), 
+                    subscription.getOrderId());
+            
+            // 주문 ID 업데이트 및 상태 활성화
+            if (subscription.getOrderId() == null || !subscription.getOrderId().equals(newOrderId)) {
+                log.info("기존 주문 ID({})를 새 주문 ID({})로 업데이트합니다", subscription.getOrderId(), newOrderId);
+                subscription.setOrderId(newOrderId);
+            }
+            
+            // 구독 상태를 활성으로 변경
+            subscription.setStatus(Membership.SubscriptionStatus.ACTIVE);
+            membershipRepository.save(subscription);
+            
+            log.info("구독 활성화 완료: id={}, 이전 상태={}, 새 상태=ACTIVE, 주문ID={}", 
+                    subscription.getId(), pendingSubscription.get().getStatus(), newOrderId);
+            return subscription.getId();
+            
+        } catch (Exception e) {
+            log.error("구독 활성화 중 오류 발생: userId={}", userId, e);
+            return null;
+        }
+    }
+    
+    /**
+     * 멤버십 ID로 Membership 엔티티 조회
+     * PaymentService에서 결제 정보 저장시 사용
+     */
+    public Optional<Membership> getMembership(Long membershipId) {
+        try {
+            log.info("멤버십 엔티티 조회: membershipId={}", membershipId);
+            return membershipRepository.findById(membershipId);
+        } catch (Exception e) {
+            log.error("멤버십 엔티티 조회 중 오류 발생: membershipId={}", membershipId, e);
+            return Optional.empty();
+        }
+    }
+    
+    /**
+     * 동일 창작자의 하위 가격 구독 취소
+     * 상위 멤버십 구독 시 하위 멤버십은 자동으로 취소
+     */
+    private void cancelLowerPriceSubscriptions(Long userId, Long creatorId, Integer newSubscriptionPrice) {
+        try {
+            List<Membership> lowerPriceSubscriptions = membershipRepository
+                .findLowerPriceActiveSubscriptions(userId, creatorId, newSubscriptionPrice);
+                
+            if (!lowerPriceSubscriptions.isEmpty()) {
+                log.info("상위 멤버십({}원) 구독으로 하위 가격 멤버십 자동 취소: 사용자={}, 창작자={}, 취소 대상={}개",
+                    newSubscriptionPrice, userId, creatorId, lowerPriceSubscriptions.size());
+                
+                for (Membership subscription : lowerPriceSubscriptions) {
+                    log.info("하위 가격 멤버십 자동 취소: 멤버십명={}, 가격={}원, ID={}",
+                        subscription.getMembershipName(), subscription.getPrice(), subscription.getId());
+                    
+                    // 구독 상태를 CANCELLED로 변경
+                    subscription.setStatus(Membership.SubscriptionStatus.CANCELLED);
+                    membershipRepository.save(subscription);
+                }
+            }
+        } catch (Exception e) {
+            log.error("하위 가격 구독 자동 취소 중 오류 발생: userId={}, creatorId={}", userId, creatorId, e);
         }
     }
 }

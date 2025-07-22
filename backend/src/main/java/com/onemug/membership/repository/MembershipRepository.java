@@ -2,6 +2,7 @@ package com.onemug.membership.repository;
 
 import com.onemug.global.entity.Membership;
 import com.onemug.global.entity.Membership.SubscriptionStatus;
+import com.onemug.global.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -76,6 +77,15 @@ public interface MembershipRepository extends JpaRepository<Membership, Long> {
      */
     @Query("SELECT m FROM Membership m WHERE m.user.id = :userId AND m.creator.id = :creatorId AND m.isTemplate = false AND m.status = 'ACTIVE' AND m.expiresAt > :now ORDER BY m.createdAt DESC")
     List<Membership> findActiveSubscriptionsByUserAndCreator(@Param("userId") Long userId, @Param("creatorId") Long creatorId, @Param("now") LocalDateTime now);
+    
+    /**
+     * 동일 창작자의 하위 가격 구독 조회
+     */
+    @Query("SELECT m FROM Membership m WHERE m.user.id = :userId AND m.creator.id = :creatorId AND m.status = 'ACTIVE' AND m.price < :price AND m.isTemplate = false")
+    List<Membership> findLowerPriceActiveSubscriptions(
+            @Param("userId") Long userId, 
+            @Param("creatorId") Long creatorId, 
+            @Param("price") Integer price);
     
     // === 창작자별 구독 조회 ===
     
@@ -182,4 +192,13 @@ public interface MembershipRepository extends JpaRepository<Membership, Long> {
             "AND (m.expiresAt IS NULL OR m.expiresAt > CURRENT_TIMESTAMP)")
     List<Long> findActiveCreatorIdsByUserId(@Param("userId") Long userId);
 
+    List<Membership> findAllByCreatorIdAndIsTemplateTrue(Long creatorId);
+
+    @Query("select m from Membership m where m.user = :user and m.status = :status")
+    List<Membership> findAllByUserAndStatus(@Param("user") User user, @Param("status") Membership.SubscriptionStatus status);
+
+
+    Optional<Membership> findByOrderId(String orderId);
+
+    List<Membership> findByUserIdAndIsTemplateFalse(Long userId);
 }

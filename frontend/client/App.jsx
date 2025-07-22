@@ -29,6 +29,8 @@ import CreatorMembership from "./pages/CreatorMembership";
 import CreatorInsights from "./pages/CreatorInsights";
 import CreatePost from "./pages/CreatePost";
 import CreatePostPublish from "./pages/CreatePostPublish";
+import UpdatePost from "./pages/UpdatePost";
+import UpdatePostPublish from "./pages/UpdatePostPublish";
 import NotFound from "./pages/NotFound";
 import Membership from "./pages/Membership";
 import SidebarLayout from "./pages/layout/SidebarLayout";
@@ -36,6 +38,7 @@ import CreatorSidebarLayout from "./pages/layout/CreatorSidebarLayout";
 import OAuthCallback from "./pages/OAuthCallback";
 import CreatorProfile from "./pages/CreatorProfile";
 import CreatorSettings from "./pages/CreatorSettings";
+import ManageSubscribers from "./pages/ManageSubscribers";
 
 const queryClient = new QueryClient();
 
@@ -88,7 +91,7 @@ const App = () => (
           <Route element={<CreatorSidebarLayout />}>
             <Route path="/creator/dashboard" element={<CreatorDashboard />} />
             <Route path="/creator/insights" element={<CreatorInsights />} />
-            <Route path="/creator/subscribers" element={<CreatorDashboard />} />
+            <Route path="/creator/subscribers" element={<ManageSubscribers />} />
             <Route path="/creator/messages" element={<Messages />} />
             <Route
               path="/creator/messages/:conversationId"
@@ -100,6 +103,11 @@ const App = () => (
             <Route
               path="/creator/post/publish"
               element={<CreatePostPublish />}
+            />
+            <Route path="/creator/post/update" element={<UpdatePost />} />
+            <Route
+                path="/creator/post/update/publish"
+                element={<UpdatePostPublish />}
             />
             <Route path="/creator/post/:id" element={<CreatorPostDetail />} />
             <Route path="/creator/membership" element={<CreatorMembership />} />

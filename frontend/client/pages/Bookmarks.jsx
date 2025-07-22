@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react"
-import axios from "axios"
+import axios from "@/lib/axios";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { Heart, MessageCircle } from "lucide-react"
 
@@ -9,8 +9,8 @@ export default function Bookmarks() {
   useEffect(() => {
     // userId 5로 예시, 실제로는 로그인 유저 id로 바꾸기
     axios
-      .get("http://localhost:8080/api/users/5/liked-posts")
-      .then((res) => setPosts(res.data))
+      .get("/api/users/liked-posts")
+      .then((res) => setPosts(res))
       .catch((err) => console.error(err))
   }, [])
 

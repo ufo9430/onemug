@@ -14,8 +14,7 @@ const CreatePost = () => {
     "원두 · 기기 리뷰": 1,
     "카페 탐방": 2,
     "레시피 공유": 3,
-    "창업/운영": 4,
-    "홈카페 팁": 5
+    "창업/운영": 4
   }
 
   const categoryId = categoryMap[selectedCategoryName];
@@ -108,16 +107,16 @@ const CreatePost = () => {
               <div className="border border-gray-200 rounded-lg overflow-hidden">
                 {/* Toolbar */}
                 <div className="bg-gray-50 border-b border-gray-200 p-3 flex items-center gap-2">
-                  <button className="inline-flex items-center gap-2 px-3 py-1.5 border border-gray-200 rounded bg-white text-sm hover:bg-gray-50 transition-colors">
-                    <Image className="w-4 h-4" />
-                    이미지
-                  </button>
-                  <button className="inline-flex items-center gap-2 px-3 py-1.5 border border-gray-200 rounded bg-white text-sm hover:bg-gray-50 transition-colors">
-                    <Video className="w-4 h-4" />
-                    동영상
-                  </button>
+                  {/*<button className="inline-flex items-center gap-2 px-3 py-1.5 border border-gray-200 rounded bg-white text-sm hover:bg-gray-50 transition-colors">*/}
+                  {/*  <Image className="w-4 h-4" />*/}
+                  {/*  이미지*/}
+                  {/*</button>*/}
+                  {/*<button className="inline-flex items-center gap-2 px-3 py-1.5 border border-gray-200 rounded bg-white text-sm hover:bg-gray-50 transition-colors">*/}
+                  {/*  <Video className="w-4 h-4" />*/}
+                  {/*  동영상*/}
+                  {/*</button>*/}
                   <span className="text-xs text-gray-500 ml-auto">
-                    파일을 드래그하��� 업로드하거나 버튼을 클릭하세요
+                    파일을 드래그하거나 업로드하거나 버튼을 클릭하세요
                   </span>
                 </div>
 

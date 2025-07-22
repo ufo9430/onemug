@@ -7,6 +7,7 @@ import com.onemug.Post.dto.PostUpdateRequestDto;
 import com.onemug.Post.service.PostService;
 import com.onemug.global.entity.Creator;
 import com.onemug.global.entity.Post;
+import com.onemug.insight.repository.PostViewLogRepository;
 import com.onemug.newcreator.repository.CreatorRegisterRepository;
 import com.onemug.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +16,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
@@ -27,6 +29,7 @@ public class PostController {
     private final PostService postService;
     private final CreatorRegisterRepository creatorRegisterRepository;
     private final UserRepository userRepository;
+    private final PostViewLogRepository postViewLogRepository;
 
     @GetMapping("/user/{id}/posts")
     public Page<Post> getPostAll(@RequestParam(defaultValue = "0") int page,
@@ -37,8 +40,8 @@ public class PostController {
     }
 
     @GetMapping("/post/{id}")
-    public PostDetailResponseDTO getPost(@PathVariable Long id) {
-        return postService.getPost(id);
+    public PostDetailResponseDTO getPost(@PathVariable Long id, Authentication authentication) {
+        return postService.getPost(id, authentication);
     }
 
     @PostMapping("/c/post/add")
@@ -75,7 +78,10 @@ public class PostController {
 
     @DeleteMapping("/c/post/delete/{id}")
     public void deletePost(@PathVariable Long id) {
+        // 1. post_view_log에서 post_id가 id인 것들 먼저 삭제
+        postViewLogRepository.deleteAllByPostId(id);
+
+        // 2. 게시글 삭제
         postService.deletePost(id);
-        // 게시글에 연결된 이미지나 다른 것들 삭제하기
     }
 }
