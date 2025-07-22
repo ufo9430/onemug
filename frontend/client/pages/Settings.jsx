@@ -14,19 +14,85 @@ const getAuthHeaders = () => {
   };
 };
 
+// 사용자 ID 추출 함수
+const getUserIdFromStorage = () => {
+  // 저장소에서 직접 userId 확인
+  let userId = localStorage.getItem('userId') || sessionStorage.getItem('userId');
+  
+  if (userId && userId !== 'undefined') {
+    console.log('저장소에서 userId 발견:', userId);
+    return userId;
+  }
+  
+  // JWT 토큰에서 추출 시도
+  const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+  if (!token) {
+    console.warn('토큰이 없어 사용자 ID를 추출할 수 없습니다.');
+    return null;
+  }
+  
+  try {
+    const decoded = jwtDecode(token);
+    console.log('JWT 디코딩 성공:', decoded);
+    
+    // 다양한 필드에서 사용자 ID 추출 시도
+    userId = decoded.userId || decoded.sub || decoded.id || decoded.user_id;
+    
+    if (userId) {
+      console.log('JWT에서 userId 추출 성공:', userId);
+      
+      // 추출한 userId를 저장소에 저장
+      if (localStorage.getItem('token')) {
+        localStorage.setItem('userId', userId);
+      } else {
+        sessionStorage.setItem('userId', userId);
+      }
+      
+      return userId;
+    } else {
+      console.warn('JWT에서 사용자 ID 필드를 찾을 수 없습니다:', decoded);
+      return null;
+    }
+  } catch (error) {
+    console.error('JWT 디코딩 실패:', error);
+    return null;
+  }
+};
+
 // API 호출을 위한 함수들
 const api = {
   // 사용자 구독 멤버십 목록 조회
   getMySubscriptions: async () => {
     try {
-      // 변경된 API 엔드포인트로 요청
+      // 사용자 ID 가져오기
+      const userId = getUserIdFromStorage();
+      
+      if (!userId) {
+        console.warn('사용자 ID가 없어 구독 목록을 조회할 수 없습니다.');
+        return [];
+      }
+      
+      console.log('구독 목록 조회 요청. 사용자 ID:', userId);
+      
+      // 변경된 API 엔드포인트로 요청 (userId를 쿼리 파라미터로 전달)
       const response = await axios.get("/memberships/my-subscriptions", {
-        headers: getAuthHeaders()
+        headers: {
+          ...getAuthHeaders(),
+          'User-Id': userId
+        },
+        params: { userId } // 쿼리 파라미터로 userId 전달
       });
 
+      console.log('구독 목록 조회 성공:', response.data);
       return response.data;
     } catch (error) {
       console.error("Error fetching subscriptions:", error);
+      console.error('오류 세부 정보:', {
+        message: error.message,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        responseData: error.response?.data
+      });
       return [];
     }
   },
@@ -34,8 +100,19 @@ const api = {
   // 활성 멤버십만 조회
   getActiveSubscriptions: async () => {
     try {
+      const userId = getUserIdFromStorage();
+      
+      if (!userId) {
+        console.warn('사용자 ID가 없어 활성 구독 목록을 조회할 수 없습니다.');
+        return [];
+      }
+      
       const response = await axios.get("/memberships/active-subscriptions", {
-        headers: getAuthHeaders()
+        headers: {
+          ...getAuthHeaders(),
+          'User-Id': userId
+        },
+        params: { userId }
       });
       return response.data;
     } catch (error) {
@@ -47,8 +124,19 @@ const api = {
   // 구독 이력 조회
   getSubscriptionHistory: async () => {
     try {
+      const userId = getUserIdFromStorage();
+      
+      if (!userId) {
+        console.warn('사용자 ID가 없어 구독 이력을 조회할 수 없습니다.');
+        return [];
+      }
+      
       const response = await axios.get("/memberships/subscription-history", {
-        headers: getAuthHeaders()
+        headers: {
+          ...getAuthHeaders(),
+          'User-Id': userId
+        },
+        params: { userId }
       });
       return response.data;
     } catch (error) {
@@ -60,8 +148,19 @@ const api = {
   // 구독 취소
   cancelSubscription: async (subscriptionId) => {
     try {
+      const userId = getUserIdFromStorage();
+      
+      if (!userId) {
+        console.warn('사용자 ID가 없어 구독을 취소할 수 없습니다.');
+        throw new Error('사용자 ID가 없습니다.');
+      }
+      
       const response = await axios.delete(`/memberships/${subscriptionId}/cancel`, {
-        headers: getAuthHeaders()
+        headers: {
+          ...getAuthHeaders(),
+          'User-Id': userId
+        },
+        params: { userId }
       });
       return response.data;
     } catch (error) {
@@ -86,7 +185,7 @@ export default function Settings() {
   // 임시 사용자 ID (실제로는 로그인 시스템에서 가져와야 함)
   const token =
     localStorage.getItem("token") || sessionStorage.getItem("token");
-  const userId = jwtDecode(token).sub;
+  const userId = getUserIdFromStorage();
 
   const settingsTabs = [
     { id: "profile", label: "프로필" },
