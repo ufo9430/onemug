@@ -17,7 +17,7 @@ import axios from "@/lib/axios";
 const Sidebar = ({ profile = {}, activeItem }) => {
   const navigate = useNavigate();
   const [hasUnread, setHasUnread] = useState(false);
-  const [loading, setLoading] = useState(!profile?.nickname); // 간단한 로딩 조건
+  const [loading, setLoading] = useState(!profile?.nickname);
 
   useEffect(() => {
     const fetchNotice = async () => {
@@ -29,7 +29,7 @@ const Sidebar = ({ profile = {}, activeItem }) => {
       }
     };
 
-    if (profile?.nickname) setLoading(false); // profile 받아왔으면 로딩 종료
+    if (profile?.nickname) setLoading(false);
     fetchNotice();
   }, [profile]);
 
