@@ -3,6 +3,7 @@ import { Heart, MessageCircle } from "lucide-react";
 import CommentsModal from "../components/CommentsModal";
 import { useParams } from "react-router-dom";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 const RelatedPostCard = ({ title, category, likes, comments, image }) => {
   return (
@@ -34,6 +35,7 @@ const PostDetail = () => {
   const [postData, setPostData] = useState(null);
   const [liked, setLiked] = useState(false); // true or false
   const [likeCount, setLikeCount] = useState(0);
+  const navigate = useNavigate();
 
   const token =
     localStorage.getItem("token") || sessionStorage.getItem("token");
@@ -109,7 +111,7 @@ const PostDetail = () => {
         await axios.post(
           `http://localhost:8080/post/${id}/like`,
           {},
-          {
+          {   
             headers: {
               Authorization: `Bearer ${token}`,
             },
@@ -149,7 +151,18 @@ const PostDetail = () => {
             <div className="max-w-4xl mx-auto px-4 lg:px-8 py-8 lg:py-12">
               {/* Author Info */}
               <div className="flex items-center gap-4 mb-8">
-                <div className="w-12 h-12 rounded-full bg-yellow-300"></div>
+                <button
+                  type="button"
+                  className="focus:outline-none"
+                  onClick={() => navigate(`/profile/${postData.authorId}`)}
+                  style={{ padding: 0, border: "none", background: "none" }}
+                >
+                  <img
+                    src={postData.profile_url || "/default-profile.png"}
+                    alt={postData.authorName}
+                    className="w-12 h-12 rounded-full object-cover bg-yellow-300"
+                  />
+                </button>
                 <div>
                   <h3 className="font-semibold text-lg text-gray-900">
                     {postData.authorName}
@@ -159,13 +172,9 @@ const PostDetail = () => {
                   </div>
                 </div>
               </div>
-
-              {/* Title */}
               <h1 className="text-3xl font-bold text-gray-900 mb-6">
                 {postData.title}
               </h1>
-
-              {/*/!* Subtitle *!/*/}
               {/*<p className="text-lg text-gray-600 mb-8 leading-relaxed">*/}
               {/*  같은 생두라도 로스터마다 풍미가 어떻게 달라지는지 비교했습니다.*/}
               {/*  홈카페 유저와 바리스타 모두에게 유용한 정리입니다.*/}

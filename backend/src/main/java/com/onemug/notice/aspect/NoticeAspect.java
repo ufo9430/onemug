@@ -55,7 +55,7 @@ public class NoticeAspect {
         //String targetName, NoticeType type
     }
 
-    @AfterReturning(pointcut = "execution(* com.onemug.comment.service.CommentService.writeComment(..)", returning = "result")
+    @AfterReturning(pointcut = "execution(* com.onemug.comment.service.CommentService.writeComment(..))", returning = "result")
     public void afterComment(Object result){
         CommentResponseDTO comment = (CommentResponseDTO) result;
         Long targetId = comment.getPost_id(); //댓글 달린 게시글
@@ -66,7 +66,7 @@ public class NoticeAspect {
 
     }
 
-    @AfterReturning(pointcut = "execution(* com.onemug.like.service.LikeService.likePost(..)")
+    @AfterReturning(pointcut = "execution(* com.onemug.like.service.LikeService.likePost(..))")
     public void afterLike(JoinPoint joinPoint){
         Object[] args = joinPoint.getArgs();
         Long targetId = (Long) args[0];

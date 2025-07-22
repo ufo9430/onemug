@@ -8,9 +8,11 @@ import com.onemug.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.bind.annotation.RequestMethod;
 import java.util.List;
@@ -369,8 +371,12 @@ public class MembershipController {
     }
 
     @GetMapping("/count")
-    public ResponseEntity<Long> getMySubscriptionCount(@RequestHeader(value = "User-Id", required = false) Long userId) {
-        if (userId == null) return ResponseEntity.badRequest().build();
+    public ResponseEntity<Long> getMySubscriptionCount(Authentication authentication) {
+        if (authentication == null || !(authentication.getPrincipal() instanceof Jwt jwt)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        Long userId = Long.valueOf(authentication.getName());
+
         long count = membershipService.getMySubscriptions(userId).size();
         return ResponseEntity.ok(count);
     }

@@ -14,7 +14,9 @@ import com.onemug.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -28,10 +30,12 @@ public class PostService {
         return postRepository.findByCreatorId(id, pageable);
     }
 
-    public PostDetailResponseDTO getPost(Long id) {
+    @Transactional
+    public PostDetailResponseDTO getPost(Long id, Authentication authentication) {
         Post post = postRepository.findById(id).orElseThrow();
         User user = post.getCreator().getUser();
         boolean liked = likeRepository.existsByUserIdAndPostId(user.getId(), id);
+        post.addViewCount();
         return PostDetailResponseDTO.from(post, user.getNickname(), liked);
     }
 

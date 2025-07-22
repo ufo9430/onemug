@@ -48,7 +48,3 @@ toss:
   payments:
     secret-key: {toss.payments.secret-key}
     api-url: {toss.payments.api-url}
-logging:
-  level:
-    org.hibernate.SQL: debug
-    org.hibernate.type: trace
