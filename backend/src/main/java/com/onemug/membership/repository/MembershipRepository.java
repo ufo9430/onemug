@@ -182,4 +182,6 @@ public interface MembershipRepository extends JpaRepository<Membership, Long> {
             "AND (m.expiresAt IS NULL OR m.expiresAt > CURRENT_TIMESTAMP)")
     List<Long> findActiveCreatorIdsByUserId(@Param("userId") Long userId);
 
+    List<Membership> findAllByCreatorIdAndIsTemplateTrue(Long creatorId);
+
 }
