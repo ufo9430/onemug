@@ -5,10 +5,9 @@ import com.onemug.comment.dto.CommentResponseDTO;
 import com.onemug.feed.repository.CreatorRepository;
 import com.onemug.global.dto.MembershipResponseDto;
 import com.onemug.global.entity.*;
-import com.onemug.membership.dto.MembershipSelectionResponseDto;
 import com.onemug.membership.dto.SubscriptionCancelResponseDto;
+import com.onemug.membership.dto.SubscriptionCreateResponseDto;
 import com.onemug.membership.repository.MembershipRepository;
-import com.onemug.membership.repository.MembershipSelectionRepository;
 import com.onemug.notice.service.NoticeService;
 import jakarta.persistence.EntityNotFoundException;
 import org.aspectj.lang.JoinPoint;
@@ -33,7 +32,7 @@ public class NoticeAspect {
     private PostRepository postRepository;
 
     @Autowired
-    private MembershipSelectionRepository membershipSelectionRepository;
+    private MembershipRepository membershipRepository;
 
     // 사용자 id 조회 - 사용자 이름 정보, targetId 해결
 
@@ -82,20 +81,26 @@ public class NoticeAspect {
         noticeService.save(senderId, receiverId, targetId, targetName, NoticeType.LIKE);
     }
 
-    @AfterReturning(pointcut = "execution(* com.onemug.membership.service.MembershipSelectionService.confirmSelection(..)", returning = "result")
+    // 구독 생성 알림 - MembershipSelection 대신 createSubscription 메소드를 사용
+    @AfterReturning(pointcut = "execution(* com.onemug.membership.service.MembershipService.createSubscription(..))", returning = "result")
     public void afterSubscription(Object result){
+        // 새로운 DTO 타입으로 변경
+        SubscriptionCreateResponseDto responseDto = (SubscriptionCreateResponseDto) result;
+        
+        // 구독 ID로 멤버십 조회
+        Long subscriptionId = responseDto.getSubscriptionId();
+        
+        // Membership 엔티티 조회
+        Membership membership = membershipRepository.findById(subscriptionId)
+                .orElseThrow(() -> new EntityNotFoundException("구독을 찾을 수 없습니다: " + subscriptionId));
 
-        MembershipSelectionResponseDto responseDto =  (MembershipSelectionResponseDto) result;
-        String selectionId = responseDto.getSelectionId();
-
-        MembershipSelection membershipSelection = membershipSelectionRepository.findBySelectionId(selectionId).orElseThrow(EntityNotFoundException::new);
-
-
-        Long receiverId = membershipSelection.getUser().getId();
-        Long targetId = membershipSelection.getMembership().getCreator().getId();
+        Long receiverId = membership.getUser().getId();
+        Long targetId = membership.getCreator().getId();
         String targetName = responseDto.getMembershipName();
 
-        Creator creator = creatorRepository.findById(targetId).orElseThrow(EntityNotFoundException::new);
+        // 창작자 정보 조회
+        Creator creator = creatorRepository.findById(targetId)
+                .orElseThrow(() -> new EntityNotFoundException("창작자를 찾을 수 없습니다: " + targetId));
         Long senderId = creator.getUser().getId();
 
         noticeService.save(senderId, receiverId, targetId, targetName, NoticeType.SUBSCRIBE);
@@ -114,5 +119,4 @@ public class NoticeAspect {
 
         noticeService.save(senderId, receiverId, targetId, targetName, NoticeType.UNSUBSCRIBE);
     }
-
 }

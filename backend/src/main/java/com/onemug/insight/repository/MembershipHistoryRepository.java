@@ -12,5 +12,5 @@ public interface MembershipHistoryRepository extends JpaRepository<Membership, L
 
     List<Membership> findMembershipsByCreatorIdAndCreatedAtAfter(Long creatorId, LocalDateTime createdAtAfter);
 
-    List<Membership> findMembershipsByNameAndCreatorIdAndCreatedAtAfter(String name, Long creatorId, LocalDateTime createdAtAfter);
+    List<Membership> findMembershipsByMembershipNameAndCreatorIdAndCreatedAtAfter(String membershipName, Long creatorId, LocalDateTime createdAtAfter);
 }
