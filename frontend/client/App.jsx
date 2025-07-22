@@ -34,6 +34,7 @@ import Membership from "./pages/Membership";
 import SidebarLayout from "./pages/layout/SidebarLayout";
 import CreatorSidebarLayout from "./pages/layout/CreatorSidebarLayout";
 import OAuthCallback from "./pages/OAuthCallback";
+import ManageSubscribers from "./pages/ManageSubscribers";
 
 const queryClient = new QueryClient();
 
@@ -81,8 +82,8 @@ const App = () => (
           <Route element={<CreatorSidebarLayout />}>
             <Route path="/creator/dashboard" element={<CreatorDashboard />} />
             <Route path="/creator/insights" element={<CreatorInsights />} />
-            <Route path="/creator/subscribers" element={<CreatorDashboard />} />
             <Route path="/creator/messages" element={<Messages />} />
+            <Route path="/creator/subscribers" element={<ManageSubscribers />} />
             <Route
               path="/creator/messages/:conversationId"
               element={<Conversation />}

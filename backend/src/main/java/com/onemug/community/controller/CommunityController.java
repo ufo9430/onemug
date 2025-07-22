@@ -51,10 +51,6 @@ public class CommunityController {
         }
 
         Long userId = Long.valueOf(authentication.getName());
-        if(authentication != null){
-            CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-            userId = userDetails.getUser().getId();
-        }
 
         return ResponseEntity.ok(chatRoomService.getOpponent(chatroomId,userId));
     }
@@ -74,8 +70,8 @@ public class CommunityController {
 
     // 현재 컨트롤러에서 생기는 예외를 받아서 ResponseEntity로 반환합니다
     // 서버 내부 오류 + 오류 내용을 http response로 반환하는 로직입니다
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<String> handleException(Exception e) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("서버 내부 오류 " + e.getMessage());
-    }
+//    @ExceptionHandler(Exception.class)
+//    public ResponseEntity<String> handleException(Exception e) {
+//        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("서버 내부 오류 " + e.getMessage());
+//    }
 }
