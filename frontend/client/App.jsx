@@ -34,7 +34,8 @@ import Membership from "./pages/Membership";
 import SidebarLayout from "./pages/layout/SidebarLayout";
 import CreatorSidebarLayout from "./pages/layout/CreatorSidebarLayout";
 import OAuthCallback from "./pages/OAuthCallback";
-import ManageSubscribers from "./pages/ManageSubscribers";
+import CreatorProfile from "./pages/CreatorProfile";
+import CreatorSettings from "./pages/CreatorSettings";
 
 const queryClient = new QueryClient();
 
@@ -51,17 +52,21 @@ const App = () => (
           <Route path="/register/email" element={<EmailStep />} />
           <Route path="/register/password" element={<PasswordStep />} />
           <Route path="/register/nickname" element={<NicknameStep />} />
-          <Route path="/explore" element={<Explore />} />
           <Route path="/creator/signup" element={<CreatorSignup />} />
+
           {/* 일반 기능 레이아웃 */}
           <Route element={<SidebarLayout />}>
             <Route path="/feed" element={<Feed />} />
+            <Route path="/explore" element={<Explore />} />
             <Route
               path="/feed/creator"
               element={<Feed hasCreatorAccount={true} />}
             />
             {/* 기존 search 라우트는 explore로 리다이렉트 */}
-            <Route path="/search" element={<Navigate to="/explore" replace />} />
+            <Route
+              path="/search"
+              element={<Navigate to="/explore" replace />}
+            />
             <Route
               path="/Membership/creator/:creatorId"
               element={<Membership />}
@@ -77,19 +82,20 @@ const App = () => (
             <Route path="/notifications" element={<Notifications />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/post/:id" element={<PostDetail />} />
+            <Route path="/profile/:creatorId" element={<CreatorProfile />} />
           </Route>
           {/* 창작자 기능 레이아웃 */}
           <Route element={<CreatorSidebarLayout />}>
             <Route path="/creator/dashboard" element={<CreatorDashboard />} />
             <Route path="/creator/insights" element={<CreatorInsights />} />
+            <Route path="/creator/subscribers" element={<CreatorDashboard />} />
             <Route path="/creator/messages" element={<Messages />} />
-            <Route path="/creator/subscribers" element={<ManageSubscribers />} />
             <Route
               path="/creator/messages/:conversationId"
               element={<Conversation />}
             />
             <Route path="/creator/notifications" element={<Notifications />} />
-            <Route path="/creator/settings" element={<Settings />} />
+            <Route path="/creator/settings" element={<CreatorSettings />} />
             <Route path="/creator/post/new" element={<CreatePost />} />
             <Route
               path="/creator/post/publish"
