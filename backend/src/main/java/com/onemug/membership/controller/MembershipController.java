@@ -1,12 +1,16 @@
 package com.onemug.membership.controller;
 
 import com.onemug.global.dto.MembershipResponseDto;
+import com.onemug.global.utils.AuthUtils;
 import com.onemug.membership.dto.*;
 import com.onemug.membership.service.MembershipService;
+import com.onemug.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.bind.annotation.RequestMethod;
 import java.util.List;
@@ -29,6 +33,26 @@ public class MembershipController {
     private static final Logger log = LoggerFactory.getLogger(MembershipController.class);
     
     private final MembershipService membershipService;
+    private final UserRepository userRepository;
+    
+    /**
+     * 인증된 사용자의 ID 가져오기
+     */
+    private Long getCurrentUserId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated() || "anonymousUser".equals(authentication.getPrincipal())) {
+            log.warn("인증되지 않은 사용자 접근");
+            return null;
+        }
+        
+        try {
+            // Authentication.getName()은 JWT 토큰의 subject 클레임을 반환 (사용자 ID)
+            return Long.valueOf(authentication.getName());
+        } catch (NumberFormatException e) {
+            log.error("사용자 ID 변환 오류: {}", authentication.getName(), e);
+            return null;
+        }
+    }
     
     /**
      * 현재 사용자의 구독 멤버십 목록 조회
@@ -36,10 +60,15 @@ public class MembershipController {
      */
     @GetMapping("/my-subscriptions")
     public ResponseEntity<List<MembershipResponseDto>> getMySubscriptions(
-            @RequestHeader(value = "User-Id", required = false) Long userId) {
+            @RequestHeader(value = "User-Id", required = false) Long headerUserId) {
         
+        // 인증된 사용자 ID 가져오기 (헤더가 없는 경우)
+        Long userId = headerUserId;
         if (userId == null) {
-            return ResponseEntity.badRequest().build();
+            userId = getCurrentUserId();
+            if (userId == null) {
+                return ResponseEntity.badRequest().build();
+            }
         }
         
         List<MembershipResponseDto> subscriptions = membershipService.getMySubscriptions(userId);
@@ -52,10 +81,15 @@ public class MembershipController {
      */
     @GetMapping("/active-subscriptions")
     public ResponseEntity<List<MembershipResponseDto>> getActiveSubscriptions(
-            @RequestHeader(value = "User-Id", required = false) Long userId) {
+            @RequestHeader(value = "User-Id", required = false) Long headerUserId) {
         
+        // 인증된 사용자 ID 가져오기 (헤더가 없는 경우)
+        Long userId = headerUserId;
         if (userId == null) {
-            return ResponseEntity.badRequest().build();
+            userId = getCurrentUserId();
+            if (userId == null) {
+                return ResponseEntity.badRequest().build();
+            }
         }
         
         List<MembershipResponseDto> activeSubscriptions = membershipService.getActiveSubscriptions(userId);
@@ -68,10 +102,15 @@ public class MembershipController {
      */
     @GetMapping("/subscription-history")
     public ResponseEntity<List<SubscriptionHistoryDto>> getSubscriptionHistory(
-            @RequestHeader(value = "User-Id", required = false) Long userId) {
+            @RequestHeader(value = "User-Id", required = false) Long headerUserId) {
         
+        // 인증된 사용자 ID 가져오기 (헤더가 없는 경우)
+        Long userId = headerUserId;
         if (userId == null) {
-            return ResponseEntity.badRequest().build();
+            userId = getCurrentUserId();
+            if (userId == null) {
+                return ResponseEntity.badRequest().build();
+            }
         }
         
         List<SubscriptionHistoryDto> history = membershipService.getSubscriptionHistory(userId);
@@ -156,10 +195,15 @@ public class MembershipController {
     @GetMapping("/creator/{creatorId}/has-subscription")
     public ResponseEntity<Boolean> hasActiveSubscriptionForCreator(
             @PathVariable Long creatorId,
-            @RequestHeader(value = "User-Id", required = false) Long userId) {
+            @RequestHeader(value = "User-Id", required = false) Long headerUserId) {
         
+        // 인증된 사용자 ID 가져오기 (헤더가 없는 경우)
+        Long userId = headerUserId;
         if (userId == null) {
-            return ResponseEntity.badRequest().build();
+            userId = getCurrentUserId();
+            if (userId == null) {
+                return ResponseEntity.badRequest().build();
+            }
         }
         
         boolean hasSubscription = membershipService.hasActiveSubscriptionForCreator(userId, creatorId);
@@ -215,6 +259,18 @@ public class MembershipController {
         // userId 파라미터가 있으면 요청 객체에 설정
         if (userId != null) {
             requestDto.setUserId(userId);
+        } else {
+            // JWT 토큰에서 사용자 ID 추출
+            Long currentUserId = getCurrentUserId();
+            if (currentUserId == null) {
+                log.error("인증된 사용자 ID를 찾을 수 없습니다");
+                MembershipValidationDto errorResult = new MembershipValidationDto();
+                errorResult.setValid(false);
+                errorResult.setErrorMessage("인증된 사용자를 찾을 수 없습니다");
+                return ResponseEntity.badRequest().body(errorResult);
+            }
+            requestDto.setUserId(currentUserId);
+            log.info("JWT 토큰에서 추출한 사용자 ID: {}", currentUserId);
         }
         
         // 서비스 호출하여 유효성 검증
@@ -235,12 +291,17 @@ public class MembershipController {
     @DeleteMapping(value = "/{subscriptionId}/cancel", produces = "application/json; charset=UTF-8")
     public ResponseEntity<SubscriptionCancelResponseDto> cancelSubscription(
             @PathVariable Long subscriptionId,
-            @RequestHeader(value = "User-Id", required = false) Long userId) {
+            @RequestHeader(value = "User-Id", required = false) Long headerUserId) {
         
+        // 인증된 사용자 ID 가져오기 (헤더가 없는 경우)
+        Long userId = headerUserId;
         if (userId == null) {
-            SubscriptionCancelResponseDto errorResponse = SubscriptionCancelResponseDto.error(
-                "User ID is required", subscriptionId, null);
-            return ResponseEntity.badRequest().body(errorResponse);
+            userId = getCurrentUserId();
+            if (userId == null) {
+                SubscriptionCancelResponseDto errorResponse = SubscriptionCancelResponseDto.error(
+                    "User ID is required", subscriptionId, null);
+                return ResponseEntity.badRequest().body(errorResponse);
+            }
         }
         
         try {
@@ -282,7 +343,18 @@ public class MembershipController {
      * 구독 생성
      */
     @PostMapping("/create")
-    public ResponseEntity<SubscriptionCreateResponseDto> createSubscription(@RequestParam Long userId, @RequestBody SubscriptionCreateRequestDto request) {
+    public ResponseEntity<SubscriptionCreateResponseDto> createSubscription(
+            @RequestParam(required = false) Long userId, 
+            @RequestBody SubscriptionCreateRequestDto request) {
+        
+        if (userId == null) {
+            userId = getCurrentUserId();
+            if (userId == null) {
+                log.error("인증된 사용자 ID를 찾을 수 없습니다");
+                return ResponseEntity.badRequest().body(SubscriptionCreateResponseDto.error("인증된 사용자를 찾을 수 없습니다"));
+            }
+        }
+        
         log.info("구독 생성 요청: userId={}, request={}", userId, request);
         
         try {

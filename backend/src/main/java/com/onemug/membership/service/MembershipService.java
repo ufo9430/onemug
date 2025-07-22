@@ -532,14 +532,14 @@ public class MembershipService {
                 } 
                 // 현재 구독이 무료이고 선택한 멤버십이 유료인 경우 -> 업그레이드 가능
                 else if (currentMembership.getPrice() == 0 && selectedMembership.getPrice() > 0) {
-                    log.info("무료 -> 유료 멤버십 업그레이드 가능: userId={}, creatorId={}", 
-                            user.getId(), request.getCreatorId());
+                    log.info("무료 -> 유료 멤버십 업그레이드 가능: userId={}, creatorId={}, membershipId={}", 
+                            user.getId(), request.getCreatorId(), request.getMembershipId());
                     return MembershipValidationDto.successWithUpgrade(currentMembership.getId());
                 }
                 // 현재 구독이 유료이고 선택한 멤버십도 유료인 경우 -> 업그레이드/다운그레이드 가능
                 else if (currentMembership.getPrice() > 0 && selectedMembership.getPrice() > 0) {
-                    log.info("유료 -> 유료 멤버십 변경 가능: userId={}, creatorId={}", 
-                            user.getId(), request.getCreatorId());
+                    log.info("유료 -> 유료 멤버십 변경 가능: userId={}, creatorId={}, membershipId={}", 
+                            user.getId(), request.getCreatorId(), request.getMembershipId());
                     return MembershipValidationDto.successWithUpgrade(currentMembership.getId());
                 } 
                 // 그 외의 케이스 (유료 -> 무료)는 불가능
@@ -697,6 +697,129 @@ public class MembershipService {
         } catch (Exception e) {
             log.error("구독 취소 중 오류 발생: membershipId={}", membershipId, e);
             return SubscriptionCancelResponseDto.error("구독 취소에 실패했습니다: " + e.getMessage(), membershipId, null);
+        }
+    }
+    
+    /**
+     * 결제 완료 후 구독 상태 업데이트
+     */
+    @Transactional
+    public boolean updateSubscriptionAfterPayment(String orderId) {
+        try {
+            log.info("결제 완료 후 구독 상태 업데이트 시작: orderId={}", orderId);
+            
+            // 주문 ID로 구독 조회
+            log.info("orderId로 구독 검색: {}", orderId);
+            Optional<Membership> membershipOpt = membershipRepository.findByOrderId(orderId);
+            
+            if (membershipOpt.isEmpty()) {
+                log.warn("주문 ID에 해당하는 구독을 찾을 수 없습니다: orderId={}", orderId);
+                
+                // 디버깅: 모든 pending 상태의 구독 조회
+                List<Membership> pendingMemberships = membershipRepository.findAll().stream()
+                        .filter(m -> m.getStatus() == Membership.SubscriptionStatus.PENDING)
+                        .toList();
+                
+                log.info("현재 PENDING 상태인 모든 구독 목록 ({}개):", pendingMemberships.size());
+                pendingMemberships.forEach(m -> {
+                    log.info("  - ID: {}, 이름: {}, 주문ID: {}, 가격: {}, 사용자ID: {}", 
+                            m.getId(), m.getMembershipName(), m.getOrderId(), 
+                            m.getPrice(), m.getUser() != null ? m.getUser().getId() : "NULL");
+                });
+                
+                return false;
+            }
+            
+            Membership membership = membershipOpt.get();
+            log.info("구독 찾음: id={}, status={}, name={}, price={}, orderId={}",
+                    membership.getId(), membership.getStatus(), 
+                    membership.getMembershipName(), membership.getPrice(), 
+                    membership.getOrderId());
+            
+            // 결제 대기 중인 구독만 활성화
+            if (membership.getStatus() == Membership.SubscriptionStatus.PENDING) {
+                log.info("구독 상태 업데이트 전: id={}, status={}", membership.getId(), membership.getStatus());
+                
+                // 구독 상태를 활성으로 변경
+                membership.setStatus(Membership.SubscriptionStatus.ACTIVE);
+                membershipRepository.save(membership);
+                
+                log.info("구독 상태 업데이트 완료: id={}, 새 상태=ACTIVE", membership.getId());
+                return true;
+            } else {
+                log.warn("구독이 이미 활성화되었거나 대기 상태가 아닙니다: status={}", membership.getStatus());
+                return false;
+            }
+            
+        } catch (Exception e) {
+            log.error("구독 상태 업데이트 중 오류 발생: orderId={}", orderId, e);
+            return false;
+        }
+    }
+    
+    /**
+     * 사용자의 최신 PENDING 상태 구독을 찾아 활성화
+     * 결제 완료 후 주문 ID 불일치 문제 해결을 위한 fallback 메서드
+     */
+    @Transactional
+    public Long updateLatestPendingSubscription(Long userId, String newOrderId) {
+        try {
+            log.info("사용자의 최신 PENDING 구독 검색 시작: userId={}, newOrderId={}", userId, newOrderId);
+            
+            // 사용자 존재 확인
+            User user = userRepository.findById(userId)
+                    .orElse(null);
+            
+            if (user == null) {
+                log.warn("사용자를 찾을 수 없습니다: userId={}", userId);
+                return null;
+            }
+            
+            // 해당 사용자의 모든 구독 조회
+            List<Membership> userMemberships = membershipRepository.findByUserIdAndIsTemplateFalse(userId);
+            
+            // 최근 생성된 PENDING 상태 구독 찾기
+            Optional<Membership> pendingSubscription = userMemberships.stream()
+                    .filter(m -> m.getStatus() == Membership.SubscriptionStatus.PENDING)
+                    .max(Comparator.comparing(Membership::getCreatedAt));
+            
+            if (pendingSubscription.isEmpty()) {
+                log.warn("사용자의 PENDING 상태 구독을 찾을 수 없습니다: userId={}", userId);
+                
+                // 디버깅: 사용자의 최근 5개 구독 상태 출력
+                userMemberships.stream()
+                        .sorted(Comparator.comparing(Membership::getCreatedAt).reversed())
+                        .limit(5)
+                        .forEach(m -> log.info("  - 최근 구독: ID={}, 상태={}, 생성일={}, 취소일={}, 가격={}원, 주문ID={}", 
+                                m.getId(), m.getStatus(), m.getCreatedAt(), 
+                                m.getCancelledAt(), m.getPrice(), m.getOrderId()));
+                
+                return null;
+            }
+            
+            Membership subscription = pendingSubscription.get();
+            log.info("최근 PENDING 구독 찾음: id={}, status={}, name={}, createdAt={}, orderId={}",
+                    subscription.getId(), subscription.getStatus(), 
+                    subscription.getMembershipName(), subscription.getCreatedAt(), 
+                    subscription.getOrderId());
+            
+            // 주문 ID 업데이트 및 상태 활성화
+            if (subscription.getOrderId() == null || !subscription.getOrderId().equals(newOrderId)) {
+                log.info("기존 주문 ID({})를 새 주문 ID({})로 업데이트합니다", subscription.getOrderId(), newOrderId);
+                subscription.setOrderId(newOrderId);
+            }
+            
+            // 구독 상태를 활성으로 변경
+            subscription.setStatus(Membership.SubscriptionStatus.ACTIVE);
+            membershipRepository.save(subscription);
+            
+            log.info("최근 PENDING 구독 활성화 완료: id={}, 새 상태=ACTIVE, 주문ID={}", 
+                    subscription.getId(), newOrderId);
+            return subscription.getId();
+            
+        } catch (Exception e) {
+            log.error("최근 PENDING 구독 활성화 중 오류 발생: userId={}", userId, e);
+            return null;
         }
     }
 }
