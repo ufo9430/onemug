@@ -2,6 +2,7 @@ package com.onemug.membership.repository;
 
 import com.onemug.global.entity.Membership;
 import com.onemug.global.entity.Membership.SubscriptionStatus;
+import com.onemug.global.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -183,5 +184,9 @@ public interface MembershipRepository extends JpaRepository<Membership, Long> {
     List<Long> findActiveCreatorIdsByUserId(@Param("userId") Long userId);
 
     List<Membership> findAllByCreatorIdAndIsTemplateTrue(Long creatorId);
+
+    @Query("select m from Membership m where m.user = :user and m.status = :status")
+    List<Membership> findAllByUserAndStatus(@Param("user") User user, @Param("status") Membership.SubscriptionStatus status);
+
 
 }
