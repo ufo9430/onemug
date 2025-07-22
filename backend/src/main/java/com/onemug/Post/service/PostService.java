@@ -1,11 +1,14 @@
 package com.onemug.Post.service;
 
 import com.onemug.Post.dto.PostCreateRequestDto;
+import com.onemug.Post.dto.PostDetailResponseDTO;
 import com.onemug.Post.dto.PostUpdateRequestDto;
 import com.onemug.Post.repository.PostRepository;
 import com.onemug.global.entity.Category;
 import com.onemug.global.entity.Creator;
 import com.onemug.global.entity.Post;
+import com.onemug.global.entity.User;
+import com.onemug.like.repository.LikeRepository;
 import com.onemug.newcreator.repository.CreatorRegisterRepository;
 import com.onemug.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -19,13 +22,17 @@ public class PostService {
     private final PostRepository postRepository;
     private final UserRepository userRepository;
     private final CreatorRegisterRepository creatorRegisterRepository;
+    private final LikeRepository likeRepository;
 
     public Page<Post> getPostAllByPage(Long id, Pageable pageable) {
         return postRepository.findByCreatorId(id, pageable);
     }
 
-    public Post getPost(Long id) {
-        return postRepository.findById(id).orElse(null);
+    public PostDetailResponseDTO getPost(Long id) {
+        Post post = postRepository.findById(id).orElseThrow();
+        User user = post.getCreator().getUser();
+        boolean liked = likeRepository.existsByUserIdAndPostId(user.getId(), id);
+        return PostDetailResponseDTO.from(post, user.getNickname(), liked);
     }
 
     public Post writePost(PostCreateRequestDto dto, Long creatorId) {
@@ -41,7 +48,7 @@ public class PostService {
     }
 
     public Post updatePost(Long id, PostUpdateRequestDto dto) {
-        Post post = getPost(id);
+        Post post = postRepository.findById(id).orElseThrow();
         post.update(dto.getTitle(), dto.getContent());
         return postRepository.save(post);
     }

@@ -1,6 +1,6 @@
 package com.onemug.comment.service;
 
-import com.onemug.Post.service.PostService;
+import com.onemug.Post.repository.PostRepository;
 import com.onemug.comment.dto.CommentRequestDto;
 import com.onemug.comment.dto.CommentResponseDTO;
 import com.onemug.comment.repository.CommentRepository;
@@ -18,7 +18,7 @@ import java.util.List;
 public class CommentService {
     private final CommentRepository commentRepository;
     private final UserRepository userRepository;
-    private final PostService postService;
+    private final PostRepository postRepository;
 
     public List<Comment> getAllComment(Long postId) {
         return commentRepository.findByPost_idOrderByCreatedAtDesc(postId);
@@ -29,7 +29,7 @@ public class CommentService {
     public CommentResponseDTO writeComment(Long postId, Long userId, CommentRequestDto dto) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("사용자 없음"));
-        Post post = postService.getPost(postId);
+        Post post = postRepository.findById(postId).orElseThrow();
 
         Comment comment = Comment.builder()
                 .content(dto.getContent())

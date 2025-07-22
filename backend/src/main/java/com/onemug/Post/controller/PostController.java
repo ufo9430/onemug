@@ -1,6 +1,7 @@
 package com.onemug.Post.controller;
 
 import com.onemug.Post.dto.PostCreateRequestDto;
+import com.onemug.Post.dto.PostDetailResponseDTO;
 import com.onemug.Post.dto.PostResponseDTO;
 import com.onemug.Post.dto.PostUpdateRequestDto;
 import com.onemug.Post.service.PostService;
@@ -36,7 +37,7 @@ public class PostController {
     }
 
     @GetMapping("/post/{id}")
-    public Post getPost(@PathVariable Long id) {
+    public PostDetailResponseDTO getPost(@PathVariable Long id) {
         return postService.getPost(id);
     }
 
