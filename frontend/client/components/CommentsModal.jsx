@@ -104,7 +104,7 @@ const CommentsModal = ({ onClose }) => {
 
   const fetchComments = async (postId) => {
     try {
-      const res = await axios.get(`http://localhost:8080/post/${id}/comments`);
+      const res = await axios.get(`/api/post/${id}/comments`);
       setComments(res.data); // 댓글 리스트 저장
       setCommentCount(res.data.length); // 댓글 개수 저장
     } catch (err) {
@@ -116,7 +116,7 @@ const CommentsModal = ({ onClose }) => {
     if (!newComment.trim()) return
 
     try {
-      const response = await axios.post(`http://localhost:8080/post/${id}/comments`,
+      const response = await axios.post(`/api/post/${id}/comments`,
         { content: newComment },
         {
           headers: {

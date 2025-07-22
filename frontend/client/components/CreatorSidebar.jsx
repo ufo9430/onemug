@@ -75,7 +75,6 @@ const CreatorSidebar = ({ profile = {}, activeItem }) => {
       <div className="h-[45px] border-b border-gray-200 flex items-center px-[26px]">
         <h1 className="text-xl font-bold text-gray-900">OneMug</h1>
       </div>
-
       <div className="flex flex-col flex-grow">
         {/* User Profile */}
         <div className="p-4">
@@ -111,7 +110,6 @@ const CreatorSidebar = ({ profile = {}, activeItem }) => {
             </div>
           )}
         </div>
-
         {/* Navigation */}
         <nav className="flex-1 px-4">
           <div className="space-y-1">

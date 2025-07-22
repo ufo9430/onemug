@@ -59,7 +59,7 @@ const CreatePostPublish = () => {
 
     try {
       const response = await axios.post(
-          'http://localhost:8080/c/post/add',
+          '/api/c/post/add',
           postData,
           {
             headers: {

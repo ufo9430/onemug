@@ -74,6 +74,7 @@ const Sidebar = ({ profile = {}, activeItem }) => {
               <div className="flex flex-col gap-2">
                 <Skeleton className="w-24 h-4" />
                 <Skeleton className="w-36 h-3" />
+
               </div>
             </div>
           ) : (

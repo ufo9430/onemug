@@ -62,7 +62,8 @@ export default function Conversation() {
   useEffect(() => {
     const userId = 1 // todo: 임시 사용자 id
     const chatroomId = Number(conversationId)
-    const socket = new WebSocket("ws://localhost:8080/ws")
+    const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+    const socket = new WebSocket(`${protocol}://${window.location.host}/ws`);
     socketRef.current = socket
 
 
