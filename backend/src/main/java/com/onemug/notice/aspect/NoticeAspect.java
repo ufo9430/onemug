@@ -1,11 +1,17 @@
 package com.onemug.notice.aspect;
 
+import com.onemug.Post.repository.PostRepository;
+import com.onemug.comment.dto.CommentResponseDTO;
+import com.onemug.feed.repository.CreatorRepository;
 import com.onemug.global.dto.MembershipResponseDto;
 import com.onemug.global.entity.*;
+import com.onemug.membership.dto.MembershipSelectionResponseDto;
 import com.onemug.membership.dto.SubscriptionCancelResponseDto;
-import com.onemug.newcreator.repository.CreatorRegisterRepository;
+import com.onemug.membership.repository.MembershipRepository;
+import com.onemug.membership.repository.MembershipSelectionRepository;
 import com.onemug.notice.service.NoticeService;
 import jakarta.persistence.EntityNotFoundException;
+import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.AfterReturning;
 import org.aspectj.lang.annotation.Aspect;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,7 +27,13 @@ public class NoticeAspect {
     private NoticeService noticeService;
 
     @Autowired
-    private CreatorRegisterRepository creatorRepository;
+    private CreatorRepository creatorRepository;
+
+    @Autowired
+    private PostRepository postRepository;
+
+    @Autowired
+    private MembershipSelectionRepository membershipSelectionRepository;
 
     // 사용자 id 조회 - 사용자 이름 정보, targetId 해결
 
@@ -44,32 +56,44 @@ public class NoticeAspect {
         //String targetName, NoticeType type
     }
 
-    // todo: 내 글에 댓글 - 댓글작성자 - 본인(댓글달린글작성자)
+    @AfterReturning(pointcut = "execution(* com.onemug.comment.service.CommentService.writeComment(..)", returning = "result")
     public void afterComment(Object result){
-        Comment comment = (Comment) result;
-        Long targetId = comment.getPost().getId(); //댓글 달린 게시글
-        String targetName = comment.getPost().getTitle();
-        Long senderId= comment.getUser().getId(); //발신 - 댓글 작성자
-        Long receiverId = comment.getPost().getCreator().getUser().getId(); //수신 - 댓글 달린 게시글 작성자(창작자)
+        CommentResponseDTO comment = (CommentResponseDTO) result;
+        Long targetId = comment.getPost_id(); //댓글 달린 게시글
+        String targetName = comment.getPost_title();
+        Long senderId= comment.getUser_id(); //발신 - 댓글 작성자
+        Long receiverId = comment.getCreator_id(); //수신 - 댓글 달린 게시글 작성자(창작자)
         noticeService.save(senderId, receiverId, targetId, targetName, NoticeType.COMMENT);
 
     }
 
-    // todo: 내 글에 좋아요 - 작성자 - 본인
-    public void afterLike(Object result){
-        // Like Response DTO 나오면 구현
+    @AfterReturning(pointcut = "execution(* com.onemug.like.service.LikeService.likePost(..)")
+    public void afterLike(JoinPoint joinPoint){
+        Object[] args = joinPoint.getArgs();
+        Long targetId = (Long) args[0];
+        Long senderId = (Long) args[1];
 
-        //noticeService.save(senderId, receiverId, targetId, targetName, NoticeType.LIKE);
+        Post target = postRepository.findById(targetId).orElseThrow(EntityNotFoundException::new);
+
+        Long receiverId = target.getCreator().getUser().getId();
+        String targetName = target.getTitle();
+
+
+        noticeService.save(senderId, receiverId, targetId, targetName, NoticeType.LIKE);
     }
 
-    // todo: 유료 구독 결제 - 창작자(알림받는) - 구독자
+    @AfterReturning(pointcut = "execution(* com.onemug.membership.service.MembershipSelectionService.confirmSelection(..)", returning = "result")
     public void afterSubscription(Object result){
 
-        MembershipResponseDto responseDto =  (MembershipResponseDto) result;
-        Long receiverId = responseDto.getSubscriberId();
-        Long targetId = responseDto.getCreatorId();
-        String targetName = responseDto.getName();
+        MembershipSelectionResponseDto responseDto =  (MembershipSelectionResponseDto) result;
+        String selectionId = responseDto.getSelectionId();
 
+        MembershipSelection membershipSelection = membershipSelectionRepository.findBySelectionId(selectionId).orElseThrow(EntityNotFoundException::new);
+
+
+        Long receiverId = membershipSelection.getUser().getId();
+        Long targetId = membershipSelection.getMembership().getCreator().getId();
+        String targetName = responseDto.getMembershipName();
 
         Creator creator = creatorRepository.findById(targetId).orElseThrow(EntityNotFoundException::new);
         Long senderId = creator.getUser().getId();
