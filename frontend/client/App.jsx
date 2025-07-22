@@ -29,6 +29,8 @@ import CreatorMembership from "./pages/CreatorMembership";
 import CreatorInsights from "./pages/CreatorInsights";
 import CreatePost from "./pages/CreatePost";
 import CreatePostPublish from "./pages/CreatePostPublish";
+import UpdatePost from "./pages/UpdatePost";
+import UpdatePostPublish from "./pages/UpdatePostPublish";
 import NotFound from "./pages/NotFound";
 import Membership from "./pages/Membership";
 import SidebarLayout from "./pages/layout/SidebarLayout";
@@ -101,6 +103,11 @@ const App = () => (
             <Route
               path="/creator/post/publish"
               element={<CreatePostPublish />}
+            />
+            <Route path="/creator/post/update" element={<UpdatePost />} />
+            <Route
+                path="/creator/post/update/publish"
+                element={<UpdatePostPublish />}
             />
             <Route path="/creator/post/:id" element={<CreatorPostDetail />} />
             <Route path="/creator/membership" element={<CreatorMembership />} />

@@ -1,14 +1,16 @@
-import React, { useState } from "react"
-import { useNavigate } from "react-router-dom"
+import React, { useEffect, useState } from "react"
+import { useLocation, useNavigate } from "react-router-dom"
 import { ChevronDown, Image, Video } from "lucide-react"
 
-const CreatePost = () => {
+const UpdatePost = () => {
   const navigate = useNavigate()
   const [title, setTitle] = useState("")
-  const [category, setCategory] = useState("")
   const [content, setContent] = useState("")
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false)
   const [selectedCategoryName, setSelectedCategoryName] = useState("");
+
+  const location = useLocation();
+  const postData = location.state?.postData;
 
   const categoryMap = {
     "원두 · 기기 리뷰": 1,
@@ -17,13 +19,22 @@ const CreatePost = () => {
     "창업/운영": 4
   }
 
+  useEffect(() => {
+    if (postData) {
+      setTitle(postData.title);
+      setSelectedCategoryName(postData.categoryName)
+      setContent(postData.content);
+    }
+  }, [postData]);
+
   const categoryId = categoryMap[selectedCategoryName];
 
   const handleNext = () => {
+    console.log("postData before : ", title, categoryId, content, postData.id);
     if (title && categoryId && content) {
       // Navigate to publishing options page
-      navigate("/creator/post/publish", {
-        state: { title, categoryId, content }
+      navigate("/creator/post/update/publish", {
+        state: { title, categoryId, content, id: postData.id }
       })
     }
   }
@@ -42,7 +53,7 @@ const CreatePost = () => {
           <div className="lg:hidden mr-4">
             <h2 className="text-lg font-bold text-gray-900">OneMug</h2>
           </div>
-          <h1 className="text-xl font-semibold text-gray-900">글 작성</h1>
+          <h1 className="text-xl font-semibold text-gray-900">글 수정</h1>
         </header>
 
         {/* Content Area */}
@@ -153,4 +164,4 @@ const CreatePost = () => {
   )
 }
 
-export default CreatePost
+export default UpdatePost
