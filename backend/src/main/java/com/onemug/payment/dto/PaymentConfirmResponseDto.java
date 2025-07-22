@@ -21,4 +21,5 @@ public class PaymentConfirmResponseDto {
     private String method;        // 결제 방법
     private String receipt;       // 영수증 정보
     private Long subscriptionId;  // 생성된 구독 ID
+    private Boolean subscriptionUpdated; // 구독 상태 업데이트 성공 여부
 }

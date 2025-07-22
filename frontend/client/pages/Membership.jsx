@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react"
 import { useParams, useSearchParams } from 'react-router-dom';
 import { Check, AlertCircle, Clock } from "lucide-react"
 import PaymentModal from "./PaymentModal"
+import axios from "@/lib/axios";
 
 const Membership = () => {
     const { creatorId } = useParams(); // URL에서 creatorId 추출
@@ -16,14 +17,118 @@ const Membership = () => {
   const [showPaymentModal, setShowPaymentModal] = useState(false)
   const [hasFreeMembership, setHasFreeMembership] = useState(false) // 무료 멤버십 구독 여부
 
+  // JWT 토큰 가져오는 함수
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+    return {
+      'Content-Type': 'application/json',
+      'Authorization': token ? `Bearer ${token}` : ''
+    };
+  };
+
   // 결제 결과 처리
   useEffect(() => {
-    const paymentResult = searchParams.get('payment');
-    if (paymentResult === 'success') {
-      alert('결제가 완료되었습니다! 멤버십이 활성화되었습니다.');
-      // URL에서 쿼리 파라미터 제거
-      setSearchParams({});
-    } else if (paymentResult === 'fail') {
+    const paymentStatus = searchParams.get('payment');
+    const membershipId = searchParams.get('membershipId');
+    const creatorId = searchParams.get('creatorId');
+    const membershipName = searchParams.get('membershipName');
+    const price = searchParams.get('price');
+    const paymentKey = searchParams.get('paymentKey');
+    const paymentOrderId = searchParams.get('orderId');
+    const paymentAmount = searchParams.get('amount');
+    const paymentMethodType = searchParams.get('method');
+
+    console.log('URL 파라미터:', {
+      paymentStatus,
+      membershipId,
+      creatorId,
+      membershipName,
+      price,
+      paymentKey,
+      paymentOrderId,
+      paymentAmount,
+      paymentMethodType
+    });
+    
+    // 결제 성공 시 구독 생성 요청
+    if (paymentStatus === 'success') {
+      console.log('결제 성공 처리 시작');
+      
+      // 멤버십 ID가 있는 경우에만 구독 생성 요청
+      if (membershipId) {
+        // 문자열 값을 적절한 숫자로 변환
+        const numericMembershipId = Number(membershipId);
+        const numericCreatorId = Number(creatorId);
+        const numericPrice = Number(price);
+        
+        // 필수 파라미터 유효성 검증
+        if (isNaN(numericMembershipId) || isNaN(numericCreatorId) || !membershipName) {
+          console.error('필수 파라미터가 올바르지 않습니다:', { membershipId, creatorId, membershipName });
+          alert('결제는 성공했지만 필수 정보가 올바르지 않습니다. 관리자에게 문의하세요.');
+          setSearchParams({});
+          return;
+        }
+        
+        // 백엔드에서 기대하는 형식으로 구독 생성 요청 데이터 준비
+        const subscriptionData = {
+          membershipId: numericMembershipId,
+          creatorId: numericCreatorId,
+          membershipName: decodeURIComponent(membershipName),
+          orderId: paymentOrderId,
+          paymentMethod: paymentMethodType || 'TOSS',
+          price: numericPrice || 0,
+          autoRenew: true
+        };
+        
+        // 디버깅을 위해 토큰 확인
+        const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+        console.log('현재 사용 중인 토큰:', token ? `${token.substring(0, 20)}...` : '토큰 없음');
+        
+        console.log('구독 생성 요청 데이터:', subscriptionData);
+        
+        // 백엔드에 구독 생성 요청
+        axios.post('/memberships/create', subscriptionData, {
+          headers: getAuthHeaders()
+        })
+        .then(response => {
+          console.log('구독 생성 결과:', response.data);
+          if (response.data.status === 'SUCCESS') {
+            alert('결제가 완료되었습니다! 멤버십이 활성화되었습니다.');
+            // 멤버십 목록 새로고침
+            fetchMemberships();
+          } else {
+            alert('결제는 완료되었지만 멤버십 활성화에 실패했습니다. 고객센터에 문의해주세요.');
+          }
+          
+          // 처리 완료 후 URL 파라미터 제거
+          setSearchParams({});
+        })
+        .catch(error => {
+          console.error('구독 생성 중 오류 발생:', error);
+          if (error.response) {
+            // 서버에서 응답을 받았지만 2xx 범위가 아닌 경우
+            console.error('서버 응답:', error.response.data);
+            console.error('상태 코드:', error.response.status);
+            console.error('헤더:', error.response.headers);
+            alert(`구독 생성 실패: ${error.response.status} - ${JSON.stringify(error.response.data)}`);
+          } else if (error.request) {
+            // 요청이 이루어졌으나 응답을 받지 못한 경우
+            console.error('요청은 전송되었지만 응답이 없습니다:', error.request);
+            alert('서버 응답이 없습니다. 네트워크 상태를 확인해주세요.');
+          } else {
+            // 요청 설정 중에 오류가 발생한 경우
+            console.error('요청 설정 중 오류 발생:', error.message);
+            alert(`오류 발생: ${error.message}`);
+          }
+          
+          // 오류 발생해도 URL 파라미터 제거
+          setSearchParams({});
+        });
+      } else {
+        alert('결제가 완료되었지만 멤버십 정보가 없습니다. 관리자에게 문의해주세요.');
+        setSearchParams({});
+      }
+    } else if (paymentStatus === 'fail') {
       setError('결제에 실패했습니다. 다시 시도해주세요.');
       // URL에서 쿼리 파라미터 제거
       setSearchParams({});
@@ -36,6 +141,24 @@ const Membership = () => {
     checkFreeMembershipStatus() // 무료 멤버십 구독 여부 확인
   }, [creatorId])
 
+  // 무료 멤버십 생성 함수 (프론트엔드 하드코딩)
+  const getFreeMembership = (creatorId = 1) => {
+    return {
+      id: "free-membership-" + creatorId,
+      membershipName: "무료 멤버십",
+      name: "무료 멤버십",
+      creatorId: creatorId,
+      creatorName: "onemug",
+      price: 0,
+      isTemplate: true,
+      benefits: [
+        "크리에이터 콘텐츠 제한적 접근",
+        "기본 피드백 제공",
+        "커뮤니티 참여 가능"
+      ]
+    };
+  };
+
   const fetchMemberships = async () => {
     try {
       setLoading(true)
@@ -43,42 +166,69 @@ const Membership = () => {
       
       // 백엔드에서 템플릿 멤버십 조회 (isTemplate = true)
       // 새로운 템플릿 전용 엔드포인트 사용
-      let url = 'http://localhost:8080/memberships/templates'
+      let url = '/memberships/templates'
       
       // creatorId가 있으면 해당 크리에이터의 템플릿 멤버십만 조회
       if (creatorId) {
         url += `/creator/${creatorId}`
       }
       
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'User-Id': '1' // 임시 사용자 ID
-        }
-      })
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
-
-      const data = await response.json()
-      console.log('API Response:', data)
+      console.log('멤버십 템플릿 API 호출:', url);
       
-      // Benefits 디버깅 로그 추가
-      data.forEach((membership, index) => {
-        console.log(`멤버십 ${index + 1} [${membership.membershipName}] Benefits:`, membership.benefits);
+      const response = await axios.get(url, {
+        headers: getAuthHeaders()
+      });
+
+      console.log('API 응답 (원본):', response.data);
+      
+      let membershipsData = [];
+      
+      if (Array.isArray(response.data)) {
+        membershipsData = response.data;
+      } else {
+        console.warn('API 응답이 배열이 아닙니다:', response.data);
+      }
+      
+      // 하드코딩된 무료 멤버십 추가 (항상 추가)
+      const freeMembership = getFreeMembership(creatorId ? parseInt(creatorId) : 1);
+      console.log('하드코딩된 무료 멤버십 추가:', freeMembership);
+      
+      // 무료 멤버십을 배열 시작에 추가
+      const allMemberships = [freeMembership, ...membershipsData];
+      
+      // Benefits 및 멤버십 속성 디버깅 로그 추가
+      allMemberships.forEach((membership, index) => {
+        console.log(`멤버십 ${index + 1} [ID:${membership.id}]:`, {
+          name: membership.membershipName || membership.name,
+          price: membership.price,
+          isTemplate: membership.isTemplate,
+          benefits: membership.benefits,
+          creatorId: membership.creatorId
+        });
       });
       
-      // 백엔드에서 템플릿만 가져오므로 필터링 불필요
       // 가격 오름차순으로 정렬
-      const sortedMemberships = data.sort((a, b) => a.price - b.price);
+      const sortedMemberships = allMemberships.sort((a, b) => a.price - b.price);
       
-      // 무료 멤버십을 이미 구독하지 않은 경우에도 백엔드에서 받은 데이터만 사용
-      setMemberships(sortedMemberships)
+      // 모든 멤버십을 표시
+      setMemberships(sortedMemberships);
+      
+      // 무료 멤버십이 하나도 없는 경우 디버그 로그 (이제 항상 있어야 함)
+      const freeMemberships = sortedMemberships.filter(m => m.price === 0);
+      console.log('무료 멤버십 템플릿 발견:', freeMemberships.length, '개', freeMemberships);
+      
     } catch (err) {
-      console.error('Error fetching memberships:', err)
-      setError('멤버십 정보를 불러오는데 실패했습니다.')
+      console.error('멤버십 정보 불러오기 실패:', err);
+      if (err.response) {
+        console.error('오류 응답:', err.response.status, err.response.data);
+      }
+      
+      // API 요청이 실패해도 무료 멤버십은 표시
+      const freeMembership = getFreeMembership(creatorId ? parseInt(creatorId) : 1);
+      console.log('오류 발생 - 무료 멤버십만 표시:', freeMembership);
+      setMemberships([freeMembership]);
+      
+      setError('유료 멤버십 정보를 불러오는데 실패했습니다. 무료 멤버십만 표시됩니다.');
     } finally {
       setLoading(false)
     }
@@ -87,16 +237,12 @@ const Membership = () => {
   // 무료 멤버십 구독 여부 확인
   const checkFreeMembershipStatus = async () => {
     try {
-      const response = await fetch('http://localhost:8080/memberships/my-subscriptions', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'User-Id': '1' // 임시 사용자 ID
-        }
-      })
+      const response = await axios.get('/memberships/my-subscriptions', {
+        headers: getAuthHeaders()
+      });
       
-      if (response.ok) {
-        const subscriptions = await response.json()
+      if (response.data) {
+        const subscriptions = response.data
         
         // 무료 멤버십 (가격이 0원인 활성 구독) 확인
         const hasFree = subscriptions.some(sub => 
@@ -126,29 +272,87 @@ const Membership = () => {
         membershipName: membership.membershipName || membership.name,
         price: membership.price,
         creatorId: creatorId ? parseInt(creatorId) : membership.creatorId,
-        userId: 1,
         autoRenew: false,
         paymentMethod: membership.price === 0 ? 'FREE' : 'CARD' // 무료 또는 카드 결제
       }
       
+      // 하드코딩된 무료 멤버십인 경우 특별 처리
+      const isFree = membership.price === 0;
+      const isHardcodedFreeMembership = typeof membership.id === 'string' && 
+                                      membership.id.startsWith('free-membership');
+      
+      if (isFree && isHardcodedFreeMembership) {
+        console.log('하드코딩된 무료 멤버십 처리:', membership);
+        
+        // Yes/No 알림창 표시
+        if (window.confirm('무료 멤버십을 구독하시겠습니까?')) {
+          try {
+            // 백엔드에 실제로 저장할 데이터 준비
+            // 하드코딩된 ID 대신 실제 백엔드에서 사용할 수 있는 데이터 구성
+            const realSubscriptionData = {
+              // membershipId는 DB에 실제로 있는 무료 멤버십 ID로 변경하거나
+              // 백엔드에서 자동 생성되도록 null 전송
+              membershipId: null,
+              membershipName: membership.membershipName || membership.name,
+              price: 0,
+              creatorId: creatorId ? parseInt(creatorId) : 1, // 기본값 1
+              autoRenew: false,
+              paymentMethod: 'FREE',
+              // 추가 식별 정보
+              isFreeHardcoded: true
+            }
+            
+            console.log('무료 멤버십 생성 요청 데이터:', realSubscriptionData);
+            
+            // 백엔드에 무료 멤버십 생성 요청
+            const response = await axios.post('/memberships/create', realSubscriptionData, {
+              headers: getAuthHeaders()
+            });
+            
+            console.log('무료 멤버십 생성 응답:', response.data);
+            
+            if (response.data && response.data.status === 'SUCCESS') {
+              // 성공 시 상태 업데이트
+              setHasFreeMembership(true);
+              alert('무료 멤버십 구독이 완료되었습니다!');
+              
+              // 구독 목록 새로고침
+              await checkFreeMembershipStatus();
+              await fetchMemberships();
+            } else {
+              setError('무료 멤버십 구독에 실패했습니다: ' + (response.data?.message || '알 수 없는 오류'));
+            }
+          } catch (err) {
+            console.error('무료 멤버십 생성 오류:', err);
+            if (err.response) {
+              console.error('오류 응답:', err.response.status, err.response.data);
+              setError(`무료 멤버십 생성 오류: ${err.response.status} - ${err.response.data?.message || '알 수 없는 오류'}`);
+            } else {
+              setError('서버 연결에 실패했습니다.');
+            }
+          }
+        } else {
+          // No를 선택한 경우
+          console.log('무료 멤버십 구독 취소');
+          setSelectedMembership(null);
+        }
+        
+        return;
+      }
+      
       console.log('멤버십 유효성 검증 시작:', subscriptionData)
-      const validationResponse = await fetch('http://localhost:8080/memberships/validate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'User-Id': '1'
-        },
-        body: JSON.stringify(subscriptionData)
+      const validationResponse = await axios.post('/memberships/validate', subscriptionData, {
+        headers: getAuthHeaders()
       })
 
-      if (!validationResponse.ok) {
-        const errorText = await validationResponse.text()
+      if (!validationResponse.data.valid) {
+        const errorText = validationResponse.data.errorMessage
         console.error('멤버십 유효성 검증 실패:', errorText)
-        setError(`멤버십 유효성 검증 실패: ${validationResponse.status}`)
+        setError(`멤버십 유효성 검증 실패: ${errorText}`)
         return
       }
 
-      const validationResult = await validationResponse.json()
+      const validationResult = validationResponse.data
       console.log('멤버십 유효성 검증 결과:', validationResult)
       
       if (validationResult.valid) {
@@ -187,6 +391,11 @@ const Membership = () => {
             : (isUpgrade ? '멤버십 업그레이드 성공:' : '유료 멤버십 선택 성공:'), 
           membership
         )
+        
+        // 무료 멤버십이면 자동으로 확인 처리
+        if (membership.price === 0) {
+          handleConfirmSelection();
+        }
       } else {
         console.error('멤버십 유효성 검증 실패:', validationResult)
         setError(validationResult.errorMessage || '멤버십 구독에 실패했습니다.')
@@ -207,16 +416,11 @@ const Membership = () => {
     if (selectionResult.isFree) {
       try {
         // 무료 멤버십 생성
-        const createResponse = await fetch('http://localhost:8080/memberships/create?userId=1', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'User-Id': '1'
-          },
-          body: JSON.stringify(selectionResult.subscriptionData)
+        const createResponse = await axios.post('/memberships/create', selectionResult.subscriptionData, {
+          headers: getAuthHeaders()
         })
         
-        const createResult = await createResponse.json()
+        const createResult = createResponse.data
         console.log('무료 멤버십 생성 결과:', createResult)
         
         if (createResult.status === 'SUCCESS') {
@@ -258,16 +462,11 @@ const Membership = () => {
           console.log('업그레이드 요청:', subscriptionData)
         }
         
-        const createResponse = await fetch('http://localhost:8080/memberships/create?userId=1', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'User-Id': '1'
-          },
-          body: JSON.stringify(subscriptionData)
+        const createResponse = await axios.post('/memberships/create', subscriptionData, {
+          headers: getAuthHeaders()
         })
         
-        const createResult = await createResponse.json()
+        const createResult = createResponse.data
         
         if (createResult.status === 'SUCCESS') {
           // 업그레이드인 경우 메시지 다르게 표시
@@ -414,66 +613,85 @@ const Membership = () => {
 
             {/* Membership Plans */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {memberships.map((membership) => (
-                <div
-                  key={membership.id}
-                  className={`relative bg-white rounded-xl border p-6 hover:shadow-lg transition-shadow ${
-                    membership.price === 0 
-                      ? 'border-green-200 ring-2 ring-green-100' 
-                      : 'border-gray-200'
-                  }`}
-                >
-                  <div className="flex flex-col h-full">
-                    {/* Free Membership Badge */}
-                    {membership.price === 0 && (
-                      <div className="absolute -top-2 -right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full font-medium">
-                        무료
-                      </div>
-                    )}
-                    
-                    {/* Header */}
-                    <div className="mb-4">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                        {membership.membershipName || membership.name}
-                      </h3>
-                      <p className="text-sm text-gray-600 mb-4">
-                        {membership.creatorName}
-                      </p>
-                      <div className="flex items-baseline gap-1">
-                        <span className="text-2xl font-bold text-gray-900">
-                          ₩{membership.price.toLocaleString()}
-                        </span>
-                        <span className="text-sm text-gray-500">/월</span>
-                      </div>
-                    </div>
-
-                    {/* Features */}
-                    <div className="space-y-3 mb-6 flex-1">
-                      {membership.benefits && membership.benefits.length > 0 ? (
-                        membership.benefits.map((benefit, index) => (
-                          <div key={index} className="flex items-start gap-3">
-                            <Check className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
-                            <span className="text-sm text-gray-700">{benefit}</span>
-                          </div>
-                        ))
-                      ) : (
-                        <div className="text-sm text-gray-500 italic">
-                          혜택 정보가 없습니다.
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Button */}
-                    <button
-                      onClick={() => handleMembershipSelect(membership)}
-                      className="w-full py-3 px-6 rounded-lg font-medium transition-colors bg-amber-500 hover:bg-amber-600 text-white"
-                      disabled={selectedMembership && selectedMembership.id === membership.id}
+              {memberships && memberships.length > 0 ? (
+                memberships.map((membership) => {
+                  // 멤버십 데이터 유효성 검증 (예상치 못한 형식의 데이터 보호)
+                  const membershipId = membership?.id || 'unknown';
+                  const membershipName = membership?.membershipName || membership?.name || '이름 없음';
+                  const creatorName = membership?.creatorName || '알 수 없음';
+                  const price = typeof membership?.price === 'number' ? membership.price : 0;
+                  const benefits = Array.isArray(membership?.benefits) ? membership.benefits : [];
+                  const isFree = price === 0;
+                  
+                  console.log(`멤버십 렌더링 [${membershipId}]:`, { membershipName, price, isFree });
+                  
+                  return (
+                    <div
+                      key={membershipId}
+                      className={`relative bg-white rounded-xl border p-6 hover:shadow-lg transition-shadow ${
+                        isFree
+                          ? 'border-green-200 ring-2 ring-green-100' 
+                          : 'border-gray-200'
+                      }`}
                     >
-                      {selectedMembership && selectedMembership.id === membership.id ? '선택 중...' : '멤버십 선택'}
-                    </button>
-                  </div>
+                      <div className="flex flex-col h-full">
+                        {/* Free Membership Badge */}
+                        {isFree && (
+                          <div className="absolute -top-2 -right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full font-medium">
+                            무료
+                          </div>
+                        )}
+                        
+                        {/* Header */}
+                        <div className="mb-4">
+                          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                            {membershipName}
+                          </h3>
+                          <p className="text-sm text-gray-600 mb-4">
+                            {creatorName}
+                          </p>
+                          <div className="flex items-baseline gap-1">
+                            <span className="text-2xl font-bold text-gray-900">
+                              ₩{price.toLocaleString()}
+                            </span>
+                            <span className="text-sm text-gray-500">/월</span>
+                          </div>
+                        </div>
+
+                        {/* Features */}
+                        <div className="space-y-3 mb-6 flex-1">
+                          {benefits.length > 0 ? (
+                            benefits.map((benefit, index) => (
+                              <div key={index} className="flex items-start gap-3">
+                                <Check className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                                <span className="text-sm text-gray-700">{benefit}</span>
+                              </div>
+                            ))
+                          ) : (
+                            <div className="text-sm text-gray-500 italic">
+                              혜택 정보가 없습니다.
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Button */}
+                        <button
+                          onClick={() => handleMembershipSelect(membership)}
+                          className="w-full py-3 px-6 rounded-lg font-medium transition-colors bg-amber-500 hover:bg-amber-600 text-white"
+                          disabled={selectedMembership && selectedMembership.id === membershipId}
+                        >
+                          {selectedMembership && selectedMembership.id === membershipId ? '선택 중...' : '멤버십 선택'}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="col-span-3 p-6 text-center bg-gray-50 rounded-xl border border-gray-200">
+                  <p className="text-gray-500">멤버십 템플릿이 없거나 로딩 중입니다.</p>
+                  <p className="text-sm text-gray-400 mt-2">사용 가능한 멤버십이 없는 경우 크리에이터에게 문의하세요.</p>
                 </div>
-              ))}
+              )}
             </div>
 
             {/* Selection Result Section */}
