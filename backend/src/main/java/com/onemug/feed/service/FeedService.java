@@ -22,7 +22,8 @@ public class FeedService {
     public Page<PostDto> getFeed(Long userId, Pageable pageable) {
 
         //  구독한 Creator ID 꺼내오기
-        List<Long> creatorIds = creatorRepo.findCreatorIdsBySubscriberId(userId);
+        List<Long> creatorIds = creatorRepo.findActiveCreatorIdsByUserId(userId);
+
 
         if (creatorIds.isEmpty()) {
             return Page.empty(pageable);
