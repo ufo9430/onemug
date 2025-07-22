@@ -78,6 +78,15 @@ public interface MembershipRepository extends JpaRepository<Membership, Long> {
     @Query("SELECT m FROM Membership m WHERE m.user.id = :userId AND m.creator.id = :creatorId AND m.isTemplate = false AND m.status = 'ACTIVE' AND m.expiresAt > :now ORDER BY m.createdAt DESC")
     List<Membership> findActiveSubscriptionsByUserAndCreator(@Param("userId") Long userId, @Param("creatorId") Long creatorId, @Param("now") LocalDateTime now);
     
+    /**
+     * 동일 창작자의 하위 가격 구독 조회
+     */
+    @Query("SELECT m FROM Membership m WHERE m.user.id = :userId AND m.creator.id = :creatorId AND m.status = 'ACTIVE' AND m.price < :price AND m.isTemplate = false")
+    List<Membership> findLowerPriceActiveSubscriptions(
+            @Param("userId") Long userId, 
+            @Param("creatorId") Long creatorId, 
+            @Param("price") Integer price);
+    
     // === 창작자별 구독 조회 ===
     
     /**
