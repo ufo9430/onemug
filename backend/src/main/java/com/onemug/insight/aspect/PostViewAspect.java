@@ -1,8 +1,10 @@
 package com.onemug.insight.aspect;
 
+import com.onemug.Post.dto.PostDetailResponseDTO;
 import com.onemug.global.entity.Post;
 import com.onemug.global.entity.PostViewLog;
 import com.onemug.insight.repository.PostViewLogRepository;
+import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.AfterReturning;
 import org.aspectj.lang.annotation.Aspect;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,13 +20,14 @@ public class PostViewAspect {
     @Autowired
     private PostViewLogRepository postViewLogRepository;
 
-    @AfterReturning(pointcut = "execution(* com.onemug.Post.service.PostService.getPost())", returning = "result")
+    @AfterReturning(pointcut = "execution(* com.onemug.Post.service.PostService.getPost(..))", returning = "result")
     @Transactional
-    public void afterPostView(Object result){
-        Post targetPost = (Post) result;
+    public void afterPostView(JoinPoint joinPoint, Object result){
+        PostDetailResponseDTO dto = (PostDetailResponseDTO) result;
 
-        Long postId = targetPost.getId();
-        Long creatorId = targetPost.getCreator().getId();
+
+        Long postId = dto.getId();
+        Long creatorId = dto.getCreator_id();
 
         PostViewLog log = PostViewLog.builder()
                 .postId(postId)
@@ -33,6 +36,5 @@ public class PostViewAspect {
                 .build();
 
         postViewLogRepository.save(log);
-        targetPost.addViewCount();
     }
 }

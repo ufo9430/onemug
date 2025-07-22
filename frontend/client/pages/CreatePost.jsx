@@ -12,10 +12,12 @@ const CreatePost = () => {
 
   const categoryMap = {
     "원두 · 기기 리뷰": 1,
-    "카페 탐방": 2,
-    "레시피 공유": 3,
-    "창업/운영": 4,
-    "홈카페 팁": 5
+    "비즈니스": 2,
+    "요리": 3,
+    "개발": 4,
+    "라이프스타일": 5,
+    "여행": 6,
+    "건강": 7
   }
 
   const categoryId = categoryMap[selectedCategoryName];

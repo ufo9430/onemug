@@ -93,6 +93,17 @@ const CreatorProfile = () => {
     fetchPosts();
   }, []);
 
+  const handleMessageClick = async(subscriberId) => {
+          // 메시지 보내기 로직 구현
+          try {
+                  const res = await axios.get(`/community/new/${subscriberId}`);
+                  console.log("메시지 보내기: 구독자 ID",res.data);
+                  navigate(`/creator/messages/${res.data.chatroomId}`);
+              } catch (err) {
+                  console.error("채팅방 이동 실패", err);
+              }
+      }
+
   const samplePost = {
     id: "1",
     title: "스페셜티 원두 10종 비교 후기 (with 추출 가이드)",
@@ -165,7 +176,7 @@ const CreatorProfile = () => {
                     </h2>
                     <div
                       className="bg-brand-primary text-white p-1.5 rounded-lg hover:bg-brand-primary/90 transition-colors cursor-pointer"
-                      onClick={() => navigate(`/community/${creatorId}`)}
+                      onClick={() => handleMessageClick(profile?.userId)}
                     >
                       <Mail className="w-5 h-5" />
                     </div>

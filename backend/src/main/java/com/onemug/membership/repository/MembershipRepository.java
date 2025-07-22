@@ -189,4 +189,7 @@ public interface MembershipRepository extends JpaRepository<Membership, Long> {
     List<Membership> findAllByUserAndStatus(@Param("user") User user, @Param("status") Membership.SubscriptionStatus status);
 
 
+    Optional<Membership> findByOrderId(String orderId);
+
+    List<Membership> findByUserIdAndIsTemplateFalse(Long userId);
 }

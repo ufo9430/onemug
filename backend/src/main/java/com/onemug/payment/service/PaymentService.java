@@ -5,6 +5,7 @@ import com.onemug.payment.dto.PaymentConfirmResponseDto;
 import com.onemug.payment.dto.TossPaymentResponseDto;
 import com.onemug.global.entity.Payment;
 import com.onemug.payment.repository.PaymentRepository;
+import com.onemug.membership.service.MembershipService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -27,6 +28,9 @@ public class PaymentService {
 
     @Autowired
     private RestTemplate restTemplate;
+    
+    @Autowired
+    private MembershipService membershipService;
     
     @Value("${toss.payments.secret-key}")
     private String tossSecretKey;
@@ -68,12 +72,37 @@ public class PaymentService {
             // 4. 결제 정보 저장
             Payment payment = savePayment(tossResponse, request);
             
-            log.info("결제 확인 완료: orderId={}, paymentKey={}", 
-                    request.getOrderId(), request.getPaymentKey());
+            // 5. 결제 성공 시 구독 상태 업데이트 (PENDING -> ACTIVE)
+            Long subscriptionId = null;
+            boolean subscriptionUpdated = false;
+            if ("DONE".equals(tossResponse.getStatus())) {
+                log.info("결제 완료 상태(DONE)를 확인함, 구독 상태 업데이트 시도: orderId={}", request.getOrderId());
+                
+                // 5.1. 주문 ID로 구독 업데이트 시도
+                subscriptionUpdated = membershipService.updateSubscriptionAfterPayment(request.getOrderId());
+                log.info("주문 ID로 구독 상태 업데이트 결과: {}, orderId={}", subscriptionUpdated ? "성공" : "실패", request.getOrderId());
+                
+                // 5.2. 실패한 경우, 최근 PENDING 상태의 구독 찾아서 업데이트 시도 (fallback)
+                if (!subscriptionUpdated && request.getUserId() != null) {
+                    log.info("fallback: 사용자 ID와 상태로 최근 구독 찾기 시도: userId={}", request.getUserId());
+                    subscriptionId = membershipService.updateLatestPendingSubscription(request.getUserId(), request.getOrderId());
+                    if (subscriptionId != null) {
+                        subscriptionUpdated = true;
+                        log.info("fallback 성공: 최근 PENDING 구독 활성화 완료: subscriptionId={}, orderId={}", subscriptionId, request.getOrderId());
+                    } else {
+                        log.warn("fallback 실패: 활성화할 PENDING 구독을 찾을 수 없음: userId={}", request.getUserId());
+                    }
+                }
+            } else {
+                log.warn("결제 상태가 DONE이 아님: {}, 구독 상태 업데이트를 건너뜀", tossResponse.getStatus());
+            }
+            
+            log.info("결제 확인 완료: orderId={}, paymentKey={}, 구독업데이트={}", 
+                    request.getOrderId(), request.getPaymentKey(), subscriptionUpdated ? "성공" : "실패");
             
             return PaymentConfirmResponseDto.builder()
                     .status("SUCCESS")
-                    .message("결제가 성공적으로 처리되었습니다.")
+                    .message(subscriptionUpdated ? "결제 및 멤버십 활성화가 완료되었습니다." : "결제는 성공했지만 멤버십 활성화에 실패했습니다.")
                     .paymentKey(tossResponse.getPaymentKey())
                     .orderId(tossResponse.getOrderId())
                     .amount(tossResponse.getTotalAmount())
@@ -81,6 +110,8 @@ public class PaymentService {
                     .approvedAt(tossResponse.getApprovedAt())
                     .method(tossResponse.getMethod())
                     .receipt(tossResponse.getReceipt() != null ? tossResponse.getReceipt().getUrl() : null)
+                    .subscriptionId(subscriptionId) // 구독 ID 추가
+                    .subscriptionUpdated(subscriptionUpdated) // 구독 업데이트 성공 여부
                     .build();
                     
         } catch (Exception e) {

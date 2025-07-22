@@ -15,6 +15,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
@@ -37,8 +38,8 @@ public class PostController {
     }
 
     @GetMapping("/post/{id}")
-    public PostDetailResponseDTO getPost(@PathVariable Long id) {
-        return postService.getPost(id);
+    public PostDetailResponseDTO getPost(@PathVariable Long id, Authentication authentication) {
+        return postService.getPost(id, authentication);
     }
 
     @PostMapping("/c/post/add")
