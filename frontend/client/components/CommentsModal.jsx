@@ -100,11 +100,13 @@ const CommentsModal = ({ onClose }) => {
   const { id } = useParams();
   const token = localStorage.getItem("token") || sessionStorage.getItem("token");
   const [comments, setComments] = useState([]);
+  const [commentCount, setCommentCount] = useState(0);
 
   const fetchComments = async (postId) => {
     try {
       const res = await axios.get(`http://localhost:8080/post/${id}/comments`);
       setComments(res.data); // 댓글 리스트 저장
+      setCommentCount(res.data.length); // 댓글 개수 저장
     } catch (err) {
       console.error("❌ 댓글 불러오기 실패", err);
     }
@@ -143,7 +145,7 @@ const CommentsModal = ({ onClose }) => {
       <div className="bg-white rounded-xl w-full max-w-2xl max-h-[80vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 className="text-xl font-bold text-gray-900">댓글 18개</h2>
+          <h2 className="text-xl font-bold text-gray-900">댓글 {commentCount}개</h2>
           <button
             onClick={onClose}
             className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors"

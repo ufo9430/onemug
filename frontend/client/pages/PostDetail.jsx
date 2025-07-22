@@ -34,6 +34,7 @@ const PostDetail = () => {
   const [postData, setPostData] = useState(null);
   const [liked, setLiked] = useState(false); // true or false
   const [likeCount, setLikeCount] = useState(0);
+  const [commentCount, setCommentCount] = useState(0);
 
   const token =
     localStorage.getItem("token") || sessionStorage.getItem("token");
@@ -83,6 +84,19 @@ const PostDetail = () => {
     };
 
     fetchPost();
+  }, [id]);
+
+  useEffect(() => {
+    const fetchComments = async (id) => {
+      try {
+        const res = await axios.get(`http://localhost:8080/post/${id}/comments`);
+        setCommentCount(res.data.length); // 댓글 개수 저장
+        console.log("res.data", res.data);
+      } catch (err) {
+        console.error("❌ 댓글 불러오기 실패", err);
+      }
+    };
+    fetchComments(id);
   }, [id]);
 
   if (!postData) return <div>Loading...</div>;
@@ -193,7 +207,7 @@ const PostDetail = () => {
                 >
                   <MessageCircle className="w-5 h-5 text-gray-500" />
                 </button>
-                <span className="text-sm text-gray-500">18</span>
+                <span className="text-sm text-gray-500">{commentCount}</span>
               </div>
             </div>
           </article>
