@@ -32,6 +32,10 @@ const PostDetail = () => {
   const [showComments, setShowComments] = useState(false)
   const { id } = useParams();
   const [postData, setPostData] = useState(null);
+  const [liked, setLiked] = useState(false); // true or false
+  const [likeCount, setLikeCount] = useState(0);
+
+  const token = localStorage.getItem("token") || sessionStorage.getItem("token");
 
   const relatedPosts = [
     {
@@ -63,8 +67,15 @@ const PostDetail = () => {
   useEffect(() => {
     const fetchPost = async () => {
       try {
-        const response = await axios.get(`/post/${id}`);
+        const response = await axios.get(`http://localhost:8080/post/${id}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
         setPostData(response.data);
+        setLiked(response.data.liked);
+        setLikeCount(response.data.likeCount);
+        console.log("response.data = ", response.data);
       } catch (error) {
         console.error("게시글 불러오기 실패:", error);
       }
@@ -74,6 +85,35 @@ const PostDetail = () => {
   }, [id]);
 
   if (!postData) return <div>Loading...</div>;
+
+  const formattedDate = new Date(postData.createdAt).toLocaleDateString("ko-KR", {
+    year: "numeric",
+    month: "long",
+    day: "2-digit"
+  });
+
+  const handleLikeToggle = async () => {
+    try {
+      if (liked) {
+        await axios.delete(`http://localhost:8080/post/${id}/like`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        setLikeCount(prev => prev - 1);
+      } else {
+        await axios.post(`http://localhost:8080/post/${id}/like`, {}, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        setLikeCount(prev => prev + 1);
+      }
+      setLiked(!liked);
+    } catch (error) {
+      console.error("좋아요 처리 실패:", error);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-brand-secondary flex">
@@ -105,10 +145,10 @@ const PostDetail = () => {
                 <div className="w-12 h-12 rounded-full bg-yellow-300"></div>
                 <div>
                   <h3 className="font-semibold text-lg text-gray-900">
-                    신유���
+                    {postData.authorName}
                   </h3>
                   <div className="text-sm text-gray-500">
-                    • {postData.category} • 2024년 1월 15일
+                    • {postData.categoryName} • {formattedDate}
                   </div>
                 </div>
               </div>
@@ -150,10 +190,15 @@ const PostDetail = () => {
 
               {/* Interaction Buttons */}
               <div className="flex items-center gap-6 mt-8 pt-8 border-t border-gray-200">
-                <button className="flex items-center justify-center w-14 h-14 rounded-full border border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow">
-                  <Heart className="w-5 h-5 text-gray-500" />
+                <button
+                    onClick={handleLikeToggle}
+                    className={`flex items-center justify-center w-14 h-14 rounded-full border ${
+                        liked ? "border-red-300 bg-red-50" : "border-gray-200 bg-white"
+                    } shadow-sm hover:shadow-md transition-shadow`}
+                >
+                  <Heart className={`w-5 h-5 ${liked ? "text-red-500 fill-red-500" : "text-gray-500"}`} />
                 </button>
-                <span className="text-sm text-gray-500">124</span>
+                <span className="text-sm text-gray-500">{likeCount}</span>
                 <button
                   onClick={() => setShowComments(true)}
                   className="flex items-center justify-center w-14 h-14 rounded-full border border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow ml-4"
