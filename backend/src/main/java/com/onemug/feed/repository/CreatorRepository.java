@@ -10,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface CreatorRepository extends JpaRepository<Creator, Long> {
@@ -34,5 +35,7 @@ public interface CreatorRepository extends JpaRepository<Creator, Long> {
           )
     """, nativeQuery = true)
     Page<Creator> searchCreators(@Param("cond") SearchCond cond, Pageable pageable);
+
+    Optional<Creator> findByUserId(Long userId);
 }
 
