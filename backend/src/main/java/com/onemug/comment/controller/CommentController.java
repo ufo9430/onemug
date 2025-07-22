@@ -5,12 +5,12 @@ import com.onemug.comment.dto.CommentRequestDto;
 import com.onemug.comment.dto.CommentResponseDTO;
 import com.onemug.comment.service.CommentService;
 import com.onemug.global.entity.Comment;
-import com.onemug.global.utils.AuthUtils;
 import com.onemug.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -29,8 +29,8 @@ public class CommentController {
 
 
     @PostMapping("/post/{id}/comments")
-    public ResponseEntity<CommentResponseDTO> writeComment(@PathVariable Long id, @RequestBody CommentRequestDto dto, @AuthenticationPrincipal Object principal) {
-        Long userId = AuthUtils.extractUserId(principal, userRepository);
+    public ResponseEntity<CommentResponseDTO> writeComment(@PathVariable Long id, @RequestBody CommentRequestDto dto, @AuthenticationPrincipal Jwt jwt) {
+        Long userId = Long.parseLong(jwt.getSubject());
 
         CommentResponseDTO responseDto = commentService.writeComment(id, userId, dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(responseDto);

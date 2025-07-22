@@ -12,12 +12,10 @@ const PAGE_SIZE = 20;
 const categories = [
   { id: null, label: "전체" },
   { id: 1, label: "원두 · 기기 리뷰" },
-  { id: 2, label: "비즈니스" },
-  { id: 3, label: "요리" },
-  { id: 4, label: "개발" },
-  { id: 5, label: "라이프스타일" },
-  { id: 6, label: "여행" },
-  { id: 7, label: "건강" },
+  { id: 2, label: "카페 탐방" },
+  { id: 3, label: "레시피 공유" },
+  { id: 4, label: "창업/운영" },
+  { id: 5, label: "홈카페 팁" },
 ];
 
 const Explore = () => {
