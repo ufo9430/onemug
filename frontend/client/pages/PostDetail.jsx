@@ -168,7 +168,7 @@ const PostDetail = () => {
                 <button
                   type="button"
                   className="focus:outline-none"
-                  onClick={() => navigate(`/profile/${postData.authorId}`)}
+                  onClick={() => navigate(`/profile/${postData.creator_id}`)}
                   style={{ padding: 0, border: "none", background: "none" }}
                 >
                   <img
