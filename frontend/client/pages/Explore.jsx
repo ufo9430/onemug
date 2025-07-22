@@ -15,7 +15,6 @@ const categories = [
   { id: 2, label: "카페 탐방" },
   { id: 3, label: "레시피 공유" },
   { id: 4, label: "창업/운영" },
-  { id: 5, label: "홈카페 팁" },
 ];
 
 const Explore = () => {
