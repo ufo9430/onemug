@@ -14,7 +14,7 @@ const CreatorSignup = () => {
       .then(response => {
         const data = response.data
         if (data.profileUrl) {
-          setProfileImage(data.profileImage)
+          setProfileImage(`http://localhost:8080${data.profileUrl}`)
         }
       })
       .catch(error => {
@@ -69,11 +69,6 @@ const CreatorSignup = () => {
                   <Camera className="w-12 h-12 text-gray-400" />
                 )}
               </div>
-              <label
-                htmlFor="profile-upload"
-                className="absolute inset-0 rounded-full cursor-pointer hover:bg-black hover:bg-opacity-10 transition-colors flex items-center justify-center"
-              >
-              </label>
             </div>
             <p className="text-sm text-gray-500 mt-2">프로필 사진</p>
           </div>

@@ -11,24 +11,27 @@ import {
   CheckSquare,
 } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "../components/ui/avatar";
+import { Skeleton } from "@/components/ui/skeleton";
 import axios from "@/lib/axios";
 
 const Sidebar = ({ profile = {}, activeItem }) => {
   const navigate = useNavigate();
   const [hasUnread, setHasUnread] = useState(false);
+  const [loading, setLoading] = useState(!profile?.nickname);
+
   useEffect(() => {
     const fetchNotice = async () => {
       try {
         const res = await axios.get("/notice/api/unread");
-
         setHasUnread(res.data.checkUnread === true);
       } catch (err) {
         console.error("알림 상태를 불러오지 못했습니다:", err);
       }
     };
 
+    if (profile?.nickname) setLoading(false);
     fetchNotice();
-  }, []);
+  }, [profile]);
 
   const navigationItems = [
     { id: "feed", label: "피드", icon: Home, path: "/feed" },
@@ -65,26 +68,38 @@ const Sidebar = ({ profile = {}, activeItem }) => {
 
         {/* User Profile */}
         <div className="p-4">
-          <div className="bg-gray-50 rounded-lg p-3 flex items-center gap-3">
-            <Avatar className="w-12 h-12">
-              <AvatarImage
-                src={
-                  `/api${profile.profileUrl}` ||
-                  "/default-profile.png"
-                }
-                alt={profile.nickname || "프로필 이미지"}
-              />
-              <AvatarFallback className="bg-brand-primary text-white font-semibold text-sm">
-                {profile.nickname?.charAt(0) || "닉"}
-              </AvatarFallback>
-            </Avatar>
-            <div>
-              <div className="font-semibold text-gray-900">
-                {profile.nickname}
+          {loading ? (
+            <div className="bg-gray-50 rounded-lg p-3 flex items-center gap-3">
+              <Skeleton className="w-12 h-12 rounded-full" />
+              <div className="flex flex-col gap-2">
+                <Skeleton className="w-24 h-4" />
+                <Skeleton className="w-36 h-3" />
+
               </div>
-              <div className="text-sm text-gray-500">{profile.email}</div>
             </div>
-          </div>
+          ) : (
+            <div className="bg-gray-50 rounded-lg p-3 flex items-center gap-3">
+              <Avatar className="w-12 h-12">
+                <AvatarImage
+                  src={
+                    profile?.profileUrl
+                      ? `http://localhost:8080${profile.profileUrl}`
+                      : "/default-profile.png"
+                  }
+                  alt="프로필 이미지"
+                />
+                <AvatarFallback className="bg-brand-primary text-white font-semibold text-sm">
+                  {profile.nickname?.charAt(0) || "닉"}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <div className="font-semibold text-gray-900">
+                  {profile.nickname}
+                </div>
+                <div className="text-sm text-gray-500">{profile.email}</div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Navigation */}
@@ -127,7 +142,9 @@ const Sidebar = ({ profile = {}, activeItem }) => {
 
       {/* Bottom Action */}
       <div className="p-4 border-t">
-        {profile.isCreator ? (
+        {loading ? (
+          <div className="w-full h-10 bg-gray-100 rounded animate-pulse" />
+        ) : profile.isCreator ? (
           <button
             onClick={() => navigate("/creator/dashboard")}
             className="w-full bg-brand-primary text-white rounded-lg py-3 px-6 font-medium hover:bg-brand-primary/90 transition-colors text-sm"

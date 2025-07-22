@@ -18,41 +18,35 @@ const PostCard = ({
   const navigate = useNavigate();
 
   return (
-    <article
-      onClick={() => navigate(`/post/${id}`)}
-      className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow overflow-hidden cursor-pointer"
-    >
-      <div className="aspect-[4/2] bg-gray-100">
-        <img src={image} alt={title} className="w-full h-full object-cover" />
-      </div>
-      <div className="p-8">
-        <div className="flex items-center gap-3 mb-6">
-          <img
-            src={authorAvatar || "/placeholder-avatar.svg"}
-            alt={author}
-            className="w-10 h-10 rounded-full object-cover"
-          />
+      <article
+          onClick={() => navigate(`/post/${id}`)}
+          className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow cursor-pointer p-6"
+      >
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-10 h-10 bg-gray-200 rounded-full" />
           <div>
             <div className="font-semibold text-gray-900">{author}</div>
             <div className="text-sm text-gray-500">• {category}</div>
           </div>
         </div>
-        <h2 className="text-xl font-bold text-gray-900 mb-4 line-clamp-2">
+
+        <h2 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2">
           {title}
         </h2>
-        <p className="text-gray-600 mb-6 line-clamp-2">{excerpt}</p>
-        <div className="flex items-center gap-6">
-          <button className="flex items-center gap-2 text-gray-600 hover:text-brand-primary transition-colors">
-            <Heart className="w-5 h-5" />
-            <span className="text-sm">{likes}</span>
-          </button>
-          <button className="flex items-center gap-2 text-gray-600 hover:text-brand-primary transition-colors">
-            <MessageCircle className="w-5 h-5" />
-            <span className="text-sm">{comments}</span>
-          </button>
+
+        <p className="text-sm text-gray-600 mb-4 line-clamp-2">{excerpt}</p>
+
+        <div className="flex items-center gap-6 text-sm text-gray-600">
+          <div className="flex items-center gap-2">
+            <Heart className="w-4 h-4" />
+            <span>{likes}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <MessageCircle className="w-4 h-4" />
+            <span>{comments}</span>
+          </div>
         </div>
-      </div>
-    </article>
+      </article>
   );
 };
 

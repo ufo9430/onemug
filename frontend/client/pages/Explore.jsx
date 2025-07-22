@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import debounce from "lodash.debounce";
-import { Heart, MessageCircle } from "lucide-react";
+import { Heart, MessageCircle, Eye } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import axios from "@/lib/axios";
 
@@ -17,7 +17,6 @@ const categories = [
   { id: 2, label: "카페 탐방" },
   { id: 3, label: "레시피 공유" },
   { id: 4, label: "창업/운영" },
-  { id: 5, label: "홈카페 팁" },
 ];
 
 const Explore = () => {
@@ -170,7 +169,10 @@ const Explore = () => {
                     <MessageCircle size={16} />
                     <span>{post.commentCount}</span>
                   </div>
-                  <span>{post.viewCount} views</span>
+                  <div className="flex items-center space-x-1">
+                    <Eye size={16} />
+                    <span>{post.viewCount}</span>
+                  </div>
                 </div>
               </article>
             ))}

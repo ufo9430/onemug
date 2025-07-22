@@ -2,59 +2,63 @@ import React, { useState, useRef, useEffect } from "react";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Avatar, AvatarImage, AvatarFallback } from "../components/ui/avatar";
+import { Skeleton } from "@/components/ui/skeleton";
 import axios from "@/lib/axios";
 import { jwtDecode } from "jwt-decode";
 
 // JWT 토큰 가져오는 함수
 const getAuthHeaders = () => {
-  const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+  const token =
+    localStorage.getItem("token") || sessionStorage.getItem("token");
   return {
-    'Content-Type': 'application/json',
-    'Authorization': token ? `Bearer ${token}` : ''
+    "Content-Type": "application/json",
+    Authorization: token ? `Bearer ${token}` : "",
   };
 };
 
 // 사용자 ID 추출 함수
 const getUserIdFromStorage = () => {
   // 저장소에서 직접 userId 확인
-  let userId = localStorage.getItem('userId') || sessionStorage.getItem('userId');
-  
-  if (userId && userId !== 'undefined') {
-    console.log('저장소에서 userId 발견:', userId);
+  let userId =
+    localStorage.getItem("userId") || sessionStorage.getItem("userId");
+
+  if (userId && userId !== "undefined") {
+    console.log("저장소에서 userId 발견:", userId);
     return userId;
   }
-  
+
   // JWT 토큰에서 추출 시도
-  const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+  const token =
+    localStorage.getItem("token") || sessionStorage.getItem("token");
   if (!token) {
-    console.warn('토큰이 없어 사용자 ID를 추출할 수 없습니다.');
+    console.warn("토큰이 없어 사용자 ID를 추출할 수 없습니다.");
     return null;
   }
-  
+
   try {
     const decoded = jwtDecode(token);
-    console.log('JWT 디코딩 성공:', decoded);
-    
+    console.log("JWT 디코딩 성공:", decoded);
+
     // 다양한 필드에서 사용자 ID 추출 시도
     userId = decoded.userId || decoded.sub || decoded.id || decoded.user_id;
-    
+
     if (userId) {
-      console.log('JWT에서 userId 추출 성공:', userId);
-      
+      console.log("JWT에서 userId 추출 성공:", userId);
+
       // 추출한 userId를 저장소에 저장
-      if (localStorage.getItem('token')) {
-        localStorage.setItem('userId', userId);
+      if (localStorage.getItem("token")) {
+        localStorage.setItem("userId", userId);
       } else {
-        sessionStorage.setItem('userId', userId);
+        sessionStorage.setItem("userId", userId);
       }
-      
+
       return userId;
     } else {
-      console.warn('JWT에서 사용자 ID 필드를 찾을 수 없습니다:', decoded);
+      console.warn("JWT에서 사용자 ID 필드를 찾을 수 없습니다:", decoded);
       return null;
     }
   } catch (error) {
-    console.error('JWT 디코딩 실패:', error);
+    console.error("JWT 디코딩 실패:", error);
     return null;
   }
 };
@@ -66,32 +70,32 @@ const api = {
     try {
       // 사용자 ID 가져오기
       const userId = getUserIdFromStorage();
-      
+
       if (!userId) {
-        console.warn('사용자 ID가 없어 구독 목록을 조회할 수 없습니다.');
+        console.warn("사용자 ID가 없어 구독 목록을 조회할 수 없습니다.");
         return [];
       }
-      
-      console.log('구독 목록 조회 요청. 사용자 ID:', userId);
-      
+
+      console.log("구독 목록 조회 요청. 사용자 ID:", userId);
+
       // 변경된 API 엔드포인트로 요청 (userId를 쿼리 파라미터로 전달)
       const response = await axios.get("/memberships/my-subscriptions", {
         headers: {
           ...getAuthHeaders(),
-          'User-Id': userId
+          "User-Id": userId,
         },
-        params: { userId } // 쿼리 파라미터로 userId 전달
+        params: { userId }, // 쿼리 파라미터로 userId 전달
       });
 
-      console.log('구독 목록 조회 성공:', response.data);
+      console.log("구독 목록 조회 성공:", response.data);
       return response.data;
     } catch (error) {
       console.error("Error fetching subscriptions:", error);
-      console.error('오류 세부 정보:', {
+      console.error("오류 세부 정보:", {
         message: error.message,
         status: error.response?.status,
         statusText: error.response?.statusText,
-        responseData: error.response?.data
+        responseData: error.response?.data,
       });
       return [];
     }
@@ -101,18 +105,18 @@ const api = {
   getActiveSubscriptions: async () => {
     try {
       const userId = getUserIdFromStorage();
-      
+
       if (!userId) {
-        console.warn('사용자 ID가 없어 활성 구독 목록을 조회할 수 없습니다.');
+        console.warn("사용자 ID가 없어 활성 구독 목록을 조회할 수 없습니다.");
         return [];
       }
-      
+
       const response = await axios.get("/memberships/active-subscriptions", {
         headers: {
           ...getAuthHeaders(),
-          'User-Id': userId
+          "User-Id": userId,
         },
-        params: { userId }
+        params: { userId },
       });
       return response.data;
     } catch (error) {
@@ -125,18 +129,18 @@ const api = {
   getSubscriptionHistory: async () => {
     try {
       const userId = getUserIdFromStorage();
-      
+
       if (!userId) {
-        console.warn('사용자 ID가 없어 구독 이력을 조회할 수 없습니다.');
+        console.warn("사용자 ID가 없어 구독 이력을 조회할 수 없습니다.");
         return [];
       }
-      
+
       const response = await axios.get("/memberships/subscription-history", {
         headers: {
           ...getAuthHeaders(),
-          'User-Id': userId
+          "User-Id": userId,
         },
-        params: { userId }
+        params: { userId },
       });
       return response.data;
     } catch (error) {
@@ -149,25 +153,28 @@ const api = {
   cancelSubscription: async (subscriptionId) => {
     try {
       const userId = getUserIdFromStorage();
-      
+
       if (!userId) {
-        console.warn('사용자 ID가 없어 구독을 취소할 수 없습니다.');
-        throw new Error('사용자 ID가 없습니다.');
+        console.warn("사용자 ID가 없어 구독을 취소할 수 없습니다.");
+        throw new Error("사용자 ID가 없습니다.");
       }
-      
-      const response = await axios.delete(`/memberships/${subscriptionId}/cancel`, {
-        headers: {
-          ...getAuthHeaders(),
-          'User-Id': userId
+
+      const response = await axios.delete(
+        `/memberships/${subscriptionId}/cancel`,
+        {
+          headers: {
+            ...getAuthHeaders(),
+            "User-Id": userId,
+          },
+          params: { userId },
         },
-        params: { userId }
-      });
+      );
       return response.data;
     } catch (error) {
       console.error("Error cancelling subscription:", error);
       throw error;
     }
-  }
+  },
 };
 
 export default function Settings() {
@@ -198,7 +205,7 @@ export default function Settings() {
     const getUserInfo = async () => {
       try {
         const res = await axios.get("/api/user/me", {
-          headers: getAuthHeaders()
+          headers: getAuthHeaders(),
         });
         setUserInfo(res.data);
       } catch (error) {
@@ -251,7 +258,7 @@ export default function Settings() {
         formData.append("file", selectedFile);
 
         const uploadRes = await axios.post("/profile-image", formData, {
-          headers: getAuthHeaders()
+          headers: getAuthHeaders(),
         });
         uploadedPath = uploadRes.data.profileUrl;
         setRawProfileUrl(uploadedPath);
@@ -259,12 +266,16 @@ export default function Settings() {
       }
 
       // 2. 닉네임, 이미지 경로 업데이트
-      const res = await axios.put(`/api/user/${userInfo.id}`, {
-        nickname,
-        profileUrl: uploadedPath,
-      }, {
-        headers: getAuthHeaders()
-      });
+      const res = await axios.put(
+        `/api/user/${userInfo.id}`,
+        {
+          nickname,
+          profileUrl: uploadedPath,
+        },
+        {
+          headers: getAuthHeaders(),
+        },
+      );
 
       setUserInfo(res.data);
       alert("프로필 저장 완료");
@@ -287,12 +298,16 @@ export default function Settings() {
     }
 
     try {
-      const res = await axios.put(`/api/user/${userInfo.id}`, {
-        currentPassword,
-        password: newPassword,
-      }, {
-        headers: getAuthHeaders()
-      });
+      const res = await axios.put(
+        `/api/user/${userInfo.id}`,
+        {
+          currentPassword,
+          password: newPassword,
+        },
+        {
+          headers: getAuthHeaders(),
+        },
+      );
 
       alert("비밀번호가 성공적으로 변경되었습니다.");
       setCurrentPassword("");
@@ -403,12 +418,14 @@ function ProfileSettings({ userInfo, onSave }) {
   const [previewUrl, setPreviewUrl] = useState(null); // 미리보기용
   const [profileImageUrl, setProfileImageUrl] = useState(""); // 이미지 주소 + 경로
   const [rawProfileUrl, setRawProfileUrl] = useState(""); // 이미지 경로
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (userInfo) {
+    if (userInfo?.nickname) {
       setNickname(userInfo.nickname || "");
       setRawProfileUrl(userInfo.profileUrl || "");
       setProfileImageUrl(`/api${userInfo.profileUrl}`);
+      setLoading(false);
     }
   }, [userInfo]);
 
@@ -437,66 +454,88 @@ function ProfileSettings({ userInfo, onSave }) {
   return (
     <div className="max-w-2xl">
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-        {/* User Info Section */}
-        <div className="flex items-center gap-6 mb-8">
-          <Avatar className="h-20 w-20">
-            <AvatarImage
-              src={previewUrl || profileImageUrl || undefined}
-              alt="Profile"
-            />
-            <AvatarFallback className="bg-brand-primary text-white font-semibold text-xl">
-              {userInfo.nickname?.charAt(0) || "닉"}
-            </AvatarFallback>
-          </Avatar>
-          <div className="flex-1">
-            <h2 className="text-xl font-semibold text-gray-900">
-              {userInfo?.nickname}
-            </h2>
-            <p className="text-gray-500">{userInfo?.email}</p>
+        {loading ? (
+          <div className="flex items-center gap-6 mb-8">
+            <Skeleton className="h-20 w-20 rounded-full" />
+            <div className="flex-1 space-y-3">
+              <Skeleton className="h-5 w-40" />
+              <Skeleton className="h-4 w-60" />
+            </div>
+            <Skeleton className="w-20 h-8 rounded-md" />
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            className="text-sm"
-            onClick={handleUploadClick}
-          >
-            사진 변경
-          </Button>
-          <input
-            type="file"
-            accept="image/*"
-            className="hidden"
-            ref={fileInputRef}
-            onChange={handleFileSelect}
-          />
-        </div>
-
-        {/* Nickname Section */}
-        <div className="space-y-4">
-          <div>
-            <label
-              htmlFor="nickname"
-              className="block text-sm font-medium text-gray-900 mb-2"
-            >
-              닉네임
-            </label>
-            <Input
-              id="nickname"
-              value={nickname}
-              onChange={(e) => setNickname(e.target.value)}
-              className="h-11"
-            />
-          </div>
-
-          <div className="border-t border-gray-100 pt-6 flex justify-end">
+        ) : (
+          <div className="flex items-center gap-6 mb-8">
+            <Avatar className="h-20 w-20">
+              <AvatarImage
+                src={previewUrl || profileImageUrl || undefined}
+                alt="Profile"
+              />
+              <AvatarFallback className="bg-brand-primary text-white font-semibold text-xl">
+                {userInfo.nickname?.charAt(0) || "닉"}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1">
+              <h2 className="text-xl font-semibold text-gray-900">
+                {userInfo?.nickname}
+              </h2>
+              <p className="text-gray-500">{userInfo?.email}</p>
+            </div>
             <Button
-              onClick={handleClickSave}
-              className="bg-brand-primary hover:bg-brand-primary/90"
+              variant="outline"
+              size="sm"
+              className="text-sm"
+              onClick={handleUploadClick}
             >
-              변경사항 저장
+              사진 변경
             </Button>
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              ref={fileInputRef}
+              onChange={handleFileSelect}
+            />
           </div>
-        </div>
+        )}
+
+        {loading ? (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-16" />
+              <Skeleton className="h-11 w-full rounded-md" />
+            </div>
+
+            <div className="border-t border-gray-100 pt-6 flex justify-end">
+              <Skeleton className="h-10 w-32 rounded-md" />
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div>
+              <label
+                htmlFor="nickname"
+                className="block text-sm font-medium text-gray-900 mb-2"
+              >
+                닉네임
+              </label>
+              <Input
+                id="nickname"
+                value={nickname}
+                onChange={(e) => setNickname(e.target.value)}
+                className="h-11"
+              />
+            </div>
+
+            <div className="border-t border-gray-100 pt-6 flex justify-end">
+              <Button
+                onClick={handleClickSave}
+                className="bg-brand-primary hover:bg-brand-primary/90"
+              >
+                변경사항 저장
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
