@@ -3,6 +3,7 @@ import { Heart, MessageCircle } from "lucide-react";
 import CommentsModal from "../components/CommentsModal";
 import { useParams } from "react-router-dom";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 const RelatedPostCard = ({ title, category, likes, comments, image }) => {
   return (
@@ -34,6 +35,8 @@ const PostDetail = () => {
   const [postData, setPostData] = useState(null);
   const [liked, setLiked] = useState(false); // true or false
   const [likeCount, setLikeCount] = useState(0);
+  const [commentCount, setCommentCount] = useState(0);
+  const navigate = useNavigate();
 
   const token =
     localStorage.getItem("token") || sessionStorage.getItem("token");
@@ -83,6 +86,21 @@ const PostDetail = () => {
     };
 
     fetchPost();
+  }, [id]);
+
+  useEffect(() => {
+    const fetchComments = async (id) => {
+      try {
+        const res = await axios.get(
+          `http://localhost:8080/post/${id}/comments`,
+        );
+        setCommentCount(res.data.length); // 댓글 개수 저장
+        console.log("res.data", res.data);
+      } catch (err) {
+        console.error("❌ 댓글 불러오기 실패", err);
+      }
+    };
+    fetchComments(id);
   }, [id]);
 
   if (!postData) return <div>Loading...</div>;
@@ -149,7 +167,18 @@ const PostDetail = () => {
             <div className="max-w-4xl mx-auto px-4 lg:px-8 py-8 lg:py-12">
               {/* Author Info */}
               <div className="flex items-center gap-4 mb-8">
-                <div className="w-12 h-12 rounded-full bg-yellow-300"></div>
+                <button
+                  type="button"
+                  className="focus:outline-none"
+                  onClick={() => navigate(`/profile/${postData.creator_id}`)}
+                  style={{ padding: 0, border: "none", background: "none" }}
+                >
+                  <img
+                    src={postData.profile_url || "/default-profile.png"}
+                    alt={postData.authorName}
+                    className="w-12 h-12 rounded-full object-cover bg-yellow-300"
+                  />
+                </button>
                 <div>
                   <h3 className="font-semibold text-lg text-gray-900">
                     {postData.authorName}
@@ -159,40 +188,15 @@ const PostDetail = () => {
                   </div>
                 </div>
               </div>
-
-              {/* Title */}
               <h1 className="text-3xl font-bold text-gray-900 mb-6">
                 {postData.title}
               </h1>
-
-              {/*/!* Subtitle *!/*/}
-              {/*<p className="text-lg text-gray-600 mb-8 leading-relaxed">*/}
-              {/*  같은 생두라도 로스터마다 풍미가 어떻게 달라지는지 비교했습니다.*/}
-              {/*  홈카페 유저와 바리스타 모두에게 유용한 정리입니다.*/}
-              {/*</p>*/}
 
               {/* Article Body */}
               <div className="prose prose-lg max-w-none">
                 <p className="text-gray-700 leading-relaxed mb-6">
                   {postData.content}
                 </p>
-
-                {/*<div className="my-8">*/}
-                {/*  <img*/}
-                {/*    src="https://cdn.builder.io/api/v1/image/assets/TEMP/80f000c642a1c9e726fd73f625fb6fc2ea2a1514?width=1472"*/}
-                {/*    alt="Coffee comparison"*/}
-                {/*    className="w-full rounded-lg"*/}
-                {/*  />*/}
-                {/*</div>*/}
-
-                {/*<h2 className="text-2xl font-bold text-gray-900 mb-4">*/}
-                {/*  주요 발견사항*/}
-                {/*</h2>*/}
-                {/*<p className="text-gray-700 leading-relaxed">*/}
-                {/*  블루보틀은 깔끔한 산미, 스타벅스는 바디감이 좋았고, 로컬*/}
-                {/*  로스터리 A가 가장 인상적이었습니다. 같은 생두라도 로스터의*/}
-                {/*  철학에 따라 완전히 다른 커피가 된다는 것을 확인했어요.*/}
-                {/*</p>*/}
               </div>
 
               {/* Interaction Buttons */}
@@ -216,7 +220,7 @@ const PostDetail = () => {
                 >
                   <MessageCircle className="w-5 h-5 text-gray-500" />
                 </button>
-                <span className="text-sm text-gray-500">18</span>
+                <span className="text-sm text-gray-500">{commentCount}</span>
               </div>
             </div>
           </article>

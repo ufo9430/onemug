@@ -100,7 +100,9 @@ export default function Settings() {
   useEffect(() => {
     const getUserInfo = async () => {
       try {
-        const res = await axios.get("/api/user/me");
+        const res = await axios.get("/c/me");
+        console.log(res.data);
+
         setUserInfo(res.data);
       } catch (error) {
         alert("사용자 정보 요청을 실패했습니다. 다시 로그인해주세요");
@@ -138,6 +140,7 @@ export default function Settings() {
 
   const handleSaveProfile = async ({
     nickname,
+    introduceText,
     selectedFile,
     rawProfileUrl,
     setRawProfileUrl,
@@ -158,8 +161,9 @@ export default function Settings() {
       }
 
       // 2. 닉네임, 이미지 경로 업데이트
-      const res = await axios.put(`/api/user/${userInfo.id}`, {
+      const res = await axios.put(`/c/me`, {
         nickname,
+        introduceText,
         profileUrl: uploadedPath,
       });
 
@@ -184,7 +188,7 @@ export default function Settings() {
     }
 
     try {
-      const res = await axios.put(`/api/user/${userInfo.id}`, {
+      const res = await axios.put(`/api/user/${userInfo.userId}`, {
         currentPassword,
         password: newPassword,
       });
@@ -293,6 +297,7 @@ function ProfileSettings({ userInfo, onSave }) {
   const fileInputRef = useRef();
 
   const [nickname, setNickname] = useState("");
+  const [introduceText, setIntroduceText] = useState("");
 
   const [selectedFile, setSelectedFile] = useState(null); // 사진 파일 저장
   const [previewUrl, setPreviewUrl] = useState(null); // 미리보기용
@@ -302,6 +307,7 @@ function ProfileSettings({ userInfo, onSave }) {
   useEffect(() => {
     if (userInfo) {
       setNickname(userInfo.nickname || "");
+      setIntroduceText(userInfo.introduceText || "");
       setRawProfileUrl(userInfo.profileUrl || "");
       setProfileImageUrl(`http://localhost:8080${userInfo.profileUrl}`);
     }
@@ -322,6 +328,7 @@ function ProfileSettings({ userInfo, onSave }) {
   const handleClickSave = () => {
     onSave({
       nickname,
+      introduceText,
       selectedFile,
       rawProfileUrl,
       setRawProfileUrl,
@@ -380,6 +387,17 @@ function ProfileSettings({ userInfo, onSave }) {
               value={nickname}
               onChange={(e) => setNickname(e.target.value)}
               className="h-11"
+            />
+          </div>
+          <div className="mt-4">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              소개글
+            </label>
+            <textarea
+              className="w-full border rounded-lg px-3 py-2 text-sm resize-none h-24"
+              placeholder="자기소개를 입력하세요"
+              value={introduceText}
+              onChange={(e) => setIntroduceText(e.target.value)}
             />
           </div>
 
