@@ -14,6 +14,7 @@ const Membership = () => {
   const [autoRenew, setAutoRenew] = useState(true)
   const [paymentMethod, setPaymentMethod] = useState("카드")
   const [showPaymentModal, setShowPaymentModal] = useState(false)
+  const [hasFreeMembership, setHasFreeMembership] = useState(false) // 무료 멤버십 구독 여부
 
   // 결제 결과 처리
   useEffect(() => {
@@ -32,6 +33,7 @@ const Membership = () => {
   // 멤버십 목록 조회
   useEffect(() => {
     fetchMemberships()
+    checkFreeMembershipStatus() // 무료 멤버십 구독 여부 확인
   }, [creatorId])
 
   const fetchMemberships = async () => {
@@ -39,9 +41,11 @@ const Membership = () => {
       setLoading(true)
       setError(null)
       
-      let url = 'http://localhost:8080/memberships'
+      // 백엔드에서 템플릿 멤버십 조회 (isTemplate = true)
+      // 새로운 템플릿 전용 엔드포인트 사용
+      let url = 'http://localhost:8080/memberships/templates'
       
-      // creatorId가 있으면 해당 크리에이터의 멤버십만 조회
+      // creatorId가 있으면 해당 크리에이터의 템플릿 멤버십만 조회
       if (creatorId) {
         url += `/creator/${creatorId}`
       }
@@ -61,13 +65,16 @@ const Membership = () => {
       const data = await response.json()
       console.log('API Response:', data)
       
-      // 백엔드에서 가져온 데이터에서 무료 멤버십(price === 0) 제외
-      // 무료 멤버십은 프론트엔드에서 직접 관리
-      const paidMemberships = data.filter(membership => membership.price > 0);
+      // Benefits 디버깅 로그 추가
+      data.forEach((membership, index) => {
+        console.log(`멤버십 ${index + 1} [${membership.membershipName}] Benefits:`, membership.benefits);
+      });
       
-      // 유료 멤버십만 가격 오름차순으로 정렬
-      const sortedMemberships = paidMemberships.sort((a, b) => a.price - b.price);
+      // 백엔드에서 템플릿만 가져오므로 필터링 불필요
+      // 가격 오름차순으로 정렬
+      const sortedMemberships = data.sort((a, b) => a.price - b.price);
       
+      // 무료 멤버십을 이미 구독하지 않은 경우에도 백엔드에서 받은 데이터만 사용
       setMemberships(sortedMemberships)
     } catch (err) {
       console.error('Error fetching memberships:', err)
@@ -77,54 +84,112 @@ const Membership = () => {
     }
   };
 
-  // 멤버십 선택 처리
+  // 무료 멤버십 구독 여부 확인
+  const checkFreeMembershipStatus = async () => {
+    try {
+      const response = await fetch('http://localhost:8080/memberships/my-subscriptions', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'User-Id': '1' // 임시 사용자 ID
+        }
+      })
+      
+      if (response.ok) {
+        const subscriptions = await response.json()
+        
+        // 무료 멤버십 (가격이 0원인 활성 구독) 확인
+        const hasFree = subscriptions.some(sub => 
+          sub.price === 0 && 
+          sub.status === 'ACTIVE' && 
+          new Date(sub.expiresAt) > new Date()
+        )
+        
+        setHasFreeMembership(hasFree)
+        console.log('무료 멤버십 구독 여부:', hasFree)
+      }
+    } catch (error) {
+      console.error('무료 멤버십 구독 상태 확인 실패:', error)
+    }
+  }
+
+  // 멤버십 선택 처리 - 새로운 API 구조에 맞게 수정
   const handleMembershipSelect = async (membership) => {
     try {
       setSelectedMembership(membership)
       setError(null)
       
-      // 무료 멤버십인 경우 프론트엔드에서 직접 처리
-      if (membership.isFreeMembership) {
-        setSelectionResult({
-          selectionId: 'free-membership-selection',
-          membershipId: membership.id,
-          membershipName: membership.name,
-          price: 0,
-          creatorId: membership.creatorId,
-          isFree: true,
-          status: 'SUCCESS',
-          message: '무료 멤버십이 선택되었습니다.'
-        })
-        return
+      // 무료/유료 공통 처리 로직 - 유효성 검증
+      // 구독 데이터 구성
+      const subscriptionData = {
+        membershipId: membership.id,
+        membershipName: membership.membershipName || membership.name,
+        price: membership.price,
+        creatorId: creatorId ? parseInt(creatorId) : membership.creatorId,
+        userId: 1,
+        autoRenew: false,
+        paymentMethod: membership.price === 0 ? 'FREE' : 'CARD' // 무료 또는 카드 결제
       }
       
-      // 유료 멤버십인 경우 기존 로직 유지
-      const response = await fetch('http://localhost:8080/memberships/select', {
+      console.log('멤버십 유효성 검증 시작:', subscriptionData)
+      const validationResponse = await fetch('http://localhost:8080/memberships/validate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'User-Id': '1' // 임시 사용자 ID
+          'User-Id': '1'
         },
-        body: JSON.stringify({
-          membershipId: membership.id,
-          creatorId: membership.creatorId
-        })
+        body: JSON.stringify(subscriptionData)
       })
 
-      const result = await response.json()
+      if (!validationResponse.ok) {
+        const errorText = await validationResponse.text()
+        console.error('멤버십 유효성 검증 실패:', errorText)
+        setError(`멤버십 유효성 검증 실패: ${validationResponse.status}`)
+        return
+      }
+
+      const validationResult = await validationResponse.json()
+      console.log('멤버십 유효성 검증 결과:', validationResult)
       
-      if (response.ok && result.status !== 'ERROR') {
-        // 유료 멤버십인 경우 isFree를 명시적으로 false로 설정
-        const enhancedResult = {
-          ...result,
-          isFree: false,
-          price: membership.price,
-          membershipName: membership.name
+      if (validationResult.valid) {
+        // 일반 성공 케이스 또는 업그레이드 가능 케이스
+        const isUpgrade = validationResult.upgradable === true
+        let message = '';
+        
+        // 무료/유료 멤버십에 따라 다른 메시지 표시
+        if (membership.price === 0) {
+          message = '무료 멤버십을 구독하시겠습니까?';
+          if (isUpgrade) {
+            message = '기존 멤버십을 취소하고 무료 멤버십으로 다운그레이드 하시겠습니까?';
+          }
+        } else {
+          message = isUpgrade 
+            ? '멤버십 업그레이드가 가능합니다. 결제를 진행하면 기존 멤버십은 자동으로 취소됩니다.'
+            : '유료 멤버십이 선택되었습니다. 결제를 진행해주세요.';
         }
-        setSelectionResult(enhancedResult)
-        console.log('유료 멤버십 선택 결과:', enhancedResult)
+        
+        setSelectionResult({
+          membershipId: membership.id,
+          membershipName: membership.membershipName || membership.name,
+          price: membership.price,
+          creatorId: membership.creatorId,
+          isFree: membership.price === 0,
+          isUpgrade: isUpgrade,
+          currentMembershipId: validationResult.currentMembershipId,
+          status: 'SUCCESS',
+          message: message,
+          subscriptionData: subscriptionData
+        })
+        
+        console.log(
+          membership.price === 0 
+            ? '무료 멤버십 선택 성공:' 
+            : (isUpgrade ? '멤버십 업그레이드 성공:' : '유료 멤버십 선택 성공:'), 
+          membership
+        )
       } else {
-        setError(result.message || '선택에 실패했습니다.')
+        console.error('멤버십 유효성 검증 실패:', validationResult)
+        setError(validationResult.errorMessage || '멤버십 구독에 실패했습니다.')
       }
     } catch (err) {
       console.error('Error selecting membership:', err)
@@ -132,64 +197,107 @@ const Membership = () => {
     }
   }
 
-  // 선택 확인 처리
+  // 선택 확인 처리 - 새로운 API 구조에 맞게 수정
   const handleConfirmSelection = async () => {
     if (!selectionResult) return
 
     console.log('선택 확인 처리 시작:', selectionResult)
 
-    // 무료 멤버십인 경우 백엔드에 기록
+    // 무료 멤버십인 경우 직접 구독 생성
     if (selectionResult.isFree) {
-      console.log('무료 멤버십 처리 시작')
       try {
-        // 무료 멤버십 가입 기록을 백엔드에 전송
-        const response = await fetch('http://localhost:8080/memberships/free-subscription', {
+        // 무료 멤버십 생성
+        const createResponse = await fetch('http://localhost:8080/memberships/create?userId=1', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'User-Id': '1' // 임시 사용자 ID
+            'User-Id': '1'
           },
-          body: JSON.stringify({
-            membershipName: selectionResult.membershipName,
-            creatorId: selectionResult.creatorId,
-            price: 0,
-            autoRenew: false // 무료 멤버십은 자동 갱신 없음
-          })
+          body: JSON.stringify(selectionResult.subscriptionData)
         })
-
-        if (response.ok) {
-          alert('무료 멤버십 가입이 완료되었습니다!')
-          setSelectionResult(null)
+        
+        const createResult = await createResponse.json()
+        console.log('무료 멤버십 생성 결과:', createResult)
+        
+        if (createResult.status === 'SUCCESS') {
+          alert('무료 멤버십을 구독하신걸 축하드립니다!')
           setSelectedMembership(null)
+          setSelectionResult(null)
+          // 무료 멤버십 상태 업데이트
+          setHasFreeMembership(true)
+          // 멤버십 목록 새로고침하여 무료 멤버십 숨기기
+          await fetchMemberships()
+          return // 여기서 리턴하여 하위 로직 실행 방지
         } else {
-          // 백엔드 기록 실패해도 프론트엔드에서는 성공 처리
-          alert('무료 멤버십 가입이 완료되었습니다!')
-          setSelectionResult(null)
-          setSelectedMembership(null)
-          console.warn('무료 멤버십 백엔드 기록 실패, 프론트엔드에서 처리 완료')
+          setError(createResult.message || '무료 멤버십 구독에 실패했습니다.')
+          return
         }
-      } catch (err) {
-        // 네트워크 오류가 있어도 무료 멤버십은 성공 처리
-        alert('무료 멤버십 가입이 완료되었습니다!')
-        setSelectionResult(null)
-        setSelectedMembership(null)
-        console.warn('무료 멤버십 백엔드 기록 실패, 프론트엔드에서 처리 완료:', err)
+      } catch (error) {
+        console.error('무료 멤버십 구독 중 오류:', error)
+        setError('무료 멤버십 구독 중 오류가 발생했습니다.')
+        return
       }
-    } else {
-      // 유료 멤버십인 경우 결제 모달 열기
-      console.log('유료 멤버십 처리 - 결제 모달 열기')
-      setShowPaymentModal(true)
     }
+    
+    // 유료 멤버십인 경우 결제 모달 열기
+    console.log('유료 멤버십 처리 - 결제 모달 열기')
+    setShowPaymentModal(true)
   }
 
-  // 결제 성공 처리
-  const handlePaymentSuccess = (paymentData) => {
-    alert('결제가 완료되었습니다! 멤버십이 활성화되었습니다.')
-    setShowPaymentModal(false)
-    setSelectionResult(null)
-    setSelectedMembership(null)
-    // 필요시 페이지 새로고침 또는 데이터 재조회
-    // window.location.reload()
+  // 결제 성공 처리 - 실제 구독 생성
+  const handlePaymentSuccess = async (paymentData) => {
+    try {
+      // 결제 성공 후 실제 구독 생성
+      if (selectionResult && selectionResult.subscriptionData) {
+        // 구독 데이터 복사 후 업그레이드 정보 추가
+        const subscriptionData = { ...selectionResult.subscriptionData }
+        
+        // 업그레이드인 경우 현재 멤버십 ID 추가
+        if (selectionResult.isUpgrade && selectionResult.currentMembershipId) {
+          subscriptionData.currentMembershipId = selectionResult.currentMembershipId
+          console.log('업그레이드 요청:', subscriptionData)
+        }
+        
+        const createResponse = await fetch('http://localhost:8080/memberships/create?userId=1', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'User-Id': '1'
+          },
+          body: JSON.stringify(subscriptionData)
+        })
+        
+        const createResult = await createResponse.json()
+        
+        if (createResult.status === 'SUCCESS') {
+          // 업그레이드인 경우 메시지 다르게 표시
+          const successMessage = selectionResult.isUpgrade 
+            ? '결제가 완료되었습니다! 멤버십이 업그레이드되었습니다.'
+            : '결제가 완료되었습니다! 멤버십이 활성화되었습니다.'
+            
+          alert(successMessage)
+          setShowPaymentModal(false)
+          setSelectionResult(null)
+          setSelectedMembership(null)
+          // 필요시 페이지 새로고침 또는 데이터 재조회
+          // window.location.reload()
+        } else {
+          console.error('구독 생성 실패:', createResult)
+          alert('결제는 완료되었지만 멤버십 활성화에 실패했습니다. 고객센터에 문의해주세요.')
+          setShowPaymentModal(false)
+        }
+      } else {
+        // selectionResult가 없는 경우 기본 성공 처리
+        alert('결제가 완료되었습니다! 멤버십이 활성화되었습니다.')
+        setShowPaymentModal(false)
+        setSelectionResult(null)
+        setSelectedMembership(null)
+      }
+    } catch (error) {
+      console.error('결제 후 구독 생성 중 오류:', error)
+      alert('결제는 완료되었지만 멤버십 활성화에 실패했습니다. 고객센터에 문의해주세요.')
+      setShowPaymentModal(false)
+    }
   }
 
   // 결제 실패 처리
@@ -211,19 +319,6 @@ const Membership = () => {
         return "bg-gray-100 text-gray-500"
     }
   }
-
-  // 무료 멤버십 객체 (프론트엔드에서 직접 선언)
-  const getFreeMembership = () => ({
-    id: 'free-membership',
-    name: '무료 멤버십',
-    price: 0,
-    creatorId: creatorId ? parseInt(creatorId) : null,
-    creatorName: '모든 크리에이터',
-    description: '기본 무료 멤버십입니다.',
-    benefits: ['기본 콘텐츠 이용', '커뮤니티 참여'],
-    isFree: true,
-    isFreeMembership: true // 프론트엔드에서 생성된 무료 멤버십 식별자
-  })
 
   if (loading) {
     return (
@@ -304,12 +399,12 @@ const Membership = () => {
                     <p className="text-blue-600">{selectionResult.message}</p>
                   )}
                   {/* 현재 구독 중인 멤버십과 비교 */}
-                  {selectionResult.currentSubscribedMembership && (
+                  {selectionResult.currentMembershipId && (
                     <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded">
                       <p className="text-yellow-800 font-medium mb-1">현재 구독 중인 플랜</p>
                       <p className="text-yellow-700 text-sm">
-                        {selectionResult.currentSubscribedMembership.name} (₩{selectionResult.currentSubscribedMembership.price?.toLocaleString()} /월)
-                        <span className="ml-2">[{selectionResult.currentSubscribedMembership.status}]</span>
+                        {selectionResult.currentMembershipId} (₩{selectionResult.price?.toLocaleString()} /월)
+                        <span className="ml-2">[{selectionResult.status}]</span>
                       </p>
                     </div>
                   )}
@@ -319,16 +414,27 @@ const Membership = () => {
 
             {/* Membership Plans */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[getFreeMembership(), ...memberships].map((membership) => (
+              {memberships.map((membership) => (
                 <div
                   key={membership.id}
-                  className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg transition-shadow"
+                  className={`relative bg-white rounded-xl border p-6 hover:shadow-lg transition-shadow ${
+                    membership.price === 0 
+                      ? 'border-green-200 ring-2 ring-green-100' 
+                      : 'border-gray-200'
+                  }`}
                 >
                   <div className="flex flex-col h-full">
+                    {/* Free Membership Badge */}
+                    {membership.price === 0 && (
+                      <div className="absolute -top-2 -right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full font-medium">
+                        무료
+                      </div>
+                    )}
+                    
                     {/* Header */}
                     <div className="mb-4">
                       <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                        {membership.name}
+                        {membership.membershipName || membership.name}
                       </h3>
                       <p className="text-sm text-gray-600 mb-4">
                         {membership.creatorName}
@@ -343,12 +449,18 @@ const Membership = () => {
 
                     {/* Features */}
                     <div className="space-y-3 mb-6 flex-1">
-                      {membership.benefits && membership.benefits.map((benefit, index) => (
-                        <div key={index} className="flex items-start gap-3">
-                          <Check className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
-                          <span className="text-sm text-gray-700">{benefit}</span>
+                      {membership.benefits && membership.benefits.length > 0 ? (
+                        membership.benefits.map((benefit, index) => (
+                          <div key={index} className="flex items-start gap-3">
+                            <Check className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                            <span className="text-sm text-gray-700">{benefit}</span>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="text-sm text-gray-500 italic">
+                          혜택 정보가 없습니다.
                         </div>
-                      ))}
+                      )}
                     </div>
 
                     {/* Button */}

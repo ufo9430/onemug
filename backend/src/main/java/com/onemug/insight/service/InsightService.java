@@ -71,7 +71,7 @@ public class InsightService {
         List<Membership> memberships = membershipHistoryRepository
                 .findMembershipsByCreatorIdAndCreatedAtAfter(creatorId, startDate);
         for (Membership membership : memberships) {
-            String membershipName = membership.getName();
+            String membershipName = membership.getMembershipName();
             if(!currentSubscribers.containsKey(membershipName)){
                 currentSubscribers.put(membershipName, 1);
             }else{
