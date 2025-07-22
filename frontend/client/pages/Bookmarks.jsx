@@ -1,18 +1,18 @@
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useState } from "react";
 import axios from "@/lib/axios";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
-import { Heart, MessageCircle } from "lucide-react"
+import { useNavigate } from "react-router-dom";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Heart, MessageCircle, Eye } from "lucide-react";
 
 export default function Bookmarks() {
-  const [posts, setPosts] = useState([])
+  const [posts, setPosts] = useState([]);
 
   useEffect(() => {
-    // userId 5로 예시, 실제로는 로그인 유저 id로 바꾸기
     axios
       .get("/api/users/liked-posts")
-      .then((res) => setPosts(res))
-      .catch((err) => console.error(err))
-  }, [])
+      .then((res) => setPosts(res.data))
+      .catch((err) => console.error(err));
+  }, []);
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -30,29 +30,32 @@ export default function Bookmarks() {
             {posts.length > 0 ? (
               posts.map((post) => <PostCard key={post.id} post={post} />)
             ) : (
-              <p className="text-center text-gray-500">좋아요한 게시글이 없습니다.</p>
+              <p className="text-center text-gray-500">
+                좋아요한 게시글이 없습니다.
+              </p>
             )}
           </div>
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 function PostCard({ post }) {
-  return (
-    <article className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow overflow-hidden cursor-pointer">
-      {/* Hero Image */}
-      <div className="aspect-[2/1] overflow-hidden">
-        {/* 게시글 이미지가 없다면 기본 이미지 넣어주세요 */}
-        <img
-          src={post.image || "https://via.placeholder.com/600x300?text=No+Image"}
-          alt={post.title}
-          className="w-full h-full object-cover"
-        />
-      </div>
+  const navigate = useNavigate();
+  // 날짜 포맷 YYYY.MM.DD
+  const formatDate = (isoString) => {
+    const date = new Date(isoString);
+    return `${date.getFullYear()}.${(date.getMonth() + 1)
+      .toString()
+      .padStart(2, "0")}.${date.getDate().toString().padStart(2, "0")}`;
+  };
 
-      {/* Content */}
+  return (
+    <article
+      className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow overflow-hidden cursor-pointer"
+      onClick={() => navigate(`/post/${post.id}`)}
+    >
       <div className="p-4 lg:p-6">
         {/* Author Info */}
         <div className="flex items-center gap-3 mb-4">
@@ -65,7 +68,9 @@ function PostCard({ post }) {
             <div className="font-semibold text-gray-900 text-sm lg:text-base">
               {post.creatorNickname}
             </div>
-            {/* 카테고리 필드가 있으면 보여주면 좋아요 */}
+            <div className="text-xs text-gray-500">
+              {formatDate(post.createdAt)}
+            </div>
           </div>
         </div>
 
@@ -78,17 +83,21 @@ function PostCard({ post }) {
         </p>
 
         {/* Post Stats */}
-        <div className="flex items-center gap-6">
-          <div className="flex items-center gap-2 text-gray-500">
-            <Heart className="w-5 h-5" />
-            <span className="text-sm">{post.likeCount}</span>
+        <div className="flex items-center gap-6 text-sm text-gray-500">
+          <div className="flex items-center gap-2">
+            <Heart className="w-5 h-5" fill="#df2222ff" stroke="#df2222ff" />
+            <span>{post.likeCount}</span>
           </div>
-          <div className="flex items-center gap-2 text-gray-500">
+          <div className="flex items-center gap-2">
             <MessageCircle className="w-5 h-5" />
-            <span className="text-sm">댓글 수 미구현</span>
+            <span>{post.commentCount}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Eye className="w-5 h-5" />
+            <span>{post.viewCount}</span>
           </div>
         </div>
       </div>
     </article>
-  )
+  );
 }

@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import debounce from "lodash.debounce";
-import { Heart, MessageCircle } from "lucide-react";
+import { Heart, MessageCircle, Eye } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import api from "@shared/api";
 
@@ -167,7 +167,10 @@ const Explore = () => {
                     <MessageCircle size={16} />
                     <span>{post.commentCount}</span>
                   </div>
-                  <span>{post.viewCount} views</span>
+                  <div className="flex items-center space-x-1">
+                    <Eye size={16} />
+                    <span>{post.viewCount}</span>
+                  </div>
                 </div>
               </article>
             ))}
