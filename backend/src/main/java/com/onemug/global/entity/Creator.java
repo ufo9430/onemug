@@ -24,4 +24,8 @@ public class Creator {
 
     @OneToMany
     private List<User> subscriber = new ArrayList<>();
+
+    public void updateIntroduceText(String text) {
+        this.introduceText = text;
+    }
 }

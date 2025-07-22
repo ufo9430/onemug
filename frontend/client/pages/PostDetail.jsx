@@ -3,6 +3,7 @@ import { Heart, MessageCircle } from "lucide-react";
 import CommentsModal from "../components/CommentsModal";
 import { useParams } from "react-router-dom";
 import axios from "axios";
+import { Avatar, AvatarImage, AvatarFallback } from "../components/ui/avatar";
 import { useNavigate } from "react-router-dom";
 
 const RelatedPostCard = ({ title, category, likes, comments, image }) => {
@@ -91,7 +92,9 @@ const PostDetail = () => {
   useEffect(() => {
     const fetchComments = async (id) => {
       try {
-        const res = await axios.get(`http://localhost:8080/post/${id}/comments`);
+        const res = await axios.get(
+          `http://localhost:8080/post/${id}/comments`,
+        );
         setCommentCount(res.data.length); // 댓글 개수 저장
         console.log("res.data", res.data);
       } catch (err) {
@@ -125,7 +128,7 @@ const PostDetail = () => {
         await axios.post(
           `http://localhost:8080/post/${id}/like`,
           {},
-          {   
+          {
             headers: {
               Authorization: `Bearer ${token}`,
             },
@@ -171,11 +174,19 @@ const PostDetail = () => {
                   onClick={() => navigate(`/profile/${postData.creator_id}`)}
                   style={{ padding: 0, border: "none", background: "none" }}
                 >
-                  <img
-                    src={postData.profile_url || "/default-profile.png"}
-                    alt={postData.authorName}
-                    className="w-12 h-12 rounded-full object-cover bg-yellow-300"
-                  />
+                  <Avatar className="w-12 h-12">
+                    <AvatarImage
+                      src={
+                        postData.profile_url
+                          ? `http://localhost:8080${postData.profile_url}`
+                          : "/default-profile.png"
+                      }
+                      alt="프로필 이미지"
+                    />
+                    <AvatarFallback className="bg-brand-primary text-white font-semibold text-sm">
+                      {postData.authorName?.charAt(0) || "닉"}
+                    </AvatarFallback>
+                  </Avatar>
                 </button>
                 <div>
                   <h3 className="font-semibold text-lg text-gray-900">
