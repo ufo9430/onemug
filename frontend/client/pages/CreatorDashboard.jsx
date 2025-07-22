@@ -1,6 +1,8 @@
-import React from "react"
-import { useNavigate } from "react-router-dom"
-import { Heart, MessageCircle, Users, Calendar } from "lucide-react"
+import React, { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { Heart, MessageCircle, Users } from "lucide-react";
+import axios from "@/lib/axios";
+
 const PostCard = ({
   id,
   title,
@@ -9,9 +11,9 @@ const PostCard = ({
   likes,
   comments,
   image,
-  author
+  author,
 }) => {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
   return (
     <article
@@ -55,11 +57,41 @@ const PostCard = ({
         </div>
       </div>
     </article>
-  )
-}
+  );
+};
 
 const CreatorDashboard = () => {
-  const navigate = useNavigate()
+  const [profile, setProfile] = useState(null);
+  const [posts, setPosts] = useState([]);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const res = await axios.get(`/dashboard/me`);
+        setProfile(res.data);
+      } catch (err) {
+        console.error("❌ 크리에이터 프로필 요청 실패", err);
+      }
+    };
+
+    fetchProfile();
+  }, []);
+
+  useEffect(() => {
+    const fetchPosts = async () => {
+      try {
+        const res = await axios.get(`/user/${profile.creatorId}/posts`);
+        console.log(res.data);
+
+        setPosts(res.data);
+      } catch (err) {
+        console.error("❌ 게시글 불러오기 실패", err);
+      }
+    };
+
+    fetchPosts();
+  }, [profile]);
 
   const samplePost = {
     id: "1",
@@ -71,12 +103,11 @@ const CreatorDashboard = () => {
     comments: 18,
     image:
       "https://cdn.builder.io/api/v1/image/assets/TEMP/d5ee4b9e89993eff120520ccacca32438749b014?width=1692",
-    author: "MinJung Kim"
-  }
+    author: "MinJung Kim",
+  };
 
   return (
     <div className="min-h-screen bg-brand-secondary flex">
-
       {/* Main Content */}
       <div className="flex-1">
         {/* Header */}
@@ -118,15 +149,19 @@ const CreatorDashboard = () => {
               <div className="flex items-start gap-8">
                 {/* Profile Image */}
                 <img
-                  src="https://cdn.builder.io/api/v1/image/assets/TEMP/192179915dd19e9acf6b9a2e604eb2eb230b7df2?width=240"
-                  alt="김민정"
-                  className="w-30 h-30 rounded-full"
+                  src={
+                    profile?.profileUrl
+                      ? `http://localhost:8080${profile.profileUrl}`
+                      : "/default-profile.png"
+                  }
+                  alt={profile?.nickname || "프로필 이미지"}
+                  className="w-[120px] h-[120px] rounded-full object-cover bg-gray-100"
                 />
 
                 {/* Profile Info */}
                 <div className="flex-1">
                   <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                    김민정
+                    {profile?.nickname}
                   </h2>
 
                   {/* Stats */}
@@ -134,32 +169,28 @@ const CreatorDashboard = () => {
                     <div className="flex items-center gap-2">
                       <Users className="w-5 h-5 text-gray-600" />
                       <span className="text-lg font-semibold text-gray-900">
-                        1,247
+                        {profile?.subscriberCount}
                       </span>
                       <span className="text-gray-600">구독자</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-lg font-semibold text-gray-900">
-                        6
+                        {profile?.postCount}
                       </span>
                       <span className="text-gray-600">게시글</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Calendar className="w-5 h-5 text-gray-600" />
-                      <span className="text-gray-600">
-                        2023년 3월 21일 가입
-                      </span>
                     </div>
                   </div>
 
                   {/* Bio */}
                   <p className="text-gray-600 mb-6 leading-relaxed">
-                    커피를 사랑하는 바리스타이자 홈카페 전문가입니다. 스페셜티
-                    커피와 추출 기법에 대한 깊이 있는 콘텐츠를 제공합니다.
+                    {profile?.introduceText}
                   </p>
 
                   {/* Edit Profile Button */}
-                  <button className="bg-brand-primary text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-brand-primary/90 transition-colors">
+                  <button
+                    className="bg-brand-primary text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-brand-primary/90 transition-colors"
+                    onClick={() => navigate("/creator/settings")}
+                  >
                     프로필 편집
                   </button>
                 </div>
@@ -179,7 +210,7 @@ const CreatorDashboard = () => {
         </main>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default CreatorDashboard
+export default CreatorDashboard;

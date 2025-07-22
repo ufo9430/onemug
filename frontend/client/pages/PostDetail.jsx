@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from "react"
-import { Heart, MessageCircle } from "lucide-react"
-import CommentsModal from "../components/CommentsModal"
+import React, { useEffect, useState } from "react";
+import { Heart, MessageCircle } from "lucide-react";
+import CommentsModal from "../components/CommentsModal";
 import { useParams } from "react-router-dom";
 import axios from "axios";
 
@@ -25,17 +25,18 @@ const RelatedPostCard = ({ title, category, likes, comments, image }) => {
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
 const PostDetail = () => {
-  const [showComments, setShowComments] = useState(false)
+  const [showComments, setShowComments] = useState(false);
   const { id } = useParams();
   const [postData, setPostData] = useState(null);
   const [liked, setLiked] = useState(false); // true or false
   const [likeCount, setLikeCount] = useState(0);
 
-  const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+  const token =
+    localStorage.getItem("token") || sessionStorage.getItem("token");
 
   const relatedPosts = [
     {
@@ -44,7 +45,7 @@ const PostDetail = () => {
       likes: 58,
       comments: 9,
       image:
-        "https://cdn.builder.io/api/v1/image/assets/TEMP/046f2ae61e6518636b365c38adedfca50dab039b?width=456"
+        "https://cdn.builder.io/api/v1/image/assets/TEMP/046f2ae61e6518636b365c38adedfca50dab039b?width=456",
     },
     {
       title: "나만의 수제 바닐라라떼 레시피 공개",
@@ -52,7 +53,7 @@ const PostDetail = () => {
       likes: 94,
       comments: 13,
       image:
-        "https://cdn.builder.io/api/v1/image/assets/TEMP/64fde26dbc24bb798c9f6d2ce660d06347b79740?width=456"
+        "https://cdn.builder.io/api/v1/image/assets/TEMP/64fde26dbc24bb798c9f6d2ce660d06347b79740?width=456",
     },
     {
       title: "카페를 하면서 제일 후회한 3가지",
@@ -60,9 +61,9 @@ const PostDetail = () => {
       likes: 172,
       comments: 23,
       image:
-        "https://cdn.builder.io/api/v1/image/assets/TEMP/2a82513b6c8f716b4e8e8de2a4e9f521f674b1b9?width=456"
-    }
-  ]
+        "https://cdn.builder.io/api/v1/image/assets/TEMP/2a82513b6c8f716b4e8e8de2a4e9f521f674b1b9?width=456",
+    },
+  ];
 
   useEffect(() => {
     const fetchPost = async () => {
@@ -86,11 +87,14 @@ const PostDetail = () => {
 
   if (!postData) return <div>Loading...</div>;
 
-  const formattedDate = new Date(postData.createdAt).toLocaleDateString("ko-KR", {
-    year: "numeric",
-    month: "long",
-    day: "2-digit"
-  });
+  const formattedDate = new Date(postData.createdAt).toLocaleDateString(
+    "ko-KR",
+    {
+      year: "numeric",
+      month: "long",
+      day: "2-digit",
+    },
+  );
 
   const handleLikeToggle = async () => {
     try {
@@ -100,14 +104,18 @@ const PostDetail = () => {
             Authorization: `Bearer ${token}`,
           },
         });
-        setLikeCount(prev => prev - 1);
+        setLikeCount((prev) => prev - 1);
       } else {
-        await axios.post(`http://localhost:8080/post/${id}/like`, {}, {
-          headers: {
-            Authorization: `Bearer ${token}`,
+        await axios.post(
+          `http://localhost:8080/post/${id}/like`,
+          {},
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
           },
-        });
-        setLikeCount(prev => prev + 1);
+        );
+        setLikeCount((prev) => prev + 1);
       }
       setLiked(!liked);
     } catch (error) {
@@ -117,7 +125,6 @@ const PostDetail = () => {
 
   return (
     <div className="min-h-screen bg-brand-secondary flex">
-
       {/* Main Content */}
       <div className="flex-1">
         {/* Header */}
@@ -191,12 +198,16 @@ const PostDetail = () => {
               {/* Interaction Buttons */}
               <div className="flex items-center gap-6 mt-8 pt-8 border-t border-gray-200">
                 <button
-                    onClick={handleLikeToggle}
-                    className={`flex items-center justify-center w-14 h-14 rounded-full border ${
-                        liked ? "border-red-300 bg-red-50" : "border-gray-200 bg-white"
-                    } shadow-sm hover:shadow-md transition-shadow`}
+                  onClick={handleLikeToggle}
+                  className={`flex items-center justify-center w-14 h-14 rounded-full border ${
+                    liked
+                      ? "border-red-300 bg-red-50"
+                      : "border-gray-200 bg-white"
+                  } shadow-sm hover:shadow-md transition-shadow`}
                 >
-                  <Heart className={`w-5 h-5 ${liked ? "text-red-500 fill-red-500" : "text-gray-500"}`} />
+                  <Heart
+                    className={`w-5 h-5 ${liked ? "text-red-500 fill-red-500" : "text-gray-500"}`}
+                  />
                 </button>
                 <span className="text-sm text-gray-500">{likeCount}</span>
                 <button
@@ -229,7 +240,7 @@ const PostDetail = () => {
       {/* Comments Modal */}
       {showComments && <CommentsModal onClose={() => setShowComments(false)} />}
     </div>
-  )
-}
+  );
+};
 
-export default PostDetail
+export default PostDetail;
