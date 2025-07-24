@@ -20,4 +20,5 @@ public class SubscriptionHistoryDto {
     private LocalDateTime expiresAt;
     private String paymentMethod;
     private String status; // ACTIVE, EXPIRED, CANCELLED
+    private Boolean autoRenew; // 자동 갱신 여부
 }

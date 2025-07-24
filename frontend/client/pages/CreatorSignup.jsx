@@ -1,30 +1,45 @@
-import React, { useState } from "react"
+import React, { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { Camera } from "lucide-react"
+import axios from "@/lib/axios";
 
 const CreatorSignup = () => {
   const navigate = useNavigate()
   const [introduction, setIntroduction] = useState("")
-  const [profileImage, setProfileImage] = useState(null)
+  const [profileImage, setProfileImage] = useState("")
 
-  const handleImageUpload = e => {
-    const file = e.target.files?.[0]
-    if (file) {
-      const reader = new FileReader()
-      reader.onload = e => {
-        setProfileImage(e.target?.result)
-      }
-      reader.readAsDataURL(file)
-    }
-  }
+  // handle user data fetching
+  useEffect(() => {
+    axios.get("/api/user/profile")
+      .then(response => {
+        const data = response.data
+        if (data.profileUrl) {
+          setProfileImage(`http://localhost:8080${data.profileUrl}`)
+        }
+      })
+      .catch(error => {
+        console.error("프로필 이미지 로드 오류:", error)
+      })
+  }, [])
 
-  const handleSubmit = e => {
+  const handleSubmit = async e => {
     e.preventDefault()
     if (introduction.trim()) {
-      // Handle creator account creation
-      console.log("Creating creator account:", { introduction, profileImage })
-      // Navigate to creator dashboard
-      navigate("/creator/dashboard")
+      try {
+        const response = await axios.post("/c/register", {
+          introduce: introduction.trim()
+        }, {
+          headers: {
+            "Content-Type": "application/json"
+          }
+        })
+        console.log("회원가입 성공:", response.data)
+        navigate("/creator/dashboard")
+      } catch (error) {
+        console.error("회원가입 오류:", error)
+        alert("회원가입에 실패했습니다. 홈으로 이동합니다.")
+        navigate("/")
+      }
     }
   }
 
@@ -54,18 +69,6 @@ const CreatorSignup = () => {
                   <Camera className="w-12 h-12 text-gray-400" />
                 )}
               </div>
-              <label
-                htmlFor="profile-upload"
-                className="absolute inset-0 rounded-full cursor-pointer hover:bg-black hover:bg-opacity-10 transition-colors flex items-center justify-center"
-              >
-                <input
-                  id="profile-upload"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  className="hidden"
-                />
-              </label>
             </div>
             <p className="text-sm text-gray-500 mt-2">프로필 사진</p>
           </div>
@@ -94,11 +97,10 @@ const CreatorSignup = () => {
             <button
               type="submit"
               disabled={!introduction.trim()}
-              className={`w-full py-3 rounded-lg font-semibold transition-colors ${
-                introduction.trim()
-                  ? "bg-brand-primary text-white hover:bg-brand-primary/90"
-                  : "bg-gray-300 text-gray-500 cursor-not-allowed"
-              }`}
+              className={`w-full py-3 rounded-lg font-semibold transition-colors ${introduction.trim()
+                ? "bg-brand-primary text-white hover:bg-brand-primary/90"
+                : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                }`}
             >
               창작 시작하기
             </button>

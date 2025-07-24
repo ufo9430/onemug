@@ -1,32 +1,65 @@
-import { useState } from "react"
-import { useNavigate } from "react-router-dom"
-import { Eye, EyeOff } from "lucide-react"
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Eye, EyeOff } from "lucide-react";
+import axios from "@/lib/axios";
 
-const SocialButton = ({ provider, icon, className, children }) => (
-  <button
-    className={`w-full flex items-center justify-center gap-3 px-4 py-3 rounded-lg font-medium text-base transition-colors ${className}`}
-  >
-    {icon}
-    {children}
-  </button>
-)
+const SocialButton = ({ provider, icon, className, children }) => {
+  const handleSocialLogin = () => {
+    window.location.href = `/api/oauth2/authorization/${provider}`;
+  };
+  return (
+    <button
+      onClick={handleSocialLogin}
+      className={`w-full flex items-center justify-center gap-3 px-4 py-3 rounded-lg font-medium text-base transition-colors ${className}`}
+    >
+      {icon}
+      {children}
+    </button>
+  );
+};
 
 export default function Login() {
-  const navigate = useNavigate()
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [showPassword, setShowPassword] = useState(false)
-  const [rememberMe, setRememberMe] = useState(false)
+  const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
 
-  const handleSubmit = e => {
-    e.preventDefault()
-    // Handle login logic here
-    console.log("Login attempt:", { email, password, rememberMe })
-  }
+  const handleSubmit = async (e) => {
+    console.log("Login attempt:", { email, password, rememberMe });
+
+    e.preventDefault();
+
+    try {
+      const response = await axios.post("/auth/login", {
+        email,
+        password,
+      });
+
+      const token = response.data.token;
+      const userId = response.data.userId;
+      if (rememberMe) {
+        localStorage.setItem("token", token);
+         localStorage.setItem("userId", userId);
+      } else {
+        sessionStorage.setItem("token", token);
+        sessionStorage.setItem("userId", userId);
+      }
+
+      alert("로그인 성공");
+
+      navigate("/feed");
+
+      // 이동 등 추가 처리
+    } catch (error) {
+      console.error("❌ 로그인 실패:", error.response?.data || error.message);
+      alert("로그인에 실패했습니다. 이메일 또는 비밀번호를 확인하세요.");
+    }
+  };
 
   const handleSignUp = () => {
-    navigate("/welcome")
-  }
+    navigate("/welcome");
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
@@ -54,7 +87,7 @@ export default function Login() {
               type="email"
               id="email"
               value={email}
-              onChange={e => setEmail(e.target.value)}
+              onChange={(e) => setEmail(e.target.value)}
               placeholder="이메일을 입력하세요"
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-transparent outline-none transition-colors"
               required
@@ -74,7 +107,7 @@ export default function Login() {
                 type={showPassword ? "text" : "password"}
                 id="password"
                 value={password}
-                onChange={e => setPassword(e.target.value)}
+                onChange={(e) => setPassword(e.target.value)}
                 placeholder="비밀번호를 입력하세요"
                 className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-transparent outline-none transition-colors"
                 required
@@ -95,7 +128,7 @@ export default function Login() {
               <input
                 type="checkbox"
                 checked={rememberMe}
-                onChange={e => setRememberMe(e.target.checked)}
+                onChange={(e) => setRememberMe(e.target.checked)}
                 className="w-4 h-4 rounded border-2 border-gray-300 text-brand-primary focus:ring-brand-primary"
               />
               <span className="text-sm text-gray-700">로그인 상태 유지</span>
@@ -157,21 +190,6 @@ export default function Login() {
           </SocialButton>
 
           <SocialButton
-            provider="kakao"
-            className="bg-social-kakao hover:bg-opacity-90 text-gray-900"
-            icon={
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <path
-                  d="M10 2.5C14.8325 2.5 18.75 5.55333 18.75 9.32083C18.75 13.0875 14.8325 16.1408 10 16.1408C9.51881 16.1411 9.0381 16.1105 8.56083 16.0492L4.8875 18.4517C4.47 18.6725 4.3225 18.6483 4.49417 18.1075L5.2375 15.0425C2.8375 13.8258 1.25 11.7175 1.25 9.32083C1.25 5.55417 5.1675 2.5 10 2.5Z"
-                  fill="black"
-                />
-              </svg>
-            }
-          >
-            카카오로 로그인
-          </SocialButton>
-
-          <SocialButton
             provider="naver"
             className="bg-social-naver hover:bg-opacity-90 text-white"
             icon={
@@ -205,5 +223,5 @@ export default function Login() {
         </div>
       </div>
     </div>
-  )
+  );
 }

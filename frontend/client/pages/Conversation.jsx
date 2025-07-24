@@ -1,10 +1,11 @@
 import React, { useEffect, useRef, useState } from "react"
 import { useParams, useNavigate } from "react-router-dom"
-import Sidebar from "@/components/Sidebar"
+
 import { ChevronLeft, Send } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
+import axios from "@/lib/axios";
 
 function formatSimpleTime(timestamp) {
   const date = new Date(timestamp);
@@ -61,38 +62,35 @@ export default function Conversation() {
   useEffect(() => {
     const userId = 1 // todo: 임시 사용자 id
     const chatroomId = Number(conversationId)
-    const socket = new WebSocket("ws://localhost:8080/ws")
+    const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+    const socket = new WebSocket(`${protocol}://${window.location.host}/ws`);
     socketRef.current = socket
 
 
     // 대화 상대 정보 불러오기
-    fetch(`http://localhost:8080/community/${chatroomId}/opponent`)
-      .then(res => res.json())
-      .then(data => {
-        console.log("대화 상대 정보:", data)
-        setMockUser(data)
+    axios.get(`/community/${chatroomId}/opponent`)
+      .then(res => {
+      console.log("대화 상대 정보:", res.data)
+      setMockUser(res.data)
       })
 
-
     // 채팅 내역 불러오기
-    fetch(`http://localhost:8080/community/${chatroomId}`)
-      .then(res => res.json())
-      .then(data => {
-        console.log("이전 채팅 내역:", data)
-        const formatted = data.map(msg => ({
-          ...msg,
-          isOwn: msg.userId === userId,
-          timestamp: formatSimpleTime(msg.createdAt)
-        }))
+    axios.get(`/community/${chatroomId}`)
+      .then(res => {
+      console.log("이전 채팅 내역:", res.data)
+      const formatted = res.data.map(msg => ({
+        ...msg,
+        isOwn: msg.userId === userId,
+        timestamp: formatSimpleTime(msg.createdAt)
+      }))
 
-        setMockMessages(formatted)
+      setMockMessages(formatted)
 
-        setTimeout(() => {
-          if (messagesEndRef.current) {
-            messagesEndRef.current.scrollIntoView({ behavior: "instant" });
-          }
-        }, 0);
-
+      setTimeout(() => {
+        if (messagesEndRef.current) {
+        messagesEndRef.current.scrollIntoView({ behavior: "instant" });
+        }
+      }, 0);
       })
 
 
@@ -130,7 +128,6 @@ export default function Conversation() {
   if (!mockUser) {
     return (
       <div className="flex min-h-screen bg-gray-50">
-        <Sidebar activeItem="messages" />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <h2 className="text-xl font-semibold text-gray-900 mb-2">
@@ -190,7 +187,6 @@ export default function Conversation() {
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <Sidebar activeItem="messages" />
 
       <div className="flex-1 flex flex-col w-full lg:w-auto h-screen">
         {/* Header */}

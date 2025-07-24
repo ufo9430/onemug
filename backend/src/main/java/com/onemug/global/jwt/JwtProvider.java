@@ -21,8 +21,6 @@ public class JwtProvider {
 
         JwtClaimsSet claims = JwtClaimsSet.builder()
                 .subject(String.valueOf(user.getId()))
-                .claim("email", user.getEmail())
-                .claim("nickname", user.getNickname())
                 .claim("scope", "USER")
                 .issuedAt(now)
                 .expiresAt(now.plus(1, ChronoUnit.HOURS))

@@ -1,12 +1,12 @@
 import React, { useState } from "react"
 import { useNavigate, useLocation } from "react-router-dom"
 import { ChevronDown, Upload } from "lucide-react"
-import CreatorSidebar from "../components/CreatorSidebar"
+import axios from "@/lib/axios";
 
 const CreatePostPublish = () => {
   const navigate = useNavigate()
   const location = useLocation()
-  const { title, category, content } = location.state || {}
+  const { title, categoryId, content } = location.state || {}
 
   const [visibility, setVisibility] = useState("")
   const [showVisibilityDropdown, setShowVisibilityDropdown] = useState(false)
@@ -22,10 +22,10 @@ const CreatePostPublish = () => {
 
   // Redirect if no content from previous step
   React.useEffect(() => {
-    if (!title || !category || !content) {
+    if (!title || !categoryId || !content) {
       navigate("/creator/post/new")
     }
-  }, [title, category, content, navigate])
+  }, [title, categoryId, content, navigate])
 
   const handleThumbnailUpload = event => {
     const file = event.target.files?.[0]
@@ -41,23 +41,48 @@ const CreatePostPublish = () => {
 
   const handlePrevious = () => {
     navigate("/creator/post/new", {
-      state: { title, category, content }
+      state: { title, categoryId, content }
     })
   }
 
-  const handlePublish = () => {
-    if (visibility) {
-      // Here you would typically send the data to your backend
-      console.log("Publishing post:", {
-        title,
-        category,
-        content,
-        visibility,
-        thumbnail
-      })
+  const handlePublish = async () => {
+    if (!visibility) return;
 
-      // Navigate back to dashboard after publishing
-      navigate("/creator/dashboard")
+    const postData = {
+      title,
+      categoryId,
+      content
+      // 필요에 따라 PostCreateRequestDto에 맞게 필드 추가
+    };
+
+    console.log(postData);
+
+    try {
+      const response = await axios.post(
+          '/api/c/post/add',
+          postData,
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              // 'Authorization': `Bearer ${token}`, // 필요시 토큰
+            },
+            withCredentials: true, // 쿠키 인증이면 이 옵션 필수
+          }
+      );
+
+      console.log('Post created:', response.data);
+      navigate('/creator/dashboard');
+    } catch (error) {
+      if (error.response) {
+        // 서버가 4xx, 5xx 에러 응답을 보냈을 때
+        console.error('Failed to create post:', error.response.status);
+      } else if (error.request) {
+        // 요청은 되었지만 응답이 없는 경우
+        console.error('No response from server:', error.request);
+      } else {
+        // 요청 설정 중 에러
+        console.error('Error setting up request:', error.message);
+      }
     }
   }
 
@@ -67,8 +92,6 @@ const CreatePostPublish = () => {
 
   return (
     <div className="min-h-screen bg-brand-secondary flex">
-      {/* Creator Sidebar */}
-      <CreatorSidebar activeItem="dashboard" />
 
       {/* Main Content */}
       <div className="flex-1">

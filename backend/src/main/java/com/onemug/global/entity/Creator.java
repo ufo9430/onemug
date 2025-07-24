@@ -19,8 +19,13 @@ public class Creator {
     private String introduceText;
 
     @OneToOne
+    @JoinColumn(name = "user_id")
     private User user;
 
     @OneToMany
     private List<User> subscriber = new ArrayList<>();
+
+    public void updateIntroduceText(String text) {
+        this.introduceText = text;
+    }
 }

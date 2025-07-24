@@ -1,6 +1,7 @@
 package com.onemug.search.dto;
 
 import java.util.Set;
+import com.onemug.search.dto.SearchTarget;
 
 /**
  *  - q            : 검색어 (필수)
@@ -10,5 +11,5 @@ import java.util.Set;
 public record SearchCond(
         String q,
         Set<Long> categoryIds,
-        SearchTarget target      // enum 정의: POST, CREATOR, ALL
-) {}
+        SearchTarget target
+) { }

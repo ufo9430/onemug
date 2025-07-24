@@ -1,5 +1,7 @@
-import React, { useState } from "react"
+import React, { useEffect, useState } from "react"
 import { X, Heart } from "lucide-react"
+import axios from "axios"
+import { useParams } from 'react-router-dom';
 
 const Comment = ({ comment, isReply = false }) => {
   const [showReplyForm, setShowReplyForm] = useState(false)
@@ -95,52 +97,55 @@ const Comment = ({ comment, isReply = false }) => {
 
 const CommentsModal = ({ onClose }) => {
   const [newComment, setNewComment] = useState("")
+  const { id } = useParams();
+  const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+  const [comments, setComments] = useState([]);
+  const [commentCount, setCommentCount] = useState(0);
 
-  const comments = [
-    {
-      id: "1",
-      author: "김민정",
-      content: "정말 유용한 정보네요! @박지수님도 보시면 좋을 것 같아요.",
-      timeAgo: "2분 전",
-      likes: 5,
-      avatar:
-        "https://cdn.builder.io/api/v1/image/assets/TEMP/05d2c67f1e294bbbcb41123ee1061cdb3f030efc?width=80"
-    },
-    {
-      id: "2",
-      author: "이준호",
-      content: "저도 비슷한 경험이 있어요. 로스터리마다 정말 다르더라구요.",
-      timeAgo: "5분 전",
-      likes: 2,
-      avatar:
-        "https://cdn.builder.io/api/v1/image/assets/TEMP/05d2c67f1e294bbbcb41123ee1061cdb3f030efc?width=80",
-      replies: [
-        {
-          id: "3",
-          author: "김민정",
-          content: "@이준호 맞아요! 어떤 로스터리가 가장 인상적이셨나요?",
-          timeAgo: "3분 전",
-          likes: 1,
-          avatar:
-            "https://cdn.builder.io/api/v1/image/assets/TEMP/9557dbcef1edb5e4b90b16b6da78b8c3bb9056d7?width=64"
-        }
-      ]
+  const fetchComments = async (postId) => {
+    try {
+      const res = await axios.get(`/api/post/${id}/comments`);
+      setComments(res.data); // 댓글 리스트 저장
+      setCommentCount(res.data.length); // 댓글 개수 저장
+    } catch (err) {
+      console.error("❌ 댓글 불러오기 실패", err);
     }
-  ]
+  };
 
-  const handleSubmitComment = () => {
-    if (newComment.trim()) {
-      console.log("New comment:", newComment)
-      setNewComment("")
+  const handleSubmitComment = async () => {
+    if (!newComment.trim()) return
+
+    try {
+      const response = await axios.post(`/api/post/${id}/comments`,
+        { content: newComment },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          }
+        }
+      )
+
+      const createdComment = response.data;
+      setComments([...comments, createdComment]); // 새 댓글 목록에 추가
+      setNewComment(""); // 입력창 초기화
+    } catch (error) {
+      console.error("❌ 댓글 등록 실패:", error);
     }
   }
+
+  useEffect(() => {
+    if (id) {
+      fetchComments(id);
+    }
+    console.log("comments", comments);
+  }, [id]);
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-xl w-full max-w-2xl max-h-[80vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 className="text-xl font-bold text-gray-900">댓글 18개</h2>
+          <h2 className="text-xl font-bold text-gray-900">댓글 {commentCount}개</h2>
           <button
             onClick={onClose}
             className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors"

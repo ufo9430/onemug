@@ -1,7 +1,11 @@
 package com.onemug.global.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.util.ArrayList;
+import java.util.List;
 
 
 @Getter
@@ -17,7 +21,7 @@ public class Category {
     private String name;
     private Integer viewCount;
 
-    @OneToOne
-    @JoinColumn(name = "post_id")
-    private Post post;
+    @OneToMany(mappedBy = "category", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private List<Post> post = new ArrayList<>();
 }

@@ -10,18 +10,21 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface CreatorRepository extends JpaRepository<Creator, Long> {
 
     /** 내가 구독한 Creator id 목록 */
     @Query("""
-        select c.id
-        from Creator c
-        join c.subscriber s
-        where s.id = :userId
-    """)
-    List<Long> findCreatorIdsBySubscriberId(@Param("userId") Long userId);
+    select distinct m.creator.id
+    from Membership m
+    where m.user.id = :userId
+      and m.isTemplate = false
+      and m.status = 'ACTIVE'
+      and (m.expiresAt is null or m.expiresAt > CURRENT_TIMESTAMP)
+""")
+    List<Long> findActiveCreatorIdsByUserId(@Param("userId") Long userId);
 
     /** Creator 통합 검색 (닉네임·소개글) */
     @Query(value = """
@@ -34,5 +37,7 @@ public interface CreatorRepository extends JpaRepository<Creator, Long> {
           )
     """, nativeQuery = true)
     Page<Creator> searchCreators(@Param("cond") SearchCond cond, Pageable pageable);
+
+    Optional<Creator> findByUserId(Long userId);
 }
 

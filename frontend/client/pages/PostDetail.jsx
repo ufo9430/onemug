@@ -1,7 +1,10 @@
-import React, { useState } from "react"
-import { Heart, MessageCircle } from "lucide-react"
-import CommentsModal from "../components/CommentsModal"
-import Sidebar from "../components/Sidebar"
+import React, { useEffect, useState } from "react";
+import { Heart, MessageCircle } from "lucide-react";
+import CommentsModal from "../components/CommentsModal";
+import { useParams } from "react-router-dom";
+import axios from "axios";
+import { Avatar, AvatarImage, AvatarFallback } from "../components/ui/avatar";
+import { useNavigate } from "react-router-dom";
 
 const RelatedPostCard = ({ title, category, likes, comments, image }) => {
   return (
@@ -24,11 +27,20 @@ const RelatedPostCard = ({ title, category, likes, comments, image }) => {
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
 const PostDetail = () => {
-  const [showComments, setShowComments] = useState(false)
+  const [showComments, setShowComments] = useState(false);
+  const { id } = useParams();
+  const [postData, setPostData] = useState(null);
+  const [liked, setLiked] = useState(false); // true or false
+  const [likeCount, setLikeCount] = useState(0);
+  const [commentCount, setCommentCount] = useState(0);
+  const navigate = useNavigate();
+
+  const token =
+    localStorage.getItem("token") || sessionStorage.getItem("token");
 
   const relatedPosts = [
     {
@@ -37,7 +49,7 @@ const PostDetail = () => {
       likes: 58,
       comments: 9,
       image:
-        "https://cdn.builder.io/api/v1/image/assets/TEMP/046f2ae61e6518636b365c38adedfca50dab039b?width=456"
+        "https://cdn.builder.io/api/v1/image/assets/TEMP/046f2ae61e6518636b365c38adedfca50dab039b?width=456",
     },
     {
       title: "나만의 수제 바닐라라떼 레시피 공개",
@@ -45,7 +57,7 @@ const PostDetail = () => {
       likes: 94,
       comments: 13,
       image:
-        "https://cdn.builder.io/api/v1/image/assets/TEMP/64fde26dbc24bb798c9f6d2ce660d06347b79740?width=456"
+        "https://cdn.builder.io/api/v1/image/assets/TEMP/64fde26dbc24bb798c9f6d2ce660d06347b79740?width=456",
     },
     {
       title: "카페를 하면서 제일 후회한 3가지",
@@ -53,15 +65,85 @@ const PostDetail = () => {
       likes: 172,
       comments: 23,
       image:
-        "https://cdn.builder.io/api/v1/image/assets/TEMP/2a82513b6c8f716b4e8e8de2a4e9f521f674b1b9?width=456"
+        "https://cdn.builder.io/api/v1/image/assets/TEMP/2a82513b6c8f716b4e8e8de2a4e9f521f674b1b9?width=456",
+    },
+  ];
+
+  useEffect(() => {
+    const fetchPost = async () => {
+      try {
+        const response = await axios.get(`/api/post/${id}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        setPostData(response.data);
+        setLiked(response.data.liked);
+        setLikeCount(response.data.likeCount);
+        console.log("response.data = ", response.data);
+      } catch (error) {
+        console.error("게시글 불러오기 실패:", error);
+      }
+    };
+
+    fetchPost();
+  }, [id]);
+
+  useEffect(() => {
+    const fetchComments = async (id) => {
+      try {
+        const res = await axios.get(
+          `http://localhost:8080/post/${id}/comments`,
+        );
+        setCommentCount(res.data.length); // 댓글 개수 저장
+        console.log("res.data", res.data);
+      } catch (err) {
+        console.error("❌ 댓글 불러오기 실패", err);
+      }
+    };
+    fetchComments(id);
+  }, [id]);
+
+  if (!postData) return <div>Loading...</div>;
+
+  const formattedDate = new Date(postData.createdAt).toLocaleDateString(
+    "ko-KR",
+    {
+      year: "numeric",
+      month: "long",
+      day: "2-digit",
+    },
+  );
+
+  const handleLikeToggle = async () => {
+    try {
+      if (liked) {
+        await axios.delete(`/api/post/${id}/like`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        setLikeCount((prev) => prev - 1);
+      } else {
+        await axios.post(
+          `/api/post/${id}/like`,
+          {},
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        );
+        setLikeCount((prev) => prev + 1);
+      }
+      setLiked(!liked);
+    } catch (error) {
+      console.error("좋아요 처리 실패:", error);
     }
-  ]
+  };
 
   return (
     <div className="min-h-screen bg-brand-secondary flex">
-      {/* Sidebar */}
-      <Sidebar activeItem="feed" />
-
       {/* Main Content */}
       <div className="flex-1">
         {/* Header */}
@@ -86,68 +168,68 @@ const PostDetail = () => {
             <div className="max-w-4xl mx-auto px-4 lg:px-8 py-8 lg:py-12">
               {/* Author Info */}
               <div className="flex items-center gap-4 mb-8">
-                <div className="w-12 h-12 rounded-full bg-yellow-300"></div>
+                <button
+                  type="button"
+                  className="focus:outline-none"
+                  onClick={() => navigate(`/profile/${postData.creator_id}`)}
+                  style={{ padding: 0, border: "none", background: "none" }}
+                >
+                  <Avatar className="w-12 h-12">
+                    <AvatarImage
+                      src={
+                        postData.profile_url
+                          ? `http://localhost:8080${postData.profile_url}`
+                          : "/default-profile.png"
+                      }
+                      alt="프로필 이미지"
+                    />
+                    <AvatarFallback className="bg-brand-primary text-white font-semibold text-sm">
+                      {postData.authorName?.charAt(0) || "닉"}
+                    </AvatarFallback>
+                  </Avatar>
+                </button>
                 <div>
                   <h3 className="font-semibold text-lg text-gray-900">
-                    신유���
+                    {postData.authorName}
                   </h3>
                   <div className="text-sm text-gray-500">
-                    • 원두 · 기기 리뷰 • 2024년 1월 15일
+                    • {postData.categoryName} • {formattedDate}
                   </div>
                 </div>
               </div>
-
-              {/* Title */}
               <h1 className="text-3xl font-bold text-gray-900 mb-6">
-                스페셜티 원두 10종 비교 후기 (with 추출 가이드)
+                {postData.title}
               </h1>
-
-              {/* Subtitle */}
-              <p className="text-lg text-gray-600 mb-8 leading-relaxed">
-                같은 생두라도 로스터마다 풍미가 어떻게 달라지는지 비교했습니다.
-                홈카페 유저와 바리스타 모두에게 유용한 정리입니다.
-              </p>
 
               {/* Article Body */}
               <div className="prose prose-lg max-w-none">
                 <p className="text-gray-700 leading-relaxed mb-6">
-                  안녕하세요, 커피를 사랑하는 여러분! 오늘은 정말 특별한 리뷰를
-                  준비했습니다. 지난 한 달간 10개의 서로 다른 로스터리에서 같은
-                  생두(에티오피아 예가체프 G1)를 구매해서 직접 비교 테스팅을
-                  진행했어요.
-                </p>
-
-                <div className="my-8">
-                  <img
-                    src="https://cdn.builder.io/api/v1/image/assets/TEMP/80f000c642a1c9e726fd73f625fb6fc2ea2a1514?width=1472"
-                    alt="Coffee comparison"
-                    className="w-full rounded-lg"
-                  />
-                </div>
-
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                  주요 발견사항
-                </h2>
-                <p className="text-gray-700 leading-relaxed">
-                  블루보틀은 깔끔한 산미, 스타벅스는 바디감이 좋았고, 로컬
-                  로스터리 A가 가장 인상적이었습니다. 같은 생두라도 로스터의
-                  철학에 따라 완전히 다른 커피가 된다는 것을 확인했어요.
+                  {postData.content}
                 </p>
               </div>
 
               {/* Interaction Buttons */}
               <div className="flex items-center gap-6 mt-8 pt-8 border-t border-gray-200">
-                <button className="flex items-center justify-center w-14 h-14 rounded-full border border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow">
-                  <Heart className="w-5 h-5 text-gray-500" />
+                <button
+                  onClick={handleLikeToggle}
+                  className={`flex items-center justify-center w-14 h-14 rounded-full border ${
+                    liked
+                      ? "border-red-300 bg-red-50"
+                      : "border-gray-200 bg-white"
+                  } shadow-sm hover:shadow-md transition-shadow`}
+                >
+                  <Heart
+                    className={`w-5 h-5 ${liked ? "text-red-500 fill-red-500" : "text-gray-500"}`}
+                  />
                 </button>
-                <span className="text-sm text-gray-500">124</span>
+                <span className="text-sm text-gray-500">{likeCount}</span>
                 <button
                   onClick={() => setShowComments(true)}
                   className="flex items-center justify-center w-14 h-14 rounded-full border border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow ml-4"
                 >
                   <MessageCircle className="w-5 h-5 text-gray-500" />
                 </button>
-                <span className="text-sm text-gray-500">18</span>
+                <span className="text-sm text-gray-500">{commentCount}</span>
               </div>
             </div>
           </article>
@@ -171,7 +253,7 @@ const PostDetail = () => {
       {/* Comments Modal */}
       {showComments && <CommentsModal onClose={() => setShowComments(false)} />}
     </div>
-  )
-}
+  );
+};
 
-export default PostDetail
+export default PostDetail;

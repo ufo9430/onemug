@@ -3,17 +3,23 @@ package com.onemug.global.dto;
 import com.onemug.global.entity.Creator;
 import com.onemug.global.entity.Membership;
 import com.onemug.global.entity.User;
+import com.onemug.global.entity.Benefit;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
 
+/**
+ * 멤버십 응답 DTO (Membership 기반으로 통합)
+ */
 @Data
-@Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class MembershipResponseDto {
     private Long id;
     private String name;
@@ -21,34 +27,38 @@ public class MembershipResponseDto {
     private String creatorName;
     private LocalDateTime subscribedAt;
     private LocalDateTime expiresAt;
-    private String status; // ACTIVE, EXPIRED, CANCELLED
+    private String status; // ACTIVE, EXPIRED, CANCELLED, PENDING
     private Boolean autoRenew;
     private Long creatorId;
     private Long subscriberId;
+    private String membershipName;
+    private List<String> benefits;
+    private Long templateId; // 원본 멤버십 템플릿 ID 추가
 
-    // Static factory method
+    // Static factory method for Membership
     public static MembershipResponseDto from(Membership membership) {
-        return MembershipResponseDto.builder()
-                .id(membership.getId())
-                .name(membership.getName())
-                .price(membership.getPrice())
-                .creatorName(membership.getCreator() != null && membership.getCreator().getUser() != null ?
-                        membership.getCreator().getUser().getNickname() : "Unknown Creator")
-                .creatorId(membership.getCreator().getId())
-                .subscribedAt(membership.getCreatedAt())
-                .expiresAt(membership.getCreatedAt() != null ?
-                        membership.getCreatedAt().plusMonths(1) : LocalDateTime.now().plusMonths(1))
-                .status(getSubscriptionStatus(membership.getCreatedAt()))
-                .autoRenew(true)
-                .build();
-    }
-    
-    private static String getSubscriptionStatus(LocalDateTime createdAt) {
-        // 구독 상태 판별 로직
-        LocalDateTime now = LocalDateTime.now();
-        if (createdAt.plusMonths(1).isBefore(now)) {
-            return "EXPIRED";
+        if (membership == null) {
+            return null;
         }
-        return "ACTIVE";
+        
+        // 수동으로 빌더 패턴 대체 (Lombok 문제 우회)
+        MembershipResponseDto dto = new MembershipResponseDto();
+        dto.id = membership.getId();
+        dto.name = membership.getMembershipName();
+        dto.price = membership.getPrice() != null ? membership.getPrice().intValue() : 0;
+        dto.creatorName = membership.getCreatorName();
+        dto.creatorId = membership.getCreator() != null ? membership.getCreator().getId() : null;
+        dto.subscriberId = membership.getUser() != null ? membership.getUser().getId() : null;
+        dto.subscribedAt = membership.getSubscribedAt();
+        dto.expiresAt = membership.getExpiresAt();
+        dto.status = membership.getStatus() != null ? membership.getStatus().name() : "UNKNOWN";
+        dto.autoRenew = membership.getAutoRenew();
+        dto.membershipName = membership.getMembershipName();
+        dto.benefits = membership.getBenefits() != null 
+            ? membership.getBenefits().stream().map(Benefit::getContent).collect(Collectors.toList())
+            : List.of(); // 빈 리스트 반환
+        dto.templateId = membership.getTemplateId(); // 원본 멤버십 템플릿 ID 추가
+        
+        return dto;
     }
 }
